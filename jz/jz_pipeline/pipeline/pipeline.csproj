@@ -1,0 +1,296 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <ProjectGuid>{B49D4A6F-BB7F-4A80-B4E9-13FE1C6A458E}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>pipeline</RootNamespace>
+    <AssemblyName>pipeline</AssemblyName>
+    <XnaFrameworkVersion>v3.0</XnaFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\bin\debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;WINDOWS;JZ_DEFAULT_CLOCKWISE_WINDING</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <XnaPlatform>Windows</XnaPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\bin\release\</OutputPath>
+    <DefineConstants>TRACE;WINDOWS;JZ_DEFAULT_CLOCKWISE_WINDING</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <XnaPlatform>Windows</XnaPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|Xbox 360' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Xbox 360\Debug</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <PlatformTarget>x86</PlatformTarget>
+    <XnaPlatform>Xbox 360</XnaPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|Xbox 360' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Xbox 360\Release</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <PlatformTarget>x86</PlatformTarget>
+    <XnaPlatform>Xbox 360</XnaPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|Zune' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Zune\Debug</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <PlatformTarget>x86</PlatformTarget>
+    <XnaPlatform>Zune</XnaPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|Zune' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Zune\Release</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <PlatformTarget>x86</PlatformTarget>
+    <XnaPlatform>Zune</XnaPlatform>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Xna.Framework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=x86">
+      <Private>False</Private>
+      <SpecificVersion>True</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Game, Version=3.0.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=MSIL">
+      <Private>False</Private>
+      <SpecificVersion>True</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline, Version=3.0.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=x86">
+      <Private>False</Private>
+      <SpecificVersion>true</SpecificVersion>
+    </Reference>
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="collada\BoundEffect.cs" />
+    <Compile Include="collada\ColladaDocument.cs" />
+    <Compile Include="collada\ColladaProcessor.cs" />
+    <Compile Include="collada\ColladaProcessorPhysics.cs" />
+    <Compile Include="collada\ColladaProcessorGeometry.cs" />
+    <Compile Include="collada\ColladaProcessorMaterial.cs" />
+    <Compile Include="collada\elements\ColladaAccessor.cs" />
+    <Compile Include="collada\elements\ColladaAnimation.cs" />
+    <Compile Include="collada\elements\ColladaAnimationClip.cs" />
+    <Compile Include="collada\elements\ColladaAsset.cs" />
+    <Compile Include="collada\elements\ColladaBindShapeMatrix.cs" />
+    <Compile Include="collada\elements\ColladaBoolArray.cs" />
+    <Compile Include="collada\elements\ColladaCamera.cs" />
+    <Compile Include="collada\elements\ColladaChannel.cs" />
+    <Compile Include="collada\elements\ColladaCOLLADA.cs" />
+    <Compile Include="collada\elements\ColladaColor.cs" />
+    <Compile Include="collada\elements\ColladaContributor.cs" />
+    <Compile Include="collada\elements\ColladaController.cs" />
+    <Compile Include="collada\elements\ColladaControlVertices.cs" />
+    <Compile Include="collada\elements\ColladaEvaluateScene.cs" />
+    <Compile Include="collada\elements\ColladaExtra.cs" />
+    <Compile Include="collada\elements\ColladaFloatArray.cs" />
+    <Compile Include="collada\elements\ColladaGeometry.cs" />
+    <Compile Include="collada\elements\ColladaIdrefArray.cs" />
+    <Compile Include="collada\elements\ColladaImage.cs" />
+    <Compile Include="collada\elements\ColladaImager.cs" />
+    <Compile Include="collada\elements\ColladaInputGroupA.cs" />
+    <Compile Include="collada\elements\ColladaInputGroupB.cs" />
+    <Compile Include="collada\elements\ColladaInstanceAnimation.cs" />
+    <Compile Include="collada\elements\ColladaInstanceCamera.cs" />
+    <Compile Include="collada\elements\ColladaInstanceController.cs" />
+    <Compile Include="collada\elements\ColladaInstanceGeometry.cs" />
+    <Compile Include="collada\elements\ColladaInstanceLight.cs" />
+    <Compile Include="collada\elements\ColladaInstanceNode.cs" />
+    <Compile Include="collada\elements\ColladaInstanceVisualScene.cs" />
+    <Compile Include="collada\elements\ColladaIntArray.cs" />
+    <Compile Include="collada\elements\ColladaJoints.cs" />
+    <Compile Include="collada\elements\ColladaLibraryAnimationClips.cs" />
+    <Compile Include="collada\elements\ColladaLibraryAnimations.cs" />
+    <Compile Include="collada\elements\ColladaLibraryCameras.cs" />
+    <Compile Include="collada\elements\ColladaLibraryControllers.cs" />
+    <Compile Include="collada\elements\ColladaLibraryGeometries.cs" />
+    <Compile Include="collada\elements\ColladaLibraryImages.cs" />
+    <Compile Include="collada\elements\ColladaLibraryLights.cs" />
+    <Compile Include="collada\elements\ColladaLibraryNodes.cs" />
+    <Compile Include="collada\elements\ColladaLibraryVisualScenes.cs" />
+    <Compile Include="collada\elements\ColladaLight.cs" />
+    <Compile Include="collada\elements\ColladaLightData.cs" />
+    <Compile Include="collada\elements\ColladaLines.cs" />
+    <Compile Include="collada\elements\ColladaLinestrips.cs" />
+    <Compile Include="collada\elements\ColladaLookAt.cs" />
+    <Compile Include="collada\elements\ColladaMatrix.cs" />
+    <Compile Include="collada\elements\ColladaMesh.cs" />
+    <Compile Include="collada\elements\ColladaMorph.cs" />
+    <Compile Include="collada\elements\ColladaNameArray.cs" />
+    <Compile Include="collada\elements\ColladaNode.cs" />
+    <Compile Include="collada\elements\ColladaOptics.cs" />
+    <Compile Include="collada\elements\ColladaOrthographic.cs" />
+    <Compile Include="collada\elements\ColladaParam.cs" />
+    <Compile Include="collada\elements\ColladaPerspective.cs" />
+    <Compile Include="collada\elements\ColladaPolygons.cs" />
+    <Compile Include="collada\elements\ColladaPolylist.cs" />
+    <Compile Include="collada\elements\ColladaPrimitives.cs" />
+    <Compile Include="collada\elements\ColladaRotate.cs" />
+    <Compile Include="collada\elements\ColladaSampler.cs" />
+    <Compile Include="collada\elements\ColladaScale.cs" />
+    <Compile Include="collada\elements\ColladaScene.cs" />
+    <Compile Include="collada\elements\ColladaSkeleton.cs" />
+    <Compile Include="collada\elements\ColladaSkew.cs" />
+    <Compile Include="collada\elements\ColladaSkin.cs" />
+    <Compile Include="collada\elements\ColladaSource.cs" />
+    <Compile Include="collada\elements\ColladaSpline.cs" />
+    <Compile Include="collada\elements\ColladaTargets.cs" />
+    <Compile Include="collada\elements\ColladaTechnique.cs" />
+    <Compile Include="collada\elements\ColladaTechniqueCommonOfLight.cs" />
+    <Compile Include="collada\elements\ColladaTechniqueCommonOfOptics.cs" />
+    <Compile Include="collada\elements\ColladaTechniqueCommonOfSource.cs" />
+    <Compile Include="collada\elements\ColladaTranslate.cs" />
+    <Compile Include="collada\elements\ColladaTriangles.cs" />
+    <Compile Include="collada\elements\ColladaTrifans.cs" />
+    <Compile Include="collada\elements\ColladaTristrips.cs" />
+    <Compile Include="collada\elements\ColladaVcount.cs" />
+    <Compile Include="collada\elements\ColladaVertexWeights.cs" />
+    <Compile Include="collada\elements\ColladaVertices.cs" />
+    <Compile Include="collada\elements\ColladaVisualScene.cs" />
+    <Compile Include="collada\elements\fx\ColladaAlpha.cs" />
+    <Compile Include="collada\elements\fx\ColladaAnnotate.cs" />
+    <Compile Include="collada\elements\fx\ColladaArgument.cs" />
+    <Compile Include="collada\elements\fx\ColladaArray.cs" />
+    <Compile Include="collada\elements\fx\ColladaBindMaterial.cs" />
+    <Compile Include="collada\elements\fx\ColladaBindOfInstanceMaterial.cs" />
+    <Compile Include="collada\elements\fx\ColladaBindVertexInput.cs" />
+    <Compile Include="collada\elements\fx\ColladaCode.cs" />
+    <Compile Include="collada\elements\fx\ColladaColorClear.cs" />
+    <Compile Include="collada\elements\fx\ColladaColorTarget.cs" />
+    <Compile Include="collada\elements\fx\ColladaCompilerOptions.cs" />
+    <Compile Include="collada\elements\fx\ColladaCompilerTarget.cs" />
+    <Compile Include="collada\elements\fx\ColladaConnectParam.cs" />
+    <Compile Include="collada\elements\fx\ColladaDepthClear.cs" />
+    <Compile Include="collada\elements\fx\ColladaDepthTarget.cs" />
+    <Compile Include="collada\elements\fx\ColladaDraw.cs" />
+    <Compile Include="collada\elements\fx\ColladaEffect.cs" />
+    <Compile Include="collada\elements\fx\ColladaEffectOfProfileCOMMON.cs" />
+    <Compile Include="collada\elements\fx\ColladaFloat.cs" />
+    <Compile Include="collada\elements\fx\ColladaFloat2.cs" />
+    <Compile Include="collada\elements\fx\ColladaFloat3.cs" />
+    <Compile Include="collada\elements\fx\ColladaFormatHint.cs" />
+    <Compile Include="collada\elements\fx\ColladaGenerator.cs" />
+    <Compile Include="collada\elements\fx\ColladaInclude.cs" />
+    <Compile Include="collada\elements\fx\ColladaInstanceEffect.cs" />
+    <Compile Include="collada\elements\fx\ColladaInstanceMaterial.cs" />
+    <Compile Include="collada\elements\fx\ColladaLibraryEffects.cs" />
+    <Compile Include="collada\elements\fx\ColladaLibraryMaterials.cs" />
+    <Compile Include="collada\elements\fx\ColladaMaterial.cs" />
+    <Compile Include="collada\elements\fx\ColladaModifier.cs" />
+    <Compile Include="collada\elements\fx\ColladaName.cs" />
+    <Compile Include="collada\elements\fx\ColladaNewparamOfProfileCOMMON.cs" />
+    <Compile Include="collada\elements\fx\ColladaNewparamOfProfileGLESandEffect.cs" />
+    <Compile Include="collada\elements\fx\ColladaPass.cs" />
+    <Compile Include="collada\elements\fx\ColladaProfileCG.cs" />
+    <Compile Include="collada\elements\fx\ColladaProfileCOMMON.cs" />
+    <Compile Include="collada\elements\fx\ColladaProfileGLES.cs" />
+    <Compile Include="collada\elements\fx\ColladaProfileGLSL.cs" />
+    <Compile Include="collada\elements\fx\ColladaRGB.cs" />
+    <Compile Include="collada\elements\fx\ColladaSamplerFX.cs" />
+    <Compile Include="collada\elements\fx\ColladaSamplerState.cs" />
+    <Compile Include="collada\elements\fx\ColladaSemantic.cs" />
+    <Compile Include="collada\elements\fx\ColladaSetparamOfInstanceEffect.cs" />
+    <Compile Include="collada\elements\fx\ColladaShader.cs" />
+    <Compile Include="collada\elements\fx\ColladaStencilClear.cs" />
+    <Compile Include="collada\elements\fx\ColladaStencilTarget.cs" />
+    <Compile Include="collada\elements\fx\ColladaSurfaceOfProfileCOMMON.cs" />
+    <Compile Include="collada\elements\fx\ColladaTechniqueCommonOfBindMaterial.cs" />
+    <Compile Include="collada\elements\fx\ColladaTechniqueFXOfProfileCOMMON.cs" />
+    <Compile Include="collada\elements\fx\ColladaTechniqueHint.cs" />
+    <Compile Include="collada\elements\fx\ColladaTexcombiner.cs" />
+    <Compile Include="collada\elements\fx\ColladaTexenv.cs" />
+    <Compile Include="collada\elements\fx\ColladaTexturePipeline.cs" />
+    <Compile Include="collada\elements\fx\ColladaTextureUnit.cs" />
+    <Compile Include="collada\elements\fx\ColladaUsertype.cs" />
+    <Compile Include="collada\elements\fx\_ColladaFixedFunction.cs" />
+    <Compile Include="collada\elements\fx\_ColladaFixedFunctionBase.cs" />
+    <Compile Include="collada\elements\fx\_ColladaFixedFunctionComplete.cs" />
+    <Compile Include="collada\elements\fx\_ColladaNewparam.cs" />
+    <Compile Include="collada\elements\fx\_ColladaTechniqueFX.cs" />
+    <Compile Include="collada\elements\physics\ColladaConvexMesh.cs" />
+    <Compile Include="collada\elements\physics\ColladaInstanceForceField.cs" />
+    <Compile Include="collada\elements\physics\ColladaInstancePhysicsModel.cs" />
+    <Compile Include="collada\elements\physics\ColladaInstancePhysicsScene.cs" />
+    <Compile Include="collada\elements\physics\ColladaLibraryForceFields.cs" />
+    <Compile Include="collada\elements\physics\ColladaLibraryPhysicsMaterials.cs" />
+    <Compile Include="collada\elements\physics\ColladaLibraryPhysicsModels.cs" />
+    <Compile Include="collada\elements\physics\ColladaLibraryPhysicsScenes.cs" />
+    <Compile Include="collada\elements\physics\ColladaPhysicsScene.cs" />
+    <Compile Include="collada\elements\physics\ColladaTechniqueCommonOfPhysicsScene.cs" />
+    <Compile Include="collada\elements\_ColladaArray.cs" />
+    <Compile Include="collada\elements\_ColladaChannelTarget.cs" />
+    <Compile Include="collada\elements\_ColladaDateTimeNode.cs" />
+    <Compile Include="collada\elements\_ColladaElement.cs" />
+    <Compile Include="collada\elements\_ColladaElementWithId.cs" />
+    <Compile Include="collada\elements\_ColladaElementWithIdAndName.cs" />
+    <Compile Include="collada\elements\_ColladaElementWithSid.cs" />
+    <Compile Include="collada\elements\_ColladaElementWithSidAndName.cs" />
+    <Compile Include="collada\elements\_ColladaGenericElement.cs" />
+    <Compile Include="collada\elements\_ColladaInput.cs" />
+    <Compile Include="collada\elements\_ColladaInstance.cs" />
+    <Compile Include="collada\elements\_ColladaPrimitive.cs" />
+    <Compile Include="collada\elements\_ColladaStringElement.cs" />
+    <Compile Include="collada\elements\_ColladaTarget.cs" />
+    <Compile Include="collada\elements\_ColladaTechnique.cs" />
+    <Compile Include="collada\elements\_ColladaTransformElement.cs" />
+    <Compile Include="Content.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\jz.csproj">
+      <Project>{5C2E321D-E461-44C8-AFA7-C8C8686FCCE2}</Project>
+      <Name>jz</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\Microsoft.Xna.GameStudio.ContentPipelineExtensions.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+     Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

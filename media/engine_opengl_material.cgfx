@@ -1,0 +1,77 @@
+// 
+// Copyright (C) 2009 Joe Zupko. All Rights Reserved.
+//   (jaz147@psu.edu, http://www.personal.psu.edu/~jaz147/)
+//
+
+float4 CameraAndScreen : jz_CameraAndScreen;
+float4x4 Projection : jz_Projection;
+float4x4 View : jz_View;
+float4x4 Wit : jz_Wit;
+float4x4 World : jz_World;
+
+sampler2D DiffuseSampler : jz_DiffuseTexture = sampler_state
+{
+	GenerateMipMap = false;
+	WrapS = Wrap;
+	WrapT = Wrap;	
+	MinFilter = LinearMipMapLinear;
+	MagFilter = Linear;
+};
+
+struct vsIn
+{
+	float4 Position : POSITION;
+	float3 Normal : NORMAL;
+	float2 TexCoords : TEXCOORD0;
+};
+
+struct vsOut
+{
+	float4 Position : POSITION;
+	float2 TexCoords : TEXCOORD0;
+};
+
+vsOut Vertex(vsIn aIn)
+{
+	vsOut ret;
+
+	float4 world = mul(aIn.Position, World);
+	float4 view = mul(world, View);
+	float4 proj = mul(view, Projection);
+
+	ret.Position = proj;
+	ret.TexCoords = aIn.TexCoords;
+	
+	return ret;
+}
+
+float4 Fragment(vsOut aIn) : COLOR0
+{
+	float4 c = tex2D(DiffuseSampler, aIn.TexCoords);
+	
+	return c;
+}
+
+technique Render
+{
+	pass
+	{
+		AlphaBlendEnable = false;
+		AlphaTestEnable = true;
+		AlphaFunc = GEqual;
+		AlphaRef = 0x0F;
+		CullFace = true;
+		CullFaceEnable = true;
+		CullCCW = true;
+		// CullMode = Ccw;
+		FillMode = Solid;
+		StencilEnable = false;
+		//TwoSidedStencilEnable = false;
+		ZEnable = true;
+		ZFunc = LEqual;
+		ZWriteEnable = true;
+		
+		FragmentProgram = compile fp20 Fragment();
+		VertexProgram = compile vp20 Vertex();
+	}
+}

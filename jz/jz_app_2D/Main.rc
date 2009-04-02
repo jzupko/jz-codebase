@@ -1,0 +1,4 @@
+#include <../jz_system/Win32Resource.h>
+
+JZ_PLATFORM_WINDOWS_APP_ICON     ICON "Main32.ico"
+JZ_PLATFORM_WINDOWS_TASKBAR_ICON ICON "Main16.ico"

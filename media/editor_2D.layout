@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GUILayout>
+    <Window Type="DefaultWindow" Name="MainWindow">
+        <Property Name="UnifiedMaxSize" Value="{{1,0},{1,0}}" />
+        <Property Name="UnifiedAreaRect" Value="{{0,0},{0,0},{1,0},{1,0}}" />
+		<Window Type="DefaultWindow" Name="Background">
+			<Property Name="UnifiedMaxSize" Value="{{1,0},{1,0}}" />
+			<Property Name="UnifiedAreaRect" Value="{{0,0},{0,0},{1,0},{1,0}}" />		
+			<Property Name="RiseOnClick" Value="false" />
+			<Event Name="MouseButtonUp" Function="OnMouseReleased" />
+			<Event Name="MouseMove" Function="OnMouseMove" />
+			<Event Name="MouseButtonDown" Function="OnMousePressed" />
+		</Window>		
+        <Window Type="editor_2D/MultiLineEditbox" Name="Console">
+			<Property Name="Alpha" Value="0.5" />
+			<Property Name="UnifiedMaxSize" Value="{{1,0},{0.25,0}}" />
+			<Property Name="UnifiedAreaRect" Value="{{0,0},{0,0},{1,0},{0.25,0}}" />
+            <Property Name="ReadOnly" Value="True" />
+			<Property Name="Text" Value="" />
+			<Event Name="MouseButtonUp" Function="OnMouseReleased" />
+			<Event Name="MouseMove" Function="OnMouseMove" />
+        </Window>
+        <Window Type="editor_2D/Button" Name="CreateCell">
+			<Property Name="UnifiedMaxSize" Value="{{0.2,0},{0.05,0}}" />
+			<Property Name="UnifiedAreaRect" Value="{{0,0},{0.25,0},{0.2,0},{0.30,0}}" />
+            <Property Name="Text" Value="CreateCell" />
+            <Event Name="Clicked" Function="jzCreateCell" />
+			<Event Name="MouseButtonUp" Function="OnMouseReleased" />
+			<Event Name="MouseMove" Function="OnMouseMove" />
+        </Window>
+        <Window Type="editor_2D/Button" Name="CreateSprite">
+			<Property Name="UnifiedMaxSize" Value="{{0.2,0},{0.05,0}}" />
+			<Property Name="UnifiedAreaRect" Value="{{0.2,0},{0.25,0},{0.4,0},{0.30,0}}" />
+            <Property Name="Text" Value="CreateSprite" />
+            <Event Name="Clicked" Function="jzCreateSprite" />
+			<Event Name="MouseButtonUp" Function="OnMouseReleased" />
+			<Event Name="MouseMove" Function="OnMouseMove" />
+        </Window>
+        <Window Type="editor_2D/FrameWindow" Name="FileSelect" >
+            <Property Name="Text" Value="File Select" />
+            <Property Name="UnifiedMaxSize" Value="{{0.5,0},{0.25,0}}" />
+            <Property Name="UnifiedAreaRect" Value="{{0,0},{0.75,0},{0.5,0},{1,0}}" />
+            <Window Type="editor_2D/ItemListbox" Name="FileSelectList" >
+		        <Property Name="UnifiedMaxSize" Value="{{1,0},{1,0}}" />
+		        <Property Name="UnifiedAreaRect" Value="{{0,0},{0.25,0},{1,0},{1,0}}" />
+                <Window Type="editor_2D/ListboxItem" >
+                    <Property Name="Text" Value="Listbox Item 1" />
+                </Window>				
+            </Window>
+        </Window>
+	</Window>
+</GUILayout>

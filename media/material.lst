@@ -1,0 +1,29 @@
+./../media/common.fxh(89) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(89) : error C1071: profile specifier "shared" not allowed on non-function "Gamma"
+./../media/common.fxh(90) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(90) : error C1071: profile specifier "shared" not allowed on non-function "CameraFocalLength"
+./../media/common.fxh(91) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(91) : error C1071: profile specifier "shared" not allowed on non-function "HemiKey"
+./../media/common.fxh(92) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(92) : error C1071: profile specifier "shared" not allowed on non-function "HemiFill"
+./../media/common.fxh(93) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(93) : error C1071: profile specifier "shared" not allowed on non-function "HemiV"
+./../media/common.fxh(94) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(94) : error C1071: profile specifier "shared" not allowed on non-function "Projection"
+./../media/common.fxh(95) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(95) : error C1071: profile specifier "shared" not allowed on non-function "ScreenDimensions"
+./../media/common.fxh(96) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(96) : error C1071: profile specifier "shared" not allowed on non-function "Time"
+./../media/common.fxh(97) : warning C7022: unrecognized profile specifier "shared"
+./../media/common.fxh(97) : error C1071: profile specifier "shared" not allowed on non-function "View"
+material.fxh(479) : error C1016: expression type incompatible with function return type
+material.fxh(474) : error C1108: function "GetTransparent" has no statements
+material.fxh(569) : error C1016: expression type incompatible with function return type
+material.fxh(540) : error C1108: function "GetL" has no statements
+material.fxh(583) : error C0104: Unknown pre-processor directive #return
+material.fxh(585) : error C1016: expression type incompatible with function return type
+material.fxh(571) : error C1108: function "GetNormal" has no statements
+material.fxh(636) : warning C7011: implicit cast from "float4" to "float3"
+material.fxh(637) : warning C7011: implicit cast from "float4" to "float3"
+material.fxh(639) : warning C7011: implicit cast from "float4" to "float3"
+material.fxh(640) : warning C7011: implicit cast from "float4" to "float3"

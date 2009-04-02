@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<GUIScheme Name="editor_2D">
+	<Imageset Name="editor_2D" Filename="../media/editor_2D.imageset" />
+	<Font Name="Commonwealth-10" Filename="../media/Commonwealth-10.font" />
+	<LookNFeel Filename="../media/editor_2D.looknfeel" />
+	<WindowRendererSet Filename="CEGUIFalagardWRBase" />
+	<FalagardMapping WindowType="editor_2D/Button"      TargetType="CEGUI/PushButton"  Renderer="Falagard/Button"       LookNFeel="editor_2D/Button" />
+	<FalagardMapping WindowType="editor_2D/Checkbox"    TargetType="CEGUI/Checkbox"    Renderer="Falagard/ToggleButton" LookNFeel="editor_2D/Checkbox" />
+	<FalagardMapping WindowType="editor_2D/ImageButton" TargetType="CEGUI/PushButton"  Renderer="Falagard/Button"       LookNFeel="editor_2D/ImageButton" />
+	<FalagardMapping WindowType="editor_2D/RadioButton" TargetType="CEGUI/RadioButton" Renderer="Falagard/ToggleButton" LookNFeel="editor_2D/RadioButton" />
+	<FalagardMapping WindowType="editor_2D/FrameWindow"  TargetType="CEGUI/FrameWindow" Renderer="Falagard/FrameWindow"  LookNFeel="editor_2D/FrameWindow" />
+	<FalagardMapping WindowType="editor_2D/Titlebar"     TargetType="CEGUI/Titlebar"    Renderer="Falagard/Titlebar"     LookNFeel="editor_2D/Titlebar" />
+	<FalagardMapping WindowType="editor_2D/SystemButton" TargetType="CEGUI/PushButton"  Renderer="Falagard/SystemButton" LookNFeel="editor_2D/Button" />
+	<FalagardMapping WindowType="editor_2D/Editbox"          TargetType="CEGUI/Editbox"          Renderer="Falagard/Editbox"          LookNFeel="editor_2D/Editbox" />
+	<FalagardMapping WindowType="editor_2D/MultiLineEditbox" TargetType="CEGUI/MultiLineEditbox" Renderer="Falagard/MultiLineEditbox" LookNFeel="editor_2D/MultiLineEditbox" />
+	<FalagardMapping WindowType="editor_2D/Menubar"   TargetType="CEGUI/Menubar"   Renderer="Falagard/Menubar"   LookNFeel="editor_2D/Menubar" />
+	<FalagardMapping WindowType="editor_2D/PopupMenu" TargetType="CEGUI/PopupMenu" Renderer="Falagard/PopupMenu" LookNFeel="editor_2D/PopupMenu" />
+	<FalagardMapping WindowType="editor_2D/MenuItem"  TargetType="CEGUI/MenuItem"  Renderer="Falagard/MenuItem"  LookNFeel="editor_2D/MenuItem" />
+	<FalagardMapping WindowType="editor_2D/AlternateProgressBar" TargetType="CEGUI/ProgressBar" Renderer="Falagard/ProgressBar" LookNFeel="editor_2D/AltProgressBar" />
+	<FalagardMapping WindowType="editor_2D/ProgressBar"          TargetType="CEGUI/ProgressBar" Renderer="Falagard/ProgressBar" LookNFeel="editor_2D/ProgressBar" />
+	<FalagardMapping WindowType="editor_2D/VUMeter"              TargetType="CEGUI/ProgressBar" Renderer="Falagard/ProgressBar" LookNFeel="editor_2D/VUMeter" />
+	<FalagardMapping WindowType="editor_2D/VerticalScrollbar"   TargetType="CEGUI/Scrollbar" Renderer="Falagard/Scrollbar" LookNFeel="editor_2D/VerticalScrollbar" />
+	<FalagardMapping WindowType="editor_2D/HorizontalScrollbar" TargetType="CEGUI/Scrollbar" Renderer="Falagard/Scrollbar" LookNFeel="editor_2D/HorizontalScrollbar" />
+	<FalagardMapping WindowType="editor_2D/VerticalScrollbarThumb"   TargetType="CEGUI/Thumb" Renderer="Falagard/Button" LookNFeel="editor_2D/VerticalScrollbarThumb" />
+	<FalagardMapping WindowType="editor_2D/HorizontalScrollbarThumb" TargetType="CEGUI/Thumb" Renderer="Falagard/Button" LookNFeel="editor_2D/HorizontalScrollbarThumb" />
+	<FalagardMapping WindowType="editor_2D/LargeVerticalScrollbar"      TargetType="CEGUI/Scrollbar" Renderer="Falagard/Scrollbar" LookNFeel="editor_2D/LargeVerticalScrollbar" />
+	<FalagardMapping WindowType="editor_2D/LargeVerticalScrollbarThumb" TargetType="CEGUI/Thumb"     Renderer="Falagard/Button"    LookNFeel="editor_2D/LargeVerticalScrollbarThumb" />
+	<FalagardMapping WindowType="editor_2D/TabButton"  TargetType="CEGUI/TabButton"  Renderer="Falagard/TabButton"  LookNFeel="editor_2D/TabButton" />
+	<FalagardMapping WindowType="editor_2D/TabControl" TargetType="CEGUI/TabControl" Renderer="Falagard/TabControl" LookNFeel="editor_2D/TabControl" />
+	<FalagardMapping WindowType="editor_2D/TabContentPane"    TargetType="DefaultWindow"    Renderer="Falagard/Default"    LookNFeel="editor_2D/TabContentPane" />
+	<FalagardMapping WindowType="editor_2D/TabButtonPane"    TargetType="DefaultWindow"    Renderer="Falagard/Default"    LookNFeel="editor_2D/TabButtonPane" />
+	<FalagardMapping WindowType="editor_2D/ComboDropList" TargetType="CEGUI/ComboDropList" Renderer="Falagard/Listbox" LookNFeel="editor_2D/ComboDropList" />
+	<FalagardMapping WindowType="editor_2D/ComboEditbox"  TargetType="CEGUI/Editbox"	 Renderer="Falagard/Editbox" LookNFeel="editor_2D/ComboEditbox" />
+	<FalagardMapping WindowType="editor_2D/Combobox"	TargetType="CEGUI/Combobox"	 Renderer="Falagard/Default" LookNFeel="editor_2D/Combobox" />
+	<FalagardMapping WindowType="editor_2D/Listbox"           TargetType="CEGUI/Listbox"           Renderer="Falagard/Listbox"           LookNFeel="editor_2D/Listbox" />
+	<FalagardMapping WindowType="editor_2D/ListHeader"        TargetType="CEGUI/ListHeader"        Renderer="Falagard/ListHeader"        LookNFeel="editor_2D/ListHeader" />
+	<FalagardMapping WindowType="editor_2D/ListHeaderSegment" TargetType="CEGUI/ListHeaderSegment" Renderer="Falagard/ListHeaderSegment" LookNFeel="editor_2D/ListHeaderSegment" />
+	<FalagardMapping WindowType="editor_2D/MultiColumnList"   TargetType="CEGUI/MultiColumnList"   Renderer="Falagard/MultiColumnList"   LookNFeel="editor_2D/MultiColumnList" />
+	<FalagardMapping WindowType="editor_2D/Slider"      TargetType="CEGUI/Slider"      Renderer="Falagard/Slider"  LookNFeel="editor_2D/Slider" />
+	<FalagardMapping WindowType="editor_2D/SliderThumb" TargetType="CEGUI/Thumb" Renderer="Falagard/Button"  LookNFeel="editor_2D/SliderThumb" />
+	<FalagardMapping WindowType="editor_2D/ScrollablePane" TargetType="CEGUI/ScrollablePane" Renderer="Falagard/ScrollablePane" LookNFeel="editor_2D/ScrollablePane" />
+	<FalagardMapping WindowType="editor_2D/Spinner" TargetType="CEGUI/Spinner" Renderer="Falagard/Default" LookNFeel="editor_2D/Spinner" />
+	<FalagardMapping WindowType="editor_2D/Tooltip" TargetType="CEGUI/Tooltip" Renderer="Falagard/Tooltip" LookNFeel="editor_2D/Tooltip" />
+	<FalagardMapping WindowType="editor_2D/StaticImage" TargetType="DefaultWindow" Renderer="Falagard/StaticImage" LookNFeel="editor_2D/StaticImage" />
+	<FalagardMapping WindowType="editor_2D/StaticText"  TargetType="DefaultWindow" Renderer="Falagard/StaticText"  LookNFeel="editor_2D/StaticText" />
+	<FalagardMapping WindowType="editor_2D/ItemListbox" TargetType="CEGUI/ItemListbox" Renderer="Falagard/ItemListbox" LookNFeel="editor_2D/ItemListbox" />
+	<FalagardMapping WindowType="editor_2D/ListboxItem" TargetType="CEGUI/ItemEntry"   Renderer="Falagard/ItemEntry"   LookNFeel="editor_2D/ListboxItem" />
+	<FalagardMapping WindowType="editor_2D/GroupBox" TargetType="CEGUI/GroupBox"   Renderer="Falagard/Default"   LookNFeel="editor_2D/GroupBox" />
+      <FalagardMapping WindowType="editor_2D/Tree" TargetType="CEGUI/Tree"   Renderer="Falagard/Tree"   LookNFeel="editor_2D/Tree" />
+</GUIScheme>
