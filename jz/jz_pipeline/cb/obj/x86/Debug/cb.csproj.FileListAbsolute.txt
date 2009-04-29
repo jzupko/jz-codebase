@@ -1,0 +1,16 @@
+D:\dev\bin\debug\cb.exe
+D:\dev\bin\debug\cb.pdb
+D:\dev\jz\jz_pipeline\cb\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\dev\jz\jz_pipeline\cb\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
+D:\dev\jz\jz_pipeline\cb\obj\x86\Debug\jz.cb.MainForm.resources
+D:\dev\jz\jz_pipeline\cb\obj\x86\Debug\cb.csproj.GenerateResource.Cache
+D:\dev\jz\jz_pipeline\cb\obj\x86\Debug\cb.exe
+D:\dev\jz\jz_pipeline\cb\obj\x86\Debug\cb.pdb
+D:\jz_dev\bin\debug\cb.exe
+D:\jz_dev\bin\debug\cb.pdb
+D:\jz_dev\jz\jz_pipeline\cb\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\jz_dev\jz\jz_pipeline\cb\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
+D:\jz_dev\jz\jz_pipeline\cb\obj\x86\Debug\jz.cb.MainForm.resources
+D:\jz_dev\jz\jz_pipeline\cb\obj\x86\Debug\cb.csproj.GenerateResource.Cache
+D:\jz_dev\jz\jz_pipeline\cb\obj\x86\Debug\cb.exe
+D:\jz_dev\jz\jz_pipeline\cb\obj\x86\Debug\cb.pdb

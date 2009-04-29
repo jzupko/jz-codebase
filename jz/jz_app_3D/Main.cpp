@@ -240,7 +240,7 @@
                         if (pPhysicsNode.IsValid())
                         {
                             World3D* pWorld = pPhysicsNode->GetWorld();
-                            // pWorld->SetGravity(Vector3::kZero);
+                            pWorld->SetGravity(Vector3::kZero);
                             pCameraBody = pWorld->Create(new SphereShape(0.2f), Body3D::kDynamic, Body3D::kStatic);
                             pCameraBody->SetTranslation(pCamera->GetWorldTranslation());
                             pCameraBody->SetFriction(0.0f);
@@ -286,6 +286,10 @@
                                         if (lv.LengthSquared() > Constants<float>::kZeroTolerance)
                                         {
                                             pCameraBody->SetVelocity(lv);
+                                        }
+                                        else
+                                        {
+                                            pCameraBody->SetVelocity(Vector3::kZero);
                                         }
                                     }
                                     pRoot->Update();

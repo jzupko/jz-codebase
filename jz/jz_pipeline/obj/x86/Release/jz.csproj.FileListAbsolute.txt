@@ -1,0 +1,6 @@
+D:\dev\bin\release\jz.dll
+D:\dev\bin\release\jz.pdb
+D:\dev\jz\jz_pipeline\obj\x86\Release\ResolveAssemblyReference.cache
+D:\dev\jz\jz_pipeline\obj\x86\Release\Microsoft.Xna.Framework.RuntimeProfile.txt
+D:\dev\jz\jz_pipeline\obj\x86\Release\jz.dll
+D:\dev\jz\jz_pipeline\obj\x86\Release\jz.pdb

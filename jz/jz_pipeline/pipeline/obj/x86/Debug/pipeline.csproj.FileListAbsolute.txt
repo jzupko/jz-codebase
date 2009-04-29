@@ -1,0 +1,10 @@
+D:\dev\bin\debug\pipeline.dll
+D:\dev\bin\debug\pipeline.pdb
+D:\dev\jz\jz_pipeline\pipeline\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\dev\jz\jz_pipeline\pipeline\obj\x86\Debug\pipeline.dll
+D:\dev\jz\jz_pipeline\pipeline\obj\x86\Debug\pipeline.pdb
+D:\jz_dev\bin\debug\pipeline.dll
+D:\jz_dev\bin\debug\pipeline.pdb
+D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Debug\pipeline.dll
+D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Debug\pipeline.pdb

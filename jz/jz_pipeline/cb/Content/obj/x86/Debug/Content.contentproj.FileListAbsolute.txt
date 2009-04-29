@@ -1,0 +1,2 @@
+D:\dev\jz\jz_pipeline\cb\Content\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\jz_dev\jz\jz_pipeline\cb\Content\obj\x86\Debug\ResolveAssemblyReference.cache
