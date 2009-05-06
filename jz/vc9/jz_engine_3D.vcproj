@@ -147,6 +147,86 @@
 	<References>
 	</References>
 	<Files>
+		<Filter
+			Name="materials"
+			>
+			<File
+				RelativePath="..\..\media\common.fxh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\media\deferred_lighting_technique_helper.fxh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\media\engine_3D_deferred.fx"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\media\fb_common.fxh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\media\fire.fx"
+				>
+			</File>
+			<File
+				RelativePath="..\..\media\improved_noise.fxh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\media\lighting_common.fxh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\media\material.fxh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\media\screen_space_common.fxh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\media\SimpleEffect.fx"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
+					/>
+				</FileConfiguration>
+			</File>
+		</Filter>
 		<File
 			RelativePath="..\jz_engine_3D\_SimpleEffectHelper.h"
 			>
@@ -190,28 +270,6 @@
 		<File
 			RelativePath="..\jz_engine_3D\Deferred.h"
 			>
-		</File>
-		<File
-			RelativePath="..\..\media\engine_3D_deferred.fx"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
-					Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
-					Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
-				/>
-			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\jz_engine_3D\IRenderable.h"
@@ -290,19 +348,6 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\media\SimpleEffect.fx"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
-					Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
 			RelativePath="..\jz_engine_3D\SimpleEffect.h"
 			>
 		</File>
@@ -312,6 +357,10 @@
 		</File>
 		<File
 			RelativePath="..\jz_engine_3D\StandardEffect.h"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\ThreePoint.h"
 			>
 		</File>
 	</Files>

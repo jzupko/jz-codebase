@@ -40,6 +40,15 @@ namespace jz
     namespace engine_3D
     {
 
+        namespace ShadowManConstants
+        {
+            static const int kShadowTargetDimension = 2048;
+            static const int kMapsPerDimension = 4;
+            static const int kPadding = 10; // allows for filtering operations on the shadow map target.
+            static const int kSize = (kShadowTargetDimension / kMapsPerDimension);
+            static const int kSizePadding = (kSize) - (2 * kPadding);
+        }
+
         class ShadowMan sealed : public Singleton<ShadowMan>
         {
         public:
@@ -55,15 +64,11 @@ namespace jz
             Matrix4 GetShadowPostTransform() const;
             graphics::Target* GetShadowTarget() const;
 
-            float GetShadowBleedReduction() const { return mBleedReduction; }
-            void SetShadowBleedReduction(float v) { mBleedReduction = v; }
-
             int Grab();
             void Release(int& aHandle);
 
         private:
             bool mbAfterPre;
-            float mBleedReduction;
 
             ShadowMan(const ShadowMan&);
             ShadowMan& operator=(const ShadowMan&);

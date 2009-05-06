@@ -38,7 +38,6 @@ namespace jz
         const Degree ThreePointSettings::kMinYaw = Degree(0);
         const Degree ThreePointSettings::kMaxYaw = Degree(135);
 
-
         const float LightLearner::kStepSize = 3.0f;
         const float LightLearner::kMotWeight = 0.7f;
         const float LightLearner::kDesiredWeight = (1.0f - kMotWeight);

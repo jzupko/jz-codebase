@@ -54,9 +54,10 @@ namespace jz
             static const int kTapsRt = 4;
             static const int kCircularTaps = (kTapsRt * kTapsRt);
 
-            static const int kGaussianKernelRadius = 5;
+            static const int kGaussianKernelRadius = 11;
             static const int kMrtCount = 3;
             static const int kHdrCount = 2;
+            static const int kShadowCount = 2;
 
             bool bActive() const { return mbActive; }
             void SetActive(bool b)
@@ -89,6 +90,15 @@ namespace jz
             void PreTransparency();
             void End();
 
+            float GetBloomThreshold() const { return mBloomThreshold; }
+            void SetBloomThreshold(float v) { mBloomThreshold = Max(v, 0.0f); }
+
+            float GetMotionBlurAmount() const { return mMotionBlurAmount; }
+            void SetMotionBlurAmount(float v) { mMotionBlurAmount = Max(v, 0.0f); }
+
+            float GetShadowControlTerm() const { return mShadowControlTerm; }
+            void SetShadowControlTerm(float v) { mShadowControlTerm = Max(v, 0.0f); }
+
             float GetGaussianKernelStdDev() const { return mGaussianStdDev; }
             void SetGaussianKernelStdDev(float v);
 
@@ -99,16 +109,22 @@ namespace jz
             Event<void()>::Entry mLoadCallback;
             Event<void()>::Entry mUnloadCallback;
 
-            graphics::Parameter<float> jz_ShadowBleedReduction;
             graphics::Parameter<graphics::Target> jz_ShadowTexture;
             graphics::Parameter<Vector2> jz_ShadowDelta;
             graphics::Parameter<Vector2> jz_ShadowNearFar;
             graphics::Parameter<Vector4> jz_ShadowScaleShift;
             graphics::Parameter<Matrix4> jz_ShadowTransform;
+            graphics::Parameter<float> jz_ShadowControlTerm;
 
             graphics::Parameter<Matrix4> jz_Projection;
             graphics::Parameter<Matrix4> jz_View;
             graphics::Parameter<Matrix4> jz_World;
+
+            graphics::Parameter<Matrix4> jz_PrevProjection;
+            graphics::Parameter<Matrix4> jz_PrevView;
+            graphics::Parameter<float> jz_MotionBlurAmount;
+
+            graphics::Parameter<float> jz_BloomThreshold;
 
             graphics::Parameter<float> jz_Gamma;
             graphics::Parameter<Vector2> jz_CameraFocalLength;
@@ -130,6 +146,12 @@ namespace jz
             graphics::Technique mAoPass2;
             graphics::Technique mAoPass3;
             graphics::Technique mLdrPass;
+            graphics::Technique mShadowBlurPass1;
+            graphics::Technique mShadowBlurPass2;
+            graphics::Technique mMotionBlur;
+            graphics::Technique mBloomProcess;
+            graphics::Technique mBloomBlurPass1;
+            graphics::Technique mBloomBlurPass2;
             graphics::EffectPtr mEffect;
 
             graphics::Parameter<bool> jz_bDebugDeferred;
@@ -146,11 +168,17 @@ namespace jz
             graphics::Technique mSpot;
             graphics::Technique mSpotWithShadow;
             graphics::Technique mSpotAsQuad;
+            graphics::Technique mSpotWithShadowAsQuad;
 
             bool mbActive;
+            float mShadowControlTerm;
+
+            float mMotionBlurAmount;
+            float mBloomThreshold;
 
             graphics::TargetPtr mTargets[kMrtCount];
             graphics::TargetPtr mHdrTargets[kHdrCount];
+            graphics::TargetPtr mShadowTargets[kShadowCount];
 
             float mGaussianWeights[kGaussianKernelRadius];
             float mGaussianStdDev;
@@ -170,11 +198,15 @@ namespace jz
             void _Set(graphics::Mesh* apMesh);
             void _DoPasses(graphics::Mesh* apMesh);
             void _Ao();
+            void _Bloom();
+            void _MotionBlur();
+            void _ShadowMapProcess();
             void _DeferredLighting();
             void _Ldr();
             void _InitPost();
             void _PreTransparency();
             void _End();
+            void _PushScreenDimensions(natural aWidth, natural aHeight);
 
             Deferred(const Deferred&);
             Deferred& operator=(const Deferred&);

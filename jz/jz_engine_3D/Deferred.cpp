@@ -25,6 +25,7 @@
 #include <jz_engine_3D/RenderMan.h>
 #include <jz_engine_3D/ShadowMan.h>
 #include <jz_system/Files.h>
+#include <jz_system/Time.h>
 #include <jz_graphics/Effect.h>
 #include <jz_graphics/Graphics.h>
 #include <jz_graphics/Material.h>
@@ -40,7 +41,13 @@ namespace jz
     {
 
         static const float kDefaultGaussianKernelStdDev = 5.0f;
+        static const float kMinimumGaussianStdDev = Constants<float>::kZeroTolerance;
         static const char* kEffectFile = "..\\media\\engine_3D_deferred.cfx";
+
+        static const float kDefaultShadowControlTerm = 0.1f;
+
+        static const float kDefaultMotionBlurAmount = 0.25f;
+        static const float kDefaultBloomThreshold = 0.9f;
 
         static const float kDefaultAoScale = -0.3f;
         static const float kMinAoScale = -0.9f;
@@ -63,20 +70,25 @@ namespace jz
             graphics::Target::kA16B16G16R16F
         };
 
+        static const graphics::Target::Format kShadowFormats[Deferred::kShadowCount] =
+        {
+            graphics::Target::kR16F,
+            graphics::Target::kR16F
+        };
+
         static const char* kDirectional = "Directional";
         static const char* kPoint = "Point";
         static const char* kPointAsQuad = "PointAsQuad";
         static const char* kSpot = "Spot";
         static const char* kSpotWithShadow = "SpotWithShadow";
         static const char* kSpotAsQuad = "SpotAsQuad";
-
-        static const char* kAoPass1 = "AOPass1";
-        static const char* kAoPass2 = "AOPass2";
-        static const char* kAoPass3 = "AOPass3";
-        static const char* kLdrPass = "LdrPass";
+        static const char* kSpotWithShadowAsQuad = "SpotWithShadowAsQuad";
 
         Deferred::Deferred()
-            : mbActive(false),
+            : mbActive(false), 
+            mShadowControlTerm(kDefaultShadowControlTerm),
+            mMotionBlurAmount(kDefaultMotionBlurAmount),
+            mBloomThreshold(kDefaultBloomThreshold),
             mAoRadius(kDefaultAoRadius),
             mAoScale(kDefaultAoScale),
             mbDebugAO(false),
@@ -113,16 +125,22 @@ namespace jz
 
             mEffect = gd.Create<Effect>(kEffectFile);
 
-            JZ_HELPER(jz_ShadowBleedReduction);
             JZ_HELPER(jz_ShadowTexture);
             JZ_HELPER(jz_ShadowDelta);
             JZ_HELPER(jz_ShadowNearFar);
             JZ_HELPER(jz_ShadowScaleShift);
             JZ_HELPER(jz_ShadowTransform);
+            JZ_HELPER(jz_ShadowControlTerm);
 
             JZ_HELPER(jz_Projection);
             JZ_HELPER(jz_View);
             JZ_HELPER(jz_World);
+
+            JZ_HELPER(jz_PrevProjection);
+            JZ_HELPER(jz_PrevView);
+            JZ_HELPER(jz_MotionBlurAmount);
+
+            JZ_HELPER(jz_BloomThreshold);
 
             JZ_HELPER(jz_Gamma);
             JZ_HELPER(jz_CameraFocalLength);
@@ -149,11 +167,17 @@ namespace jz
             JZ_HELPER(jz_SpotFalloffExponent);
 #           undef JZ_HELPER
 
-#           define JZ_HELPER(name) m##name = mEffect->GetTechniqueByName(k##name)
+#           define JZ_HELPER(name) m##name = mEffect->GetTechniqueByName(#name)
             JZ_HELPER(AoPass1);
             JZ_HELPER(AoPass2);
             JZ_HELPER(AoPass3);
             JZ_HELPER(LdrPass);
+            JZ_HELPER(ShadowBlurPass1);
+            JZ_HELPER(ShadowBlurPass2);
+            JZ_HELPER(MotionBlur);
+            JZ_HELPER(BloomProcess);
+            JZ_HELPER(BloomBlurPass1);
+            JZ_HELPER(BloomBlurPass2);
 
             JZ_HELPER(Directional);
             JZ_HELPER(Point);
@@ -161,6 +185,7 @@ namespace jz
             JZ_HELPER(Spot);
             JZ_HELPER(SpotWithShadow);
             JZ_HELPER(SpotAsQuad);
+            JZ_HELPER(SpotWithShadowAsQuad);
 #           undef JZ_HELPER
 
             #pragma region Random vectors
@@ -187,12 +212,18 @@ namespace jz
         {
             mEffect.Reset();
 
-            jz_ShadowBleedReduction.Reset();
             jz_ShadowTexture.Reset();
             jz_ShadowDelta.Reset();
             jz_ShadowNearFar.Reset();
             jz_ShadowScaleShift.Reset();
             jz_ShadowTransform.Reset();
+            jz_ShadowControlTerm.Reset();
+
+            jz_BloomThreshold.Reset();
+
+            jz_MotionBlurAmount.Reset();
+            jz_PrevView.Reset();
+            jz_PrevProjection.Reset();
 
             jz_Projection.Reset();
             jz_View.Reset();
@@ -221,6 +252,12 @@ namespace jz
             jz_SpotFalloffCosHalfAngle.Reset();
             jz_SpotFalloffExponent.Reset();
 
+            mBloomBlurPass2.Reset();
+            mBloomBlurPass1.Reset();
+            mBloomProcess.Reset();
+            mMotionBlur.Reset();
+            mShadowBlurPass2.Reset();
+            mShadowBlurPass1.Reset();
             mAoPass1.Reset();
             mAoPass2.Reset();
             mAoPass3.Reset();
@@ -232,6 +269,7 @@ namespace jz
             mSpot.Reset();
             mSpotWithShadow.Reset();
             mSpotAsQuad.Reset();
+            mSpotWithShadowAsQuad.Reset();
         }
 
         void Deferred::Begin(const ColorRGBA& c)
@@ -265,7 +303,7 @@ namespace jz
 
         void Deferred::SetGaussianKernelStdDev(float v)
         {
-            mGaussianStdDev = v;
+            mGaussianStdDev = Max(v, kMinimumGaussianStdDev);
             float sum = 0.0f;
 
             mGaussianWeights[0] = Gaussian1D(0, mGaussianStdDev);
@@ -291,6 +329,7 @@ namespace jz
 
                 for (int i = 0; i < kMrtCount; i++) { mTargets[i] = graphics.Create<Target>(0u, 0u, kMrtFormats[i]); }
                 for (int i = 0; i < kHdrCount; i++) { mHdrTargets[i] = graphics.Create<Target>(0u, 0u, kHdrFormats[i]); }
+                for (int i = 0; i < kShadowCount; i++) { mShadowTargets[i] = graphics.Create<Target>(ShadowManConstants::kShadowTargetDimension, ShadowManConstants::kShadowTargetDimension, kShadowFormats[i]); }
 
                 graphics.OnLoad.Add<Deferred, &Deferred::_Load>(this, mLoadCallback);
                 graphics.OnUnload.Add<Deferred, &Deferred::_Unload>(this, mUnloadCallback);
@@ -314,6 +353,7 @@ namespace jz
                 mUnloadCallback.Reset();
                 mLoadCallback.Reset();
 
+                for (int i = 0; i < kShadowCount; i++) { mShadowTargets[i].Reset(); }
                 for (int i = 0; i < kHdrCount; i++) { mHdrTargets[i].Reset(); }
                 for (int i = 0; i < kMrtCount; i++) { mTargets[i].Reset(); }
             }
@@ -382,9 +422,6 @@ namespace jz
             {
                 LightNode* light = mLights[i];
 
-                const wchar_t* pDescription = (light->GetType() == LightNodeType::kSpot)
-                    ? L"Spot light" : ((light->GetType() == LightNodeType::kPoint) ? L"Point light" : L"Directional light");
-
                 jz_LightAttenuation.Set(light->GetAttenuation());
                 jz_LightColor.Set(light->GetColor());
 
@@ -416,7 +453,8 @@ namespace jz
                     }
                     else
                     {
-                        Matrix4 m = Matrix4::CreateScale(light->GetRange()) * light->GetWorldTransform();
+                        Matrix4 m = Matrix4::CreateScale(light->GetRange());
+                        m = m * light->GetWorldTransform();
 
                         jz_Projection.Set(rm.GetProjection());
                         jz_View.Set(rm.GetView());
@@ -430,9 +468,30 @@ namespace jz
                 else if (light->GetType() == LightNodeType::kSpot)
                 {
                     const BoundingSphere& worldBounding = rm.GetWorldFrustumBoundingSphere();
+                    if (light->GetShadowHandle() >= 0)
+                    {
+                        Vector2 nf;
+                        Matrix4::ExtractNearFarDirectX(light->GetShadowProjection(), nf.X, nf.Y);
+
+                        jz_ShadowTexture.Set(mShadowTargets[0]);
+                        jz_ShadowDelta.Set(sm.GetShadowDelta());
+                        jz_ShadowNearFar.Set(nf);
+                        jz_ShadowScaleShift.Set(sm.GetScaleShift(light->GetShadowHandle()));
+                        jz_ShadowTransform.Set((rm.GetInverseView() * light->GetShadowTransform() * sm.GetShadowPostTransform()));
+                        jz_ShadowControlTerm.Set(mShadowControlTerm);
+                    }
+
                     if (light->GetWorldFrustum().Test(worldBounding) == Geometric::kContains)
                     {
-                        mEffect->SetTechnique(mSpotAsQuad);
+                        if (light->GetShadowHandle() >= 0)
+                        {
+                            mEffect->SetTechnique(mSpotWithShadowAsQuad);
+                        }
+                        else
+                        {
+                            mEffect->SetTechnique(mSpotAsQuad);
+                        }
+
                         _Set(rm.GetUnitQuadMesh().Get());
                         _DoPasses(rm.GetUnitQuadMesh().Get());
                     }
@@ -447,16 +506,6 @@ namespace jz
 
                         if (light->GetShadowHandle() >= 0)
                         {
-                            Vector2 nf;
-                            Matrix4::ExtractNearFarDirectX(light->GetShadowProjection(), nf.X, nf.Y);
-
-                            jz_ShadowTexture.Set(sm.GetShadowTarget());
-                            jz_ShadowDelta.Set(sm.GetShadowDelta());
-                            jz_ShadowNearFar.Set(nf);
-                            jz_ShadowScaleShift.Set(sm.GetScaleShift(light->GetShadowHandle()));
-                            jz_ShadowTransform.Set((rm.GetInverseView() * light->GetShadowTransform() * sm.GetShadowPostTransform()));
-                            jz_ShadowBleedReduction.Set(sm.GetShadowBleedReduction());
-
                             mEffect->SetTechnique(mSpotWithShadow);
                         }
                         else
@@ -486,15 +535,82 @@ namespace jz
             _DoPasses(rm.GetUnitQuadMesh().Get());
         }
 
-        void Deferred::_InitPost()
+        void Deferred::_ShadowMapProcess()
         {
             using namespace graphics;
 
-            Graphics& gd = Graphics::GetSingleton();
+            RenderMan& rm = RenderMan::GetSingleton();
+            ShadowMan& sm = ShadowMan::GetSingleton();
+
+            Target::ResetTarget(0u);
+            jz_ShadowControlTerm.Set(mShadowControlTerm);
+
+            mShadowTargets[1]->SetToDevice(0u);
+            jz_ShadowTexture.Set(sm.GetShadowTarget());
+            mEffect->SetTechnique(mShadowBlurPass1);
+            _DoPasses(rm.GetUnitQuadMesh().Get());
+
+            mShadowTargets[0]->SetToDevice(0u);
+            jz_ShadowTexture.Set(mShadowTargets[1]);
+            mEffect->SetTechnique(mShadowBlurPass2);
+            _DoPasses(rm.GetUnitQuadMesh().Get());
+        }
+
+        void Deferred::_Bloom()
+        {
+            using namespace graphics;
+
             RenderMan& rm = RenderMan::GetSingleton();
 
-            float width = (float)gd.GetViewportWidth();
-            float height = (float)gd.GetViewportHeight();
+            jz_BloomThreshold.Set(mBloomThreshold);
+
+            Target::ResetTarget(0u);
+            jz_MrtTexture0.Set(mTargets[0]);
+            mHdrTargets[0]->SetToDevice(0u);
+            mEffect->SetTechnique(mBloomProcess);
+            _DoPasses(rm.GetUnitQuadMesh().Get());
+
+            mHdrTargets[1]->SetToDevice(0u);
+            jz_HdrTexture.Set(mHdrTargets[0]);
+            mEffect->SetTechnique(mBloomBlurPass1);
+            _DoPasses(rm.GetUnitQuadMesh().Get());
+
+            mHdrTargets[0]->SetToDevice(0u);
+            jz_HdrTexture.Set(mHdrTargets[1]);
+            mEffect->SetTechnique(mBloomBlurPass2);
+            _DoPasses(rm.GetUnitQuadMesh().Get());
+
+            Swap(mHdrTargets[0], mTargets[0]);
+        }
+
+        void Deferred::_MotionBlur()
+        {
+            using namespace graphics;
+            RenderMan& rm = RenderMan::GetSingleton();
+
+            jz_Projection.Set(rm.GetProjection());
+            jz_View.Set(rm.GetView());
+
+            jz_PrevProjection.Set(rm.GetPrevFrameProjection());
+            jz_PrevView.Set(rm.GetPrevFrameView());
+            jz_MotionBlurAmount.Set(mMotionBlurAmount);
+
+            Target::ResetTarget(0u);
+            jz_MrtTexture0.Set(mTargets[0]);
+            mHdrTargets[0]->SetToDevice(0u);
+
+            mEffect->SetTechnique(mMotionBlur);
+            _Set(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh().Get());
+            Swap(mHdrTargets[0], mTargets[0]);
+        }
+
+        void Deferred::_PushScreenDimensions(natural aWidth, natural aHeight)
+        {
+            float width = (float)aWidth;
+            float height = (float)aHeight;
+
+            RenderMan& rm = RenderMan::GetSingleton();
 
             Vector2 nf;
             Matrix4::ExtractNearFarDirectX(rm.GetProjection(), nf.X, nf.Y);
@@ -502,14 +618,22 @@ namespace jz
             float fly = 1.0f / Tan(Matrix4::ExtractFov(rm.GetProjection()) * 0.5f);
             float flx = fly * (width / height);
 
+            jz_CameraFocalLength.Set(Vector2(flx, fly));
+            jz_ScreenDimensions.Set(Vector2(width, height));
+        }
+
+        void Deferred::_InitPost()
+        {
+            using namespace graphics;
+
+            Graphics& gd = Graphics::GetSingleton();
+            RenderMan& rm = RenderMan::GetSingleton();
+
             jz_Projection.Set(Matrix4::kIdentity);
             jz_View.Set(Matrix4::kIdentity);
             jz_World.Set(Matrix4::kIdentity);
 
             jz_Gamma.Set(rm.GetGamma());
-            jz_CameraFocalLength.Set(Vector2(flx, fly));
-            jz_ScreenDimensions.Set(Vector2(width, height));
-
             jz_RandomVectors.Set<kCircularTaps>(mRandomVectors);
             jz_GaussianWeights.Set<kGaussianKernelRadius>(mGaussianWeights);
 
@@ -525,14 +649,28 @@ namespace jz
 
         void Deferred::_PreTransparency()
         {
+            using namespace graphics;
+
+            Graphics& gd = Graphics::GetSingleton();
+
             _InitPost();
+            _PushScreenDimensions(ShadowManConstants::kShadowTargetDimension, ShadowManConstants::kShadowTargetDimension);
+            _ShadowMapProcess();
+            _PushScreenDimensions(gd.GetViewportWidth(), gd.GetViewportHeight());
             _Ao();
             _DeferredLighting();
         }
 
         void Deferred::_End()
         {
+            using namespace graphics;
+
+            Graphics& gd = Graphics::GetSingleton();
+
             _InitPost();
+            _PushScreenDimensions(gd.GetViewportWidth(), gd.GetViewportHeight());
+            _Bloom();
+            _MotionBlur();
             _Ldr();
         }
 

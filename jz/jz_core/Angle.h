@@ -209,7 +209,7 @@ namespace jz
         while (av > (bv + Radian::kPi.GetValue())) { av -= Radian::kTwoPi.GetValue(); }
         while (bv > (av + Radian::kPi.GetValue())) { bv -= Radian::kTwoPi.GetValue(); }
 
-        return Degree(jz::Lerp(av, bv, aWeightOfB));
+        return Radian(jz::Lerp(av, bv, aWeightOfB));
     }
 
     inline Degree Sign(Degree d)

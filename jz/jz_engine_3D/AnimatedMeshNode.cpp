@@ -38,6 +38,11 @@ namespace jz
            const AnimatedMeshNode* p = static_cast<const AnimatedMeshNode*>(apInstance);
             
             StandardEffect* pEffect = p->GetEffect().Get();
+            if (p->bThreePoint())
+            {
+                pEffect->SetThreePoint(p->GetThreePoint());
+            }
+
             pEffect->SetSkinning(p->GetSkinning());
             pEffect->SetWit(p->GetWit());
             pEffect->SetWorld(p->GetWorldTransform());

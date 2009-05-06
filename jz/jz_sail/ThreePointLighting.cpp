@@ -20,7 +20,10 @@
 // THE SOFTWARE.
 //
 
+#define JZ_SET_CAMERA_IMMEDIATELY 0
+
 #include <jz_sail/ThreePointLighting.h>
+#include <jz_system/Time.h>
 
 namespace jz
 {
@@ -42,19 +45,30 @@ namespace jz
               mCurrent(ThreePointSettings::kDefault),
               mDesiredCameraYaw(Radian::kZero), 
               mDesiredCameraPitch(Radian::kZero),
-              mMotivation(ThreePointSettings::kDefault)
+              mMotivation(ThreePointSettings::kDefault),
+              mLastTick(0.0f)
         {}
 
         ThreePointLighting::~ThreePointLighting()
         { }
 
-        void ThreePointLighting::Tick(float aElapsedTime, const Matrix4& aInverseViewTransform, const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights, LightSettings& arSettings)
+        static const float kMinElapsed = Constants<float>::kZeroTolerance;
+        static const float kMaxElapsed = (float)(1.0 / 7.5);
+
+        bool ThreePointLighting::Tick(const Matrix4& aInverseViewTransform, const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights, LightSettings& arSettings)
         {
+            float currentTime = system::Time::GetSingleton().GetSeconds();
+            float elapsedTime = Clamp(currentTime - mLastTick, kMinElapsed, kMaxElapsed);
+            mLastTick = currentTime;
+
             #pragma region Update
             {
                 Vector3 keyWorldDir;
                 Vector3 backWorldDir;
-                _UpdateHelper(aElapsedTime, aInverseViewTransform, aTargetBS, aMotivatingLights, keyWorldDir, backWorldDir);
+                if (!_UpdateHelper(elapsedTime, aInverseViewTransform, aTargetBS, aMotivatingLights, keyWorldDir, backWorldDir))
+                {
+                    return false;
+                }
 
                 float fillLum = 0.0f;
                 mKeyDiffuse = ColorRGB::kBlack;
@@ -89,7 +103,7 @@ namespace jz
             #pragma endregion
 
             #pragma region Step and calculate output
-            mLearner.Step(mIdeal, mCurrent, mMotivation, aElapsedTime);
+            mLearner.Step(mIdeal, mCurrent, mMotivation, elapsedTime);
 
             arSettings.KeyDiffuse = mKeyDiffuse;
             arSettings.KeySpecular = mKeySpecular;
@@ -107,6 +121,8 @@ namespace jz
             arSettings.FillTransform = _GetTransform(aTargetBS, keyRoll, fillYaw);
             arSettings.BackTransform = _GetTransform(aTargetBS, keyRoll, backYaw);
             #pragma endregion
+
+            return true;
         }
 
 
@@ -296,21 +312,28 @@ namespace jz
             arPitch = -jz::ASin(aDirection.Y);
         }
 
-        void ThreePointLighting::_UpdateHelper(float aElapsedTime, const Matrix4& aInverseViewTransform, const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights, Vector3& arKeyWorldDir, Vector3& arBackWorldDir)
+        bool ThreePointLighting::_UpdateHelper(float aElapsedTime, const Matrix4& aInverseViewTransform, const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights, Vector3& arKeyWorldDir, Vector3& arBackWorldDir)
         {
             float time = aElapsedTime;
 
             #pragma region Calculate new camera vector
             {
                 Vector3 eye = Vector3::Normalize(Vector3::TransformDirection(aInverseViewTransform, Vector3::kBackward));
-                JZ_ASSERT(eye.Length() > Constants<float>::kLooseTolerance);
+                if (eye.Length() <= Constants<float>::kLooseTolerance)
+                {
+                    return false;
+                }
 
                 _GetYawPitch(eye, mDesiredCameraYaw, mDesiredCameraPitch);
 
+#if JZ_SET_CAMERA_IMMEDIATELY
+                mCameraYaw = mDesiredCameraYaw;
+                mCameraPitch = mDesiredCameraPitch;
+#else
                 float t = jz::Clamp(time * kCameraStep, 0.0f, 1.0f);
                 mCameraYaw = jz::Lerp(mCameraYaw, mDesiredCameraYaw, t);
                 mCameraPitch = jz::Lerp(mCameraPitch, mDesiredCameraPitch, t);
-
+#endif
                 mCamera = _GetCameraTransform(mCameraYaw, mCameraPitch);
                 mInvCamera = _GetInvCameraTransform(mCameraYaw, mCameraPitch);
             }
@@ -339,6 +362,8 @@ namespace jz
                 arBackWorldDir = Vector3::TransformDirection(backM, Vector3::kBackward);
             }
             #pragma endregion
+
+            return true;
         }
         #pragma endregion
 

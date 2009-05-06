@@ -14,7 +14,7 @@
 	ColorWriteEnable3 = 0;
 	
 #define JZ_SHADOW_OUTPUT \
-	ColorWriteEnable = RED|GREEN; \
+	ColorWriteEnable = RED; \
 	ColorWriteEnable1 = 0; \
 	ColorWriteEnable2 = 0; \
 	ColorWriteEnable3 = 0;

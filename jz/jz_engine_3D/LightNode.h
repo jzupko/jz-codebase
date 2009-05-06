@@ -54,6 +54,12 @@ namespace jz
             LightNode(const string& aId);
             virtual ~LightNode();
 
+            void ClearFixedRange()
+            {
+                mbFixedRange = false;
+                mRange = CalculateLightRange(mAttenuation, mColor);
+            }
+
             virtual BoundingBox GetAABB() const override { return mAABB; }
             virtual void PoseForRender() override;
 
@@ -84,6 +90,7 @@ namespace jz
             {
                 mbFixedRange = true;
                 mRange = v;
+                mFlags |= SceneNodeFlags::kLocalDirty;
             }
 
             const Region& GetWorldFrustum() const { return mWorldFrustum; }

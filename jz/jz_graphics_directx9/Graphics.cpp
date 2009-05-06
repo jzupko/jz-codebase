@@ -281,7 +281,7 @@ namespace jz
             p[3] = 255; // A
         }
 
-        Graphics::Graphics()
+        Graphics::Graphics(bool abStartFullscreen)
             : mbActive(false), mbBegin(false), mbLost(true), mbLoaded(false), mbNeedsResize(false),
             mbOwnsWindow(false), mbMinimized(false),
             mpActiveEffect(null), mpActiveMesh(null), mpActivePass(null)
@@ -297,6 +297,7 @@ namespace jz
             
             if (!gspD3D9) { throw exception(__FUNCTION__ ": failed creating d3d9."); }
 
+            if (abStartFullscreen) { SetFullscreen(true); }
             _InitWindow();
             _ResetDevice();
 

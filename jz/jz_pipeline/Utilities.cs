@@ -901,6 +901,112 @@ namespace jz
             return ret;
         }
 
+        /// <summary>
+        /// Generates indices and vertices for a sphere mesh.
+        /// </summary>
+        /// <param name="r">Radius of the sphere.</param>
+        /// <param name="n">Segments per 360° ring of the sphere.</param>
+        /// <param name="abOversize">If abOversize is true, the midpoint of segments will be r from the center of the sphere. Otherwise, vertices will be r from the center of the sphere.</param>
+        /// <param name="arIndices">Generated vertices of the sphere.</param>
+        /// <param name="arVertices">Generated indices of the sphere.</param>
+        /// <remarks>
+        /// From: http://www.codeproject.com/KB/WPF/XamlUVSphere.aspx 
+        /// - Author: Rainer Stropek
+        /// </remarks>
+        public static void GenerateSphere(float r, int n, bool abOversize, out int[] arIndices, out float[] arVertices)
+        {
+            #region Build
+            {
+                if (n < 4) { n = 4; }
+                if (n % 2 != 0) { n++; }
+                int vn = (n - 1);
+                float step = MathHelper.TwoPi / ((float)n);
+
+                if (abOversize)
+                {
+                    r = (r / ((float)Math.Cos(step * 0.5)));
+                }
+
+                List<int> indices = new List<int>();
+                List<float> vertices = new List<float>();
+
+                #region Vertices
+                {
+                    vertices.Add(0); vertices.Add(r); vertices.Add(0);
+                    for (int i = 1; i < (n / 2); i++)
+                    {
+                        float theta = (step * i);
+                        float y = (r * (float)Math.Cos(theta));
+
+                        float c = (r * (float)Math.Sin(theta));
+                        for (int j = 0; j < vn; j++)
+                        {
+                            float ro = (step * j);
+                            float x = (c * (float)Math.Sin(ro));
+                            float z = (c * (float)Math.Cos(ro));
+
+                            vertices.Add(x); vertices.Add(y); vertices.Add(z);
+                        }
+                    }
+                    vertices.Add(0); vertices.Add(-r); vertices.Add(0);
+                }
+                #endregion
+
+                #region Top candy wrapper twist.
+                {
+                    int prev = (vn - 1);
+                    for (int i = 0; i < vn; prev = i, i++)
+                    {
+                        indices.Add(0);
+                        indices.Add(1 + i);
+                        indices.Add(1 + prev);
+                    }
+                }
+                #endregion
+
+                #region Internal triangles
+                {
+                    for (int i = 0; i < ((n / 2) - 2); i++)
+                    {
+                        // +1 to skip top candy wrapper twist.
+                        int offset = (i * vn) + 1;
+                        int prev = (vn - 1);
+                        for (int j = 0; j < vn; prev = j, j++)
+                        {
+                            int i0 = (offset + prev);
+                            int i1 = (offset + j);
+                            int i2 = (offset + prev + vn);
+                            int i3 = (offset + j + vn);
+
+                            indices.Add(i0); indices.Add(i1); indices.Add(i2);
+                            indices.Add(i2); indices.Add(i1); indices.Add(i3);
+                        }
+                    }
+                }
+                #endregion
+
+                #region Bottom candy wrapper twist.
+                {
+                    // +1 to skip top candy wrapper twist.
+                    int offset = (((n / 2) - 2) * vn) + 1;
+                    int prev = (vn - 1);
+                    int last = ((vertices.Count / 3) - 1);
+
+                    for (int i = 0; i < vn; prev = i, i++)
+                    {
+                        indices.Add(offset + prev);
+                        indices.Add(offset + i);
+                        indices.Add(last);
+                    }
+                }
+                #endregion
+
+                arIndices = indices.ToArray();
+                arVertices = vertices.ToArray();
+            }
+            #endregion
+        }
+
         public struct IndexComparable : IComparable<IndexComparable>
         {
             public UInt16 I0, I1, I2;
@@ -961,7 +1067,7 @@ namespace jz
                 else { return c0; }
             }
         }
-        
+                
         public sealed class TriangleComparer : IEqualityComparer<Triangle>
         {
             #region Private membets
@@ -1151,6 +1257,307 @@ namespace jz
                 int hash = hashString.GetHashCode();
 
                 return hash;
+            }
+        }
+
+        public struct Edge : IComparable<Edge>
+        {
+            public Edge(int aTriangle, UInt16 aVertexIndex1, UInt16 aVertexIndex2)
+            {
+                TriangleA = aTriangle;
+                TriangleB = aTriangle;
+                VertexIndex1ofA = aVertexIndex1;
+                VertexIndex2ofA = aVertexIndex2;
+            }
+
+            public int TriangleA;
+            public int TriangleB;
+
+            public UInt16 VertexIndex1ofA;
+            public UInt16 VertexIndex2ofA;
+
+            public int CompareTo(Edge b)
+            {
+                int c = VertexIndex1ofA.CompareTo(b.VertexIndex1ofA);
+
+                if (c == 0) { return (VertexIndex2ofA.CompareTo(b.VertexIndex2ofA)); }
+                else { return c; }
+            }
+
+            public bool IsShared
+            {
+                get
+                {
+                    bool bReturn = (TriangleA != TriangleB);
+
+                    return bReturn;
+                }
+            }
+        }
+
+
+        public static Edge[] BuildEdges(UInt16[] aIndices, Vector3[] aNormals)
+        {
+            int indexCount = aIndices.Length;
+            if (indexCount % 3 != 0) { throw new Exception("Indices are not expected size."); }
+
+            List<Edge> edges = new List<Edge>();
+
+            #region Find edges where vi1 < vi2
+            for (int i = 0; i < indexCount; i += 3)
+            {
+                UInt16 vi1 = aIndices[i + 2];
+
+                for (int j = 0; j < 3; j++)
+                {
+                    UInt16 vi2 = aIndices[i + j];
+
+                    Debug.Assert(vi1 != vi2);
+                    if (vi1 < vi2)
+                    {
+                        Edge edge = new Edge(i, vi1, vi2);
+                        int index = edges.BinarySearch(edge);
+
+                        edges.Insert((index < 0) ? ~index : index, edge);
+                    }
+
+                    vi1 = vi2;
+                }
+            }
+            #endregion
+
+            #region Find edges where vi1 > vi2
+            for (int i = 0; i < indexCount; i += 3)
+            {
+                UInt16 vi1 = aIndices[i + 2];
+
+                for (int j = 0; j < 3; j++)
+                {
+                    UInt16 vi2 = aIndices[i + j];
+
+                    Debug.Assert(vi1 != vi2);
+                    if (vi1 > vi2)
+                    {
+                        Edge edg = new Edge(i, vi2, vi1);
+                        int bestEdge = -1;
+                        float bestDot = float.MinValue;
+
+                        int curEdge = edges.BinarySearch(edg);
+                        while (curEdge >= 1)
+                        {
+                            curEdge--;
+                            if (edges[curEdge].CompareTo(edg) != 0)
+                            {
+                                curEdge++;
+                                break;
+                            }
+                            else
+                            {
+                                bool bTest = false;
+                            }
+                        }
+
+                        for (; (curEdge >= 0 && curEdge < edges.Count && (edges[curEdge].CompareTo(edg) == 0)); curEdge++)
+                        {
+                            if (!edges[curEdge].IsShared)
+                            {
+                                Vector3 n0 = aNormals[(edges[curEdge].TriangleA / 3)];
+                                Vector3 n1 = aNormals[(i / 3)];
+
+                                float dot = Vector3.Dot(n0, n1);
+
+                                if (dot > bestDot)
+                                {
+                                    bestEdge = curEdge;
+                                    bestDot = dot;
+                                }
+                            }
+                        }
+
+                        if (bestEdge >= 0)
+                        {
+                            #region Silliness to update a value-type.
+                            {
+                                Edge edge = edges[bestEdge];
+                                edge.TriangleB = i;
+                                edges[bestEdge] = edge;
+                            }
+                            #endregion
+                        }
+                        else
+                        {
+                            Edge edge = new Edge(i, vi1, vi2);
+                            int index = edges.BinarySearch(edge);
+
+                            edges.Insert((index < 0) ? ~index : index, edge);
+                        }
+                    }
+
+                    vi1 = vi2;
+                }
+            }
+            #endregion
+
+            return edges.ToArray();
+        }
+
+        /// <summary>
+        /// Processes a mesh so it forms a sealed 2D manifold.
+        /// </summary>
+        /// <param name="aTrianglesToEdges">An array of indices into aEdges.</param>
+        /// <param name="aEdges">An edge list for the triangles in aIndices.</param>
+        /// <param name="aIndices">A list of indices, expected to be a TriangleList.</param>
+        /// <remarks>
+        /// aTrianglesToEdges, aEdges, and aIndices are expected to have the same semantics as expected
+        /// or produced by BuildEdges.
+        /// </remarks>
+        public static void Close(ref Edge[] arEdges, ref UInt16[] arIndices, ref Vector3[] arNormals)
+        {
+            bool bNeedsProcessing = false;
+            foreach (Edge e in arEdges)
+            {
+                if (!e.IsShared)
+                {
+                    bNeedsProcessing = true;
+                    break;
+                }
+            }
+
+            if (bNeedsProcessing)
+            {
+                List<IndexComparable> ihelper = new List<IndexComparable>();
+                UInt16[] outIndices = new UInt16[arIndices.Length * 2];
+                Vector3[] outNormals = new Vector3[arNormals.Length * 2];
+
+                int count = arIndices.Length;
+                int outI = 0;
+                for (int i = 0; i < count; i += 3)
+                {
+                    #region Original triangle
+                    {
+                        IndexComparable indx = new IndexComparable(false);
+                        indx.I0 = arIndices[i + 0];
+                        indx.I1 = arIndices[i + 1];
+                        indx.I2 = arIndices[i + 2];
+
+                        int index = ihelper.BinarySearch(indx);
+                        if (index < 0)
+                        {
+                            ihelper.Insert(~index, indx);
+
+                            outIndices[outI + 0] = indx.I0;
+                            outIndices[outI + 1] = indx.I1;
+                            outIndices[outI + 2] = indx.I2;
+
+                            outNormals[(outI / 3)] = arNormals[(i / 3)];
+
+                            outI += 3;
+                        }
+                    }
+                    #endregion
+
+                    #region Flipped triangle
+                    {
+                        IndexComparable indx = new IndexComparable(false);
+                        indx.I0 = arIndices[i + 2];
+                        indx.I1 = arIndices[i + 1];
+                        indx.I2 = arIndices[i + 0];
+
+                        int index = ihelper.BinarySearch(indx);
+                        if (index < 0)
+                        {
+                            ihelper.Insert(~index, indx);
+
+                            outIndices[outI + 0] = indx.I0;
+                            outIndices[outI + 1] = indx.I1;
+                            outIndices[outI + 2] = indx.I2;
+
+                            outNormals[(outI / 3)] = -arNormals[(i / 3)];
+
+                            outI += 3;
+                        }
+                    }
+                    #endregion
+                }
+                Array.Resize(ref outIndices, outI);
+                Array.Resize(ref outNormals, (outI / 3));
+                Debug.Assert((outIndices.Length / 3) % 2 == 0);
+                Debug.Assert((outNormals.Length == (outIndices.Length / 3)) && (outNormals.Length % 2 == 0));
+
+                Edge[] outEdges = BuildEdges(outIndices, outNormals);
+
+                arEdges = outEdges;
+                arIndices = outIndices;
+                arNormals = outNormals;
+
+#if DEBUG
+                foreach (Edge e in arEdges)
+                {
+                    if (!e.IsShared)
+                    {
+                        bool bFalse = true;
+                    }
+                    Debug.Assert(e.IsShared);
+                }
+#endif
+            }
+        }
+
+        public static void ValidateSealedConvexGeometry(int[] indices, float[] vertices)
+        {
+            int count = indices.Length;
+
+            if (count % 3 != 0) { throw new Exception("Invalid number of indices."); }
+            if (vertices.Length % 3 != 0) { throw new Exception("Invalid number of floats in vertices."); }
+
+            for (int i = 0; i < count; i++)
+            {
+                if (indices[i] < 0 || (indices[i] * 3) >= vertices.Length)
+                {
+                    throw new Exception("Out of range index.");
+                }
+            }
+
+            Vector3[] normals = new Vector3[indices.Length / 3];
+            for (int i = 0; i < count; i += 3)
+            {
+                int i0 = (indices[i + 0] * 3);
+                int i1 = (indices[i + 1] * 3);
+                int i2 = (indices[i + 2] * 3);
+
+                Vector3 v0 = (new Vector3(vertices[i0 + 0], vertices[i0 + 1], vertices[i0 + 2]));
+                Vector3 v1 = (new Vector3(vertices[i1 + 0], vertices[i1 + 1], vertices[i1 + 2]));
+                Vector3 v2 = (new Vector3(vertices[i2 + 0], vertices[i2 + 1], vertices[i2 + 2]));
+
+                Vector3 normal = Vector3.Normalize(Vector3.Cross(v2 - v0, v1 - v0));
+
+                normals[i / 3] = normal;
+            }
+
+            Edge[] edges = BuildEdges(Array.ConvertAll<int, ushort>(indices, delegate(int e) { return (UInt16)e; }), normals);
+
+            foreach (Edge e in edges)
+            {
+                if (!e.IsShared) { throw new Exception("Unshared edge."); }
+
+                Vector3 n0 = normals[e.TriangleA / 3];
+                Vector3 n1 = normals[e.TriangleB / 3];
+
+                if (!Utilities.AboutEqual(Vector3.Dot(n0, n1), 1.0f))
+                {
+                    Vector3 u = Vector3.Normalize(Vector3.Cross(n1, n0));
+
+                    int i0 = (e.VertexIndex1ofA * 3);
+                    int i1 = (e.VertexIndex2ofA * 3);
+
+                    Vector3 v0 = (new Vector3(vertices[i0 + 0], vertices[i0 + 1], vertices[i0 + 2]));
+                    Vector3 v1 = (new Vector3(vertices[i1 + 0], vertices[i1 + 1], vertices[i1 + 2]));
+
+                    Vector3 v = Vector3.Normalize(v1 - v0);
+                    float d = (Vector3.Dot(u, v));
+
+                    if (d < 0.0f) { throw new Exception("Mesh is not convex."); }
+                }
             }
         }
     }

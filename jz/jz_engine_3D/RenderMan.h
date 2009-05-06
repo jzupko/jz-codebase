@@ -68,6 +68,9 @@ namespace jz
             const Matrix4& GetProjection() const { return mProjection; }
             const Matrix4& GetView() const { return mView; }
 
+            const Matrix4& GetPrevFrameView() const { return mPrevView; }
+            const Matrix4& GetPrevFrameProjection() const { return mPrevProjection; }
+
             const Region& GetWorldFrustum() const { return mWorldFrustum; }
             const BoundingSphere& GetWorldFrustumBoundingSphere() const { return mWorldFrustumBoundingSphere; }
 
@@ -106,6 +109,8 @@ namespace jz
             Matrix4 mProjection;
             Matrix4 mInverseView;
             Matrix4 mView;
+            Matrix4 mPrevView;
+            Matrix4 mPrevProjection;
             Region mWorldFrustum;
             BoundingSphere mWorldFrustumBoundingSphere;
             float mGamma;

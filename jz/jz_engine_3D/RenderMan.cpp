@@ -75,7 +75,10 @@ namespace jz
 
         RenderMan::RenderMan()
             : mProjection(Matrix4::kIdentity),
-            mView(Matrix4::kIdentity), mpDeferred(null),
+            mView(Matrix4::kIdentity), 
+            mPrevView(Matrix4::kIdentity),
+            mPrevProjection(Matrix4::kIdentity),
+            mpDeferred(null),
             mGamma(kGamma),
             mClearColor(ColorRGBA::kBlack)
         {
@@ -87,6 +90,16 @@ namespace jz
             mpUnitFrustum = graphics.Create<Mesh>(kUnitFrustum);
             mpUnitQuad = graphics.Create<Mesh>(kUnitQuad);
             mpUnitSphere = graphics.Create<Mesh>(kUnitSphere);
+
+#           define JZ_HELPER(n) if (!n->IsLoadable()) { throw exception(__FUNCTION__ ": " #n " is not loadable."); }
+
+            JZ_HELPER(mpSimpleEffect);
+            JZ_HELPER(mpUnitBox);
+            JZ_HELPER(mpUnitFrustum);
+            JZ_HELPER(mpUnitQuad);
+            JZ_HELPER(mpUnitSphere);
+
+#           undef JZ_HELPER
 
             mpDeferred = new Deferred();
             mpShadowMan = new ShadowMan();
@@ -197,6 +210,9 @@ namespace jz
                 if (mpDeferred->bActive()) { mpDeferred->End(); }
 
                 graphics.End();
+
+                mPrevView = mView;
+                 mPrevProjection = mProjection;
             }
 
             _ResetTrees();

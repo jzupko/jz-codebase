@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using jz.pipeline;
 using jz.pipeline.collada;
 using jz.pipeline.collada.elements;
@@ -41,6 +42,7 @@ namespace jz.cb
     /// </remarks>
     public static class Builder
     {
+        public const string kBuildConfigExtension = ".build_config";
         public const string kOutDir = "compiled\\";
         public const string kColladaExtension = ".dae";
         public const string kColladaOutExtension = ".scn";
@@ -54,6 +56,7 @@ namespace jz.cb
         public const string kEdgeImageOut = "_EDGE.png";
 
         #region Private members
+        private const string kProcessPhysicsKey = "ProcessPhysics";
         private static void _ProcessCollada(string aInDirectory, string aOutDirectory, MessageHandler aHandler)
         {
             if (Directory.Exists(aInDirectory))
@@ -62,19 +65,6 @@ namespace jz.cb
 
                 foreach (string e in files)
                 {
-                    ColladaCOLLADA root;
-                    if (ColladaDocument.Load(e, out root) > 0)
-                    {
-                        foreach (string f in ColladaDocument.LoggedMessages)
-                        {
-                            aHandler(f);
-                        }
-                    }
-
-                    ColladaProcessor processor = new ColladaProcessor();
-                    processor.bProcessPhysics = true;
-                    SceneContent content = processor.Process(root, null);
-
                     string relativeFilename = Utilities.ExtractRelativeFilename(aInDirectory, e);
                     int pos = relativeFilename.IndexOf(Path.DirectorySeparatorChar, 0);
                     while (pos >= 0)
@@ -88,17 +78,64 @@ namespace jz.cb
                     }
 
                     string outFile = Path.Combine(aOutDirectory, Utilities.ExtractBaseFilename(relativeFilename) + kColladaOutExtension);
-                    if (!File.Exists(outFile))
+
+                    if (!File.Exists(outFile) || File.GetLastWriteTime(e).Ticks > File.GetLastWriteTime(outFile).Ticks)
                     {
-                        BinaryWriter writer = new BinaryWriter(new FileStream(outFile, FileMode.Create));
-                        DocInfo info = new DocInfo();
-                        info.BaseFilename = Utilities.ExtractBaseFilename(Utilities.ExtractRelativeFilename(aInDirectory, e));
-                        info.Filename = relativeFilename;
-                        info.InAbsDirectory = aInDirectory;
-                        info.OutRelDirectory = Path.GetDirectoryName(Utilities.ExtractRelativeFilename(aOutDirectory, outFile));
-                        info.OutAbsDirectory = Path.Combine(aOutDirectory, info.OutRelDirectory);
-                        SceneWriter.Write(writer, info, content);
-                        writer.Close();
+                        aHandler("Building: \"" + outFile + "\" from \"" + e + "\".");
+
+                        #region Parse input
+                        ColladaCOLLADA root;
+                        if (ColladaDocument.Load(e, out root) > 0)
+                        {
+                            foreach (string f in ColladaDocument.LoggedMessages)
+                            {
+                                aHandler(f);
+                            }
+                        }
+                        #endregion
+
+                        ColladaProcessor processor = new ColladaProcessor();
+                        processor.bProcessPhysics = true;
+
+                        #region Load config file
+                        string configFile = Utilities.RemoveExtension(e) + kBuildConfigExtension;
+                        if (File.Exists(configFile))
+                        {
+                            try
+                            {
+                                ConfigFile cfg = new ConfigFile(configFile);
+                                if (cfg.Exists(kProcessPhysicsKey))
+                                {
+                                    processor.bProcessPhysics = cfg.GetBoolean(kProcessPhysicsKey);
+                                }
+                            }
+                            catch
+                            {
+                                aHandler("COLLADA config file for \"" + e + "\" exists but loading failed.");
+                            }
+                        }
+                        #endregion
+
+                        #region Process
+                        SceneContent content = processor.Process(root, null);
+                        #endregion
+
+                        #region Write output
+                        {
+                            BinaryWriter writer = new BinaryWriter(new FileStream(outFile, FileMode.Create));
+                            DocInfo info = new DocInfo();
+                            info.BaseFilename = Utilities.ExtractBaseFilename(Utilities.ExtractRelativeFilename(aInDirectory, e));
+                            info.Filename = relativeFilename;
+                            info.InAbsDirectory = aInDirectory;
+                            info.OutRelDirectory = Path.GetDirectoryName(Utilities.ExtractRelativeFilename(aOutDirectory, outFile));
+                            info.OutAbsDirectory = Path.Combine(aOutDirectory, info.OutRelDirectory);
+                            SceneWriter.Write(writer, info, content);
+                            writer.Close();
+                            File.SetLastWriteTime(outFile, File.GetLastWriteTime(e));
+                        }
+                        #endregion
+
+                        aHandler("Done building \"" + outFile + "\".");
                     }
                 }
             }
@@ -185,8 +222,6 @@ namespace jz.cb
 
                 foreach (string e in files)
                 {
-                    aHandler("Processing heightmap \"" + e + "\".");
-
                     string relativeFilename = Utilities.ExtractRelativeFilename(aInDirectory, e);
                     int pos = relativeFilename.IndexOf(Path.DirectorySeparatorChar, 0);
                     while (pos >= 0)
@@ -204,8 +239,9 @@ namespace jz.cb
 
                     string outFile = Path.Combine(aOutDirectory, (baseFilename + kHeightMapOut));
 
-                    if (!File.Exists(outFile))
+                    if (!File.Exists(outFile) || File.GetLastWriteTime(e).Ticks > File.GetLastWriteTime(outFile).Ticks)
                     {
+                        aHandler("Processing heightmap \"" + e + "\".");
                         Texture input = Texture.FromFile(Helpers.Game.Manager.GraphicsDevice, e, textureLoadParams);
 
                         if (input is Texture2D)
@@ -228,7 +264,9 @@ namespace jz.cb
                             outTexture.Save(tempFile, ImageFileFormat.Dds);
                             outTexture = (Texture2D)Texture.FromFile(Helpers.Game.Manager.GraphicsDevice, tempFile, Helpers.kTextureDxt5Parameters);
                             outTexture.Save(outFile, ImageFileFormat.Dds);
+                            File.SetLastWriteTime(outFile, File.GetLastWriteTime(e));
                         }
+                        aHandler("Done processing \"" + outFile + "\".");
                     }
                 }
             }
@@ -469,8 +507,6 @@ namespace jz.cb
 
                 foreach (string e in files)
                 {
-                    aHandler("Processing sprite \"" + e + "\".");
-
                     string relativeFilename = Utilities.ExtractRelativeFilename(aInDirectory, e);
                     int pos = relativeFilename.IndexOf(Path.DirectorySeparatorChar, 0);
                     while (pos >= 0)
@@ -490,8 +526,10 @@ namespace jz.cb
                     string outEdgeFile = Path.Combine(aOutDirectory, (baseFilename + kEdgeOut));
                     string outEdgeImage = Path.Combine(aOutDirectory, (baseFilename + kEdgeImageOut));
 
-                    if (!File.Exists(outFile))
+                    if (!File.Exists(outFile) || File.GetLastWriteTime(e).Ticks > File.GetLastWriteTime(outFile).Ticks)
                     {
+                        aHandler("Processing sprite \"" + e + "\".");
+
                         Texture2D conv = (Texture2D)Texture.FromFile(Helpers.Game.Manager.GraphicsDevice, e, textureLoadParams);
                         #region Edges
                         {
@@ -534,6 +572,9 @@ namespace jz.cb
                         conv.Save(tempFile, ImageFileFormat.Dds);
                         conv = (Texture2D)Texture.FromFile(Helpers.Game.Manager.GraphicsDevice, tempFile, Helpers.kTextureWriteParameters);
                         conv.Save(outFile, ImageFileFormat.Dds);
+                        File.SetLastWriteTime(outFile, File.GetLastWriteTime(e));
+
+                        aHandler("Done processing \"" + outFile + "\".");
                     }
                 }
             }
@@ -541,17 +582,46 @@ namespace jz.cb
         #endregion
 
         public delegate void MessageHandler(string e);
+        private static bool msbProcessing = false;
+        public static bool bProcessing { get { return msbProcessing; } }
+        public static void StopProcessing() { msbProcessing = false; }
+
         public static void Process(string aInDirectory, string aOutDirectory, MessageHandler aHandler, BuilderFlags aFlags)
         {
-            if (!Directory.Exists(aOutDirectory))
+            if (!msbProcessing)
             {
-                DirectoryInfo info = Directory.CreateDirectory(aOutDirectory);
-                if (!info.Exists) { throw new Exception("Could not create output directory \"" + aOutDirectory + "\"."); }
-            }
+                msbProcessing = true;
+                int count = 0;
+                while (msbProcessing)
+                {
+                    if (count == 0)
+                    {
+                        aHandler("Scanning...");
+                        count++;
+                    }
+                    else if (count >= 59) { count = 0; }
+                    else { count++; }
 
-            if ((aFlags & BuilderFlags.ProcessColladaFiles) != 0) { _ProcessCollada(aInDirectory, aOutDirectory, aHandler); }
-            if ((aFlags & BuilderFlags.ProcessSprites) != 0) { _ProcessSprites(aInDirectory, aOutDirectory, aHandler); }
-            if ((aFlags & BuilderFlags.ProcessHeightMaps) != 0) { _ProcessHeightMaps(aInDirectory, aOutDirectory, aHandler); }
+                    try
+                    {
+                        if (!Directory.Exists(aOutDirectory))
+                        {
+                            DirectoryInfo info = Directory.CreateDirectory(aOutDirectory);
+                            if (!info.Exists) { throw new Exception("Could not create output directory \"" + aOutDirectory + "\"."); }
+                        }
+
+                        if ((aFlags & BuilderFlags.ProcessColladaFiles) != 0) { _ProcessCollada(aInDirectory, aOutDirectory, aHandler); }
+                        if ((aFlags & BuilderFlags.ProcessSprites) != 0) { _ProcessSprites(aInDirectory, aOutDirectory, aHandler); }
+                        if ((aFlags & BuilderFlags.ProcessHeightMaps) != 0) { _ProcessHeightMaps(aInDirectory, aOutDirectory, aHandler); }
+                    }
+                    catch
+                    {
+                        msbProcessing = false;
+                        throw;
+                    }
+                    Thread.Sleep(1000);
+                }
+            }
         }
 
         public static void Process(string aInDirectory, string aOutDirectory, BuilderFlags aFlags)

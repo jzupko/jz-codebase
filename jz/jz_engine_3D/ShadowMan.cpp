@@ -33,19 +33,16 @@ namespace jz
     namespace engine_3D
     {
 
-        static const int kShadowTargetDimension = 1024;
-        static const int kMapsPerDimension = 2;
-        static const int kPadding = 2;
-        static const int kSize = (kShadowTargetDimension / kMapsPerDimension);
-        static const int kSizePadding = (kSize) - (2 * kPadding);
+        static const graphics::DepthStencilSurface::Format kShadowDsFormat = graphics::DepthStencilSurface::kD16;
+        static const graphics::Target::Format kShadowTargetFormat = graphics::Target::kR16F;
 
         ShadowMan::ShadowMan()
-            : mbAfterPre(false), mBleedReduction(0.0f)
+            : mbAfterPre(false)
         { 
-            mpDsSurface = graphics::Graphics::GetSingleton().Create<graphics::DepthStencilSurface>(kShadowTargetDimension, kShadowTargetDimension, graphics::DepthStencilSurface::kD16);
-            mpShadowTarget = graphics::Graphics::GetSingleton().Create<graphics::Target>(kShadowTargetDimension, kShadowTargetDimension, graphics::Target::kG16R16F);
+            mpDsSurface = graphics::Graphics::GetSingleton().Create<graphics::DepthStencilSurface>(ShadowManConstants::kShadowTargetDimension, ShadowManConstants::kShadowTargetDimension, kShadowDsFormat);
+            mpShadowTarget = graphics::Graphics::GetSingleton().Create<graphics::Target>(ShadowManConstants::kShadowTargetDimension, ShadowManConstants::kShadowTargetDimension, kShadowTargetFormat);
 
-            for (int i = 0; i < (kMapsPerDimension * kMapsPerDimension); i++)
+            for (int i = 0; i < (ShadowManConstants::kMapsPerDimension * ShadowManConstants::kMapsPerDimension); i++)
             {
                 mFreeList.push_back(i);
             }
@@ -56,12 +53,12 @@ namespace jz
 
         Vector4 ShadowMan::GetScaleShift(int aHandle) const
         {
-            JZ_ASSERT(aHandle >= 0 && aHandle < (kMapsPerDimension * kMapsPerDimension));
+            JZ_ASSERT(aHandle >= 0 && aHandle < (ShadowManConstants::kMapsPerDimension * ShadowManConstants::kMapsPerDimension));
 
-            const float xScale =  (float)kSizePadding / (float)kShadowTargetDimension;
-            const float yScale =  (float)kSizePadding / (float)kShadowTargetDimension;
-            const float xShift = (float)(((aHandle % kMapsPerDimension) * kSize) + kPadding) / (float)kShadowTargetDimension;
-            const float yShift = (float)(((aHandle / kMapsPerDimension) * kSize) + kPadding) / (float)kShadowTargetDimension;
+            const float xScale =  (float)ShadowManConstants::kSizePadding / (float)ShadowManConstants::kShadowTargetDimension;
+            const float yScale =  (float)ShadowManConstants::kSizePadding / (float)ShadowManConstants::kShadowTargetDimension;
+            const float xShift = (float)(((aHandle % ShadowManConstants::kMapsPerDimension) * ShadowManConstants::kSize) + ShadowManConstants::kPadding) / (float)ShadowManConstants::kShadowTargetDimension;
+            const float yShift = (float)(((aHandle / ShadowManConstants::kMapsPerDimension) * ShadowManConstants::kSize) + ShadowManConstants::kPadding) / (float)ShadowManConstants::kShadowTargetDimension;
 
             Vector4 v = Vector4(xScale, yScale, xShift, yShift);
 
@@ -70,8 +67,8 @@ namespace jz
 
         Vector2 ShadowMan::GetShadowDelta() const
         {
-            const float x = (1.0f / (float)kShadowTargetDimension);
-            const float y = (1.0f / (float)kShadowTargetDimension);
+            const float x = (1.0f / (float)ShadowManConstants::kShadowTargetDimension);
+            const float y = (1.0f / (float)ShadowManConstants::kShadowTargetDimension);
 
             Vector2 ret = Vector2(x, y);
 
@@ -84,7 +81,7 @@ namespace jz
                 0.5f,  0, 0, 0,
                 0, -0.5f, 0, 0,
                 0,     0, 1, 0,
-                0.5f + (0.5f * (1.0f / (float)kShadowTargetDimension)), 0.5f + (0.5f * (1.0f / (float)kShadowTargetDimension)), 0, 1);
+                0.5f + (0.5f * (1.0f / (float)ShadowManConstants::kShadowTargetDimension)), 0.5f + (0.5f * (1.0f / (float)ShadowManConstants::kShadowTargetDimension)), 0, 1);
 
             return ret;
         }
@@ -108,18 +105,18 @@ namespace jz
         {
             using namespace graphics;
             JZ_ASSERT(mbAfterPre);
-            JZ_ASSERT(aHandle >= 0 && aHandle < (kMapsPerDimension * kMapsPerDimension));
+            JZ_ASSERT(aHandle >= 0 && aHandle < (ShadowManConstants::kMapsPerDimension * ShadowManConstants::kMapsPerDimension));
 
             Viewport vp;
-            int x = (aHandle % kMapsPerDimension);
-            int y = (aHandle / kMapsPerDimension);
+            int x = (aHandle % ShadowManConstants::kMapsPerDimension);
+            int y = (aHandle / ShadowManConstants::kMapsPerDimension);
 
-            vp.X = (x * kSize) + (kPadding);
-            vp.Y = (y * kSize) + (kPadding);
-            vp.Height = kSizePadding;
+            vp.X = (x * ShadowManConstants::kSize) + (ShadowManConstants::kPadding);
+            vp.Y = (y * ShadowManConstants::kSize) + (ShadowManConstants::kPadding);
+            vp.Height = ShadowManConstants::kSizePadding;
             vp.MaxZ = 1.0f;
             vp.MinZ = 0.0f;
-            vp.Width = kSizePadding;
+            vp.Width = ShadowManConstants::kSizePadding;
 
             Graphics::GetSingleton().SetViewport(vp);
         }
@@ -163,15 +160,15 @@ namespace jz
         void ShadowMan::Release(int& aHandle)
         {
     #   ifndef NDEBUG
-            JZ_ASSERT(aHandle >= 0 && aHandle < (kMapsPerDimension * kMapsPerDimension));
+            JZ_ASSERT(aHandle >= 0 && aHandle < (ShadowManConstants::kMapsPerDimension * ShadowManConstants::kMapsPerDimension));
             for (size_t i = 0u; i < mFreeList.size(); i++)
             {
                 JZ_ASSERT(mFreeList[i] != aHandle);
             }
+    #   endif
 
             mFreeList.push_back(aHandle);
             aHandle = -1;
-    #   endif
         }
 
     }

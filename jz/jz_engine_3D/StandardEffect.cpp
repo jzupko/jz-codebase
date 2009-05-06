@@ -23,6 +23,7 @@
 #include <jz_core/Matrix4.h>
 #include <jz_core/Memory.h>
 #include <jz_engine_3D/StandardEffect.h>
+#include <jz_engine_3D/ThreePoint.h>
 #include <jz_system/Files.h>
 
 namespace jz

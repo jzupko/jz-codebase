@@ -28,6 +28,7 @@
 #include <jz_engine_3D/IRenderable.h>
 #include <jz_engine_3D/IShadowable.h>
 #include <jz_engine_3D/SceneNode.h>
+#include <jz_engine_3D/ThreePoint.h>
 
 namespace jz
 {
@@ -67,6 +68,11 @@ namespace jz
             bool GetNonDeferred() const { return mbNonDeferred; }
             void SetNonDeferred(bool b) { mbNonDeferred = b; }
 
+            bool bThreePoint() const { return mbHasTp; }
+            void SetUseThreePoint(bool b) { mbHasTp = b; }
+            const ThreePoint& GetThreePoint() const { return mTp; }
+            void SetThreePoint(const ThreePoint& v) { mTp = v; mbHasTp = true; }
+
         protected:
             virtual void _PopulateClone(SceneNode* apNode) override;
             virtual void _PostUpdate(bool abChanged)  override;
@@ -76,6 +82,9 @@ namespace jz
             BoundingBox mAABB;
             bool mbNonDeferred;
             graphics::RenderPack mPack;
+
+            bool mbHasTp;
+            ThreePoint mTp;
 
         private:
             friend void jz::__IncrementRefCount<engine_3D::MeshNode>(engine_3D::MeshNode*);

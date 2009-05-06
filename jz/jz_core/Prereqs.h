@@ -297,8 +297,8 @@ namespace jz
     //       be represented, not the smallest signed number.
     const float  Constants<float>::kMin              = -FLT_MAX; 
     const double Constants<double>::kMin             = -DBL_MAX;
-    const float  Constants<float>::kMinLuminance     = 0.004f;
-    const double Constants<double>::kMinLuminance    = 0.004;
+    const float  Constants<float>::kMinLuminance     = 1e-6f;
+    const double Constants<double>::kMinLuminance    = 1e-6;
     const float  Constants<float>::kNaN              = std::numeric_limits<float>::signaling_NaN();
     const double Constants<double>::kNaN             = std::numeric_limits<double>::signaling_NaN();
     const float  Constants<float>::kPi               = 3.14159265359f;

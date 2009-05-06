@@ -10,7 +10,8 @@ technique TECHNIQUE_NAME
 		DISABLE_COLOR_WRITE
 		
         AlphaTestEnable = false;
-        AlphaBlendEnable = false;
+        // Part of DISABLE_COLOR_WRITE
+        // AlphaBlendEnable = false;
         CullMode = None;
         FillMode = Solid;
         ZEnable = true;
@@ -55,12 +56,12 @@ technique TECHNIQUE_NAME
 		
         AlphaTestEnable = false;
         AlphaBlendEnable = true;
-#		if !defined(DRAW_FRONT_FACE)
-			CullMode = FRONT_FACE_CULLING;
-#		else
-			CullMode = BACK_FACE_CULLING;
-#			undef DRAW_FRONT_FACE
-#		endif
+#       if defined(DRAW_FRONT_FACES)
+            CullMode = BACK_FACE_CULLING;
+#           undef DRAW_FRONT_FACES
+#       else
+            CullMode = FRONT_FACE_CULLING;
+#       endif
         DestBlend = One;
         FillMode = Solid;
         SrcBlend = One;
@@ -73,18 +74,19 @@ technique TECHNIQUE_NAME
         StencilFail = Zero;
         StencilFunc = Equal;
         StencilMask = STENCIL_BIT_DEFERRED_MASK|STENCIL_BIT_NO_DEFERRED;
-        StencilPass = Keep;
+        StencilPass = Zero;
         StencilWriteMask = STENCIL_BIT_DEFERRED_MASK;
+        StencilZFail = Zero;
 
         TwoSidedStencilMode = false;
-
-#		if !defined(VERTEX_SHADER_NAME)
-#			define VERTEX_SHADER_NAME VertexDeferredLight
-#		endif
 
 #		if !defined(FRAGMENT_SHADER_NAME)
 #			define FRAGMENT_SHADER_NAME  JZ_CAT(Fragment, TECHNIQUE_NAME)
 #		endif
+
+#       if !defined(VERTEX_SHADER_NAME)
+#           define VERTEX_SHADER_NAME VertexDeferredLight
+#       endif
 
 #		ifdef SHADER_VER
 			VertexShader = compile JZ_CAT(vs, SHADER_VER) VERTEX_SHADER_NAME();

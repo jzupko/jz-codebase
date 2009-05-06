@@ -86,6 +86,9 @@ namespace jz
 
     inline float Lerp(float v1, float v2, float aWeightOfV2)
     {
+        // (v1 * (1.0 - aWeightOfV2) + v2 * aWeightOfV2)
+        // (v1 - v1 * aWeightOfV2 + v2 * aWeightOfV2
+        // (v1 + ((v2 - v1) * aWeightOfV2))
         return v1 + ((v2 - v1) * aWeightOfV2);
     }
 

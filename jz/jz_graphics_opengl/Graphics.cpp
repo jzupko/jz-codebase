@@ -325,7 +325,7 @@ namespace jz
             p[3] = 255; // A
         }
 
-        Graphics::Graphics()
+        Graphics::Graphics(bool abStartFullscreen)
             : mbActive(false), mbBegin(false), mbLoaded(false), mbNeedsResize(false),
             mbOwnsWindow(false), mbMinimized(false),
             mpActiveEffect(null), mpActiveMesh(null), mpActivePass(null)
@@ -336,6 +336,8 @@ namespace jz
             }
 
             _SetDefaultSettings();
+
+            if (abStartFullscreen) { SetFullscreen(true); }
             _InitWindow();
             _ResetDevice();
 

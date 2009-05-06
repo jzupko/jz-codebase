@@ -44,12 +44,12 @@ namespace jz.cb
             this.processOptionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.processColladaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.processHeightmapsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.processSpritesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.Output = new System.Windows.Forms.TextBox();
             this.InFolder = new System.Windows.Forms.TextBox();
             this.OutFolder = new System.Windows.Forms.TextBox();
             this.InputFolder = new System.Windows.Forms.Label();
             this.OutputFolder = new System.Windows.Forms.Label();
-            this.processSpritesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -80,28 +80,28 @@ namespace jz.cb
             // InFolderMenuItem
             // 
             this.InFolderMenuItem.Name = "InFolderMenuItem";
-            this.InFolderMenuItem.Size = new System.Drawing.Size(125, 22);
+            this.InFolderMenuItem.Size = new System.Drawing.Size(152, 22);
             this.InFolderMenuItem.Text = "&In Folder";
             this.InFolderMenuItem.Click += new System.EventHandler(this.FolderMenuItem_Click);
             // 
             // OutFolderMenuItem
             // 
             this.OutFolderMenuItem.Name = "OutFolderMenuItem";
-            this.OutFolderMenuItem.Size = new System.Drawing.Size(125, 22);
+            this.OutFolderMenuItem.Size = new System.Drawing.Size(152, 22);
             this.OutFolderMenuItem.Text = "&Out Folder";
             this.OutFolderMenuItem.Click += new System.EventHandler(this.OutFolderMenuItem_Click);
             // 
             // RunMenuItem
             // 
             this.RunMenuItem.Name = "RunMenuItem";
-            this.RunMenuItem.Size = new System.Drawing.Size(125, 22);
+            this.RunMenuItem.Size = new System.Drawing.Size(152, 22);
             this.RunMenuItem.Text = "&Run";
             this.RunMenuItem.Click += new System.EventHandler(this.RunMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(125, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -182,6 +182,16 @@ namespace jz.cb
             this.processHeightmapsToolStripMenuItem.Text = "Process Heightmaps";
             this.processHeightmapsToolStripMenuItem.Click += new System.EventHandler(this.processHeightmapsToolStripMenuItem_Click);
             // 
+            // processSpritesToolStripMenuItem
+            // 
+            this.processSpritesToolStripMenuItem.Checked = true;
+            this.processSpritesToolStripMenuItem.CheckOnClick = true;
+            this.processSpritesToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.processSpritesToolStripMenuItem.Name = "processSpritesToolStripMenuItem";
+            this.processSpritesToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
+            this.processSpritesToolStripMenuItem.Text = "Process Sprites";
+            this.processSpritesToolStripMenuItem.Click += new System.EventHandler(this.processSpritesToolStripMenuItem_Click);
+            // 
             // Output
             // 
             this.Output.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
@@ -240,16 +250,6 @@ namespace jz.cb
             this.OutputFolder.TabIndex = 7;
             this.OutputFolder.Text = "Output Folder";
             // 
-            // processSpritesToolStripMenuItem
-            // 
-            this.processSpritesToolStripMenuItem.Checked = true;
-            this.processSpritesToolStripMenuItem.CheckOnClick = true;
-            this.processSpritesToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.processSpritesToolStripMenuItem.Name = "processSpritesToolStripMenuItem";
-            this.processSpritesToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
-            this.processSpritesToolStripMenuItem.Text = "Process Sprites";
-            this.processSpritesToolStripMenuItem.Click += new System.EventHandler(this.processSpritesToolStripMenuItem_Click);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -266,6 +266,7 @@ namespace jz.cb
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "JZ Content Builder";
+            this.TopMost = true;
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);

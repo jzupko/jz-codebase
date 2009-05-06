@@ -9,7 +9,7 @@
 // furnished to do so, subject to the following conditions:
 // 
 // The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
+// all copies or substantial portions of the Software.  
 // 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -22,6 +22,15 @@
 
 // #define DEBUG_PHYSICS 1
 // #define DEBUG_SHADOWS 1
+// #define DEBUG_DEFERRED 1
+
+#define DISABLE_AUTO_CHARACTER_LIGHTING 0
+#define ALLOW_DEFERRED_LIGHTING_TO_AFFECT_AUTO_LIT_CHARACTER 0
+#define START_FULLSCREEN 0
+#define ADD_CAMERA_LIGHT 0
+#define DISABLE_ENVIRONMENT_LIGHTS 0
+
+// Note: deferred must currently always be enabled. Forward rendering has not been completely implemented.
 #define DEFERRED 1
 
 #include <jz_core/Logger.h>
@@ -62,15 +71,27 @@
     
     static void ActivateAnimation(::jz::engine_3D::AnimatedMeshNode* p)
     {
-        p->SetNonDeferred(true);
+#       if !DISABLE_AUTO_CHARACTER_LIGHTING
+#           if !ALLOW_DEFERRED_LIGHTING_TO_AFFECT_AUTO_LIT_CHARACTER
+                p->SetNonDeferred(true);
+#           endif
+#       endif
+
         p->GetAnimationControl()->SetStartIndex(10);
         p->GetAnimationControl()->SetEndIndex(92);
         p->GetAnimationControl()->SetPlay(true);
     }
 
+    // This function sets the animated character's threepoint lighting settings.
+    // Note: this only works because the animated character is unique in the scene - if there 
+    //       were multiple characters, they would share the same effect which means the three point 
+    //       settings would be shared between them. The proper way to do this would be to insert
+    //       a function in the node's render tree using SetPostEffectFunc
     static void SetThreePoint(::jz::engine_3D::ThreePoint tp, ::jz::engine_3D::AnimatedMeshNode* p)
     {
-        p->GetEffect()->SetThreePoint(tp);
+#       if !DISABLE_AUTO_CHARACTER_LIGHTING
+        p->SetThreePoint(tp);
+#       endif
     }
 
     static void GatherLights(::jz::BoundingSphere& aSphere, ::jz::engine_3D::LightNode* p, ::std::vector<::jz::sail::ThreePointLighting::MotivatingLight>& arOut)
@@ -90,19 +111,42 @@
         }
     }
 
+    // Compensates for lack of forward pipeline by setting transparent object's threepoint lighting rig.
+    static void SetThreePointTransparents(::jz::engine_3D::SceneNode* pRootNode, ::jz::engine_3D::MeshNode* p)
+    {
+        if (p->GetEffect()->IsTransparent() && !p->GetEffect()->IsAlpha1Bit())
+        {
+            // Eww.
+            std::vector<::jz::sail::ThreePointLighting::MotivatingLight> mot;
+            pRootNode->Apply<jz::engine_3D::LightNode>(std::tr1::bind(GatherLights, p->GetWorldBounding(), std::tr1::placeholders::_1, std::tr1::ref(mot)));
+
+            ::jz::sail::ThreePointLighting tpl;
+            ::jz::sail::ThreePointLighting::LightSettings settings;
+            tpl.Tick(jz::Matrix4::kIdentity, p->GetWorldBounding(), mot, settings);
+
+            jz::engine_3D::ThreePoint tp;
+            tp.BackDiffuse = settings.BackDiffuse;
+            tp.BackPosition = settings.BackTransform.GetTranslation();
+            tp.BackSpecular = settings.BackSpecular;
+            tp.FillDirection = jz::Vector3::TransformDirection(settings.FillTransform, jz::Vector3::kForward);
+            tp.KeyDiffuse = settings.KeyDiffuse;
+            tp.KeyPosition = settings.KeyTransform.GetTranslation();
+            tp.KeySpecular = settings.KeySpecular;
+            tp.KeyToFillRatio = !jz::AboutZero(settings.KeyDiffuse.R) ? (settings.FillDiffuse.R / settings.KeyDiffuse.R) : 0.0f;
+            p->SetThreePoint(tp);
+        }
+    }
+
     static void ActivateShadowing(::jz::engine_3D::LightNode* p)
     {
-        if (p->GetType() == ::jz::engine_3D::LightNodeType::kSpot)
-        {
-            p->SetCastShadow(true);
-        }
-#       pragma region Temporarily disable point lights
-        else
-        {
-            //p->SetColor(jz::Vector3::kZero);
-            //p->Update(jz::Matrix4::kIdentity, true);
-        }
-#       pragma endregion
+#       if DISABLE_ENVIRONMENT_LIGHTS
+            p->SetColor(::jz::Vector3::kZero);
+#       else
+            if (p->GetType() == ::jz::engine_3D::LightNodeType::kSpot)
+            {
+                p->SetCastShadow(true);
+            }
+#       endif
     }
 
     static void Light(float* apMaxRange, ::jz::engine_3D::LightNode* apLight, ::jz::engine_3D::IShadowable* p)
@@ -136,12 +180,18 @@
                 if (!jz::AboutEqual(maxRange, p->GetRange()))
                 {
                     p->SetRange(maxRange);
-                    p->Update(jz::Matrix4::kIdentity, true);
                 }
             }
         }
     }
 
+    // Called "control term" to allow for testing different shadow techniques.
+    // Currently, a scaling factor for a smoothstep depth biasing scheme.
+    // Should be > 0 to reduce shadow acne. Higher values create a fake soft
+    // shadowing effect.
+    // This is currently a global term. Eventually, it should be attached to individal LightNodes.
+    static const float kShadowControlStep = 0.01f;
+    static const float kGaussianStdDevStep = 0.1f;
     static bool KeyHandler(jz::system::Key::Code aCode, jz::system::Key::State aState)
     {
         if (aCode == jz::system::Key::kEscape && aState == jz::system::Key::kReleased)
@@ -153,6 +203,26 @@
 
                 return true;
             }
+        }
+        else if (aCode == jz::system::Key::kUp && aState == jz::system::Key::kPressed)
+        {
+            jz::engine_3D::Deferred::GetSingleton().SetShadowControlTerm(
+                jz::engine_3D::Deferred::GetSingleton().GetShadowControlTerm() + kShadowControlStep);
+        }
+        else if (aCode == jz::system::Key::kDown && aState == jz::system::Key::kPressed)
+        {
+            jz::engine_3D::Deferred::GetSingleton().SetShadowControlTerm(
+                jz::engine_3D::Deferred::GetSingleton().GetShadowControlTerm() - kShadowControlStep);
+        }
+        else if (aCode == jz::system::Key::kRight && aState == jz::system::Key::kPressed)
+        {
+            jz::engine_3D::Deferred::GetSingleton().SetGaussianKernelStdDev(
+                jz::engine_3D::Deferred::GetSingleton().GetGaussianKernelStdDev() + kGaussianStdDevStep);
+        }
+        else if (aCode == jz::system::Key::kLeft && aState == jz::system::Key::kPressed)
+        {
+            jz::engine_3D::Deferred::GetSingleton().SetGaussianKernelStdDev(
+                jz::engine_3D::Deferred::GetSingleton().GetGaussianKernelStdDev() - kGaussianStdDevStep);
         }
 
         return false;
@@ -210,30 +280,70 @@
 					files.AddArchive(new FileArchive("..\\media\\compiled"));
 
                     Loader loader;
+#if START_FULLSCREEN
+                    Graphics graphics(true);
+#else
                     Graphics graphics;
+#endif
                     {
                         RenderMan man;
 
 #                       ifdef DEFERRED
-                            ShadowMan::GetSingleton().SetShadowBleedReduction(0.05f);
                             Deferred::GetSingleton().SetActive(true);
+                            Deferred::GetSingleton().SetBloomThreshold(0.6f);
+                            Deferred::GetSingleton().SetMotionBlurAmount(0.34f);
+
+#                           ifdef DEBUG_DEFERRED
+                                Deferred::GetSingleton().SetDebugDeferredLighting(true);
+#                           endif
 #                       endif
 
+                        const float kWomanMovement = 0.5f;
+                        const float kWomanMax = 4.0f;
+                        const float kWomanMin = -6.0f;
+                        const float kWomanScale = 0.016f;
+                        float womanPosition = 0.0f;
+                        float womanDirection = -1.0f;
                         SceneNodePtr pWoman(LoadScene("1930\\woman.scn"));
-                        pWoman->SetLocalTransform(Matrix4::CreateScale(0.01f));
+                        SceneNodePtr pArrowKey(LoadScene("1930\\arrow.scn"));
+                        SceneNodePtr pArrowFill(pArrowKey->Clone<SceneNode>(null));
 
                         //files.AddArchive(new ZipArchive("compiled.zip"));
                         SceneNodePtr pRoot(LoadScene("1930\\1930_room.scn"));
                         pWoman->SetParent(pRoot.Get());
                         pWoman->Apply<AnimatedMeshNode>(ActivateAnimation);
 
+                        pArrowKey->SetParent(pRoot.Get());
+                        pArrowFill->SetParent(pRoot.Get());
+
+                        {
+                            pRoot->Update();
+                            pRoot->Apply<MeshNode>(tr1::bind(SetThreePointTransparents, pRoot.Get(), tr1::placeholders::_1));
+                        }
+
                         pRoot->Apply<LightNode>(ActivateShadowing);
                         PhysicsNodePtr pPhysicsNode = SceneNode::Get<PhysicsNode>("1930_room_physics_node");
                         CameraFPSNodePtr pCamera(new CameraFPSNode());
+
+#                       if ADD_CAMERA_LIGHT
+                        {
+                            LightNodePtr pCameraLight(new LightNode());
+                            pCameraLight->SetParent(pCamera.Get());
+                            pCameraLight->SetType(LightNodeType::kSpot);
+                            pCameraLight->SetAttenuation(Vector3(0, 0, 1));
+                            pCameraLight->SetCastShadow(true);
+                            pCameraLight->SetColor(Vector3::kOne * 2.5f);
+                            pCameraLight->SetFalloffAngle(Degree(90.0));
+                            pCameraLight->SetFalloffExponent(10.0f);
+                            pCameraLight->SetLocalTranslation(Vector3::kBackward * 0.25f + Vector3::kRight * 0.25f);
+                        }   
+#                       endif
+
                         float ar = ((float)graphics.GetViewportWidth()) / ((float)graphics.GetViewportHeight());
                         pCamera->SetWorldTranslation(Vector3::kUp + Vector3::kRight);
                         pCamera->SetProjection(Matrix4::CreatePerspectiveFieldOfViewDirectX(Radian::kPiOver2, ar, 0.099f, 22.63f));
                         pCamera->SetParent(pRoot.Get());
+                        pCamera->SetMoveRate(2.0f);
                         pCamera->SetActive(true);
                         Body3DPtr pCameraBody;
 
@@ -255,10 +365,10 @@
                         ThreePointLighting lighting;
                         lighting.GetLightLearner().Load("..\\media\\woman.dat");
                         ImageIlluminationMetrics ideal;
-                        ideal.Entropy = 1.0f;
-                        ideal.MaxIntensity = 1.0f;
-                        ideal.Roll = 0.25f;
-                        ideal.Yaw = 0.5f;
+                        ideal.Entropy = 0.09282619f;
+                        ideal.MaxIntensity = 0.937254965f;
+                        ideal.Roll = 0.7495458f;
+                        ideal.Yaw =0.8952829f;
                         lighting.SetIdeal(ideal);
 
                         MSG msg; 
@@ -276,6 +386,41 @@
                                 Time::GetSingleton().Tick();
                                 float t = Time::GetSingleton().GetElapsedSeconds();
                                 loader.Tick();
+
+                                womanPosition += (kWomanMovement * womanDirection * t);
+                                if (womanPosition < kWomanMin) { womanPosition = kWomanMin; womanDirection = -womanDirection; }
+                                if (womanPosition > kWomanMax) { womanPosition = kWomanMax; womanDirection = -womanDirection; }
+
+                                pWoman->SetLocalTransform(
+                                    Matrix4::CreateScale(kWomanScale) * 
+                                    Matrix4::CreateRotationY((womanDirection > 0.0f) ? Radian::kZero : Radian::kPi) * 
+                                    Matrix4::CreateTranslation(Vector3(1, 0, womanPosition)));
+
+                                {
+                                    ThreePointLighting::LightSettings settings;
+                                    vector<ThreePointLighting::MotivatingLight> mot;
+                                    pRoot->Apply<LightNode>(bind(GatherLights, pWoman->GetWorldBounding(), tr1::placeholders::_1, tr1::ref(mot)));
+                                    if (lighting.Tick(man.GetInverseView(),
+                                        pWoman->GetWorldBounding(),
+                                        mot,
+                                        settings))
+                                    {
+                                        pArrowKey->SetWorldTransform(Matrix4::CreateScale(0.3f) * settings.KeyTransform);
+                                        pArrowFill->SetWorldTransform(Matrix4::CreateScale(0.3f) * settings.FillTransform);
+
+                                        ThreePoint tp;
+                                        tp.BackDiffuse = settings.BackDiffuse;
+                                        tp.BackPosition = settings.BackTransform.GetTranslation();
+                                        tp.BackSpecular = settings.BackSpecular;
+                                        tp.FillDirection = Vector3::TransformDirection(settings.FillTransform, Vector3::kForward);
+                                        tp.KeyDiffuse = settings.KeyDiffuse;
+                                        tp.KeyPosition = settings.KeyTransform.GetTranslation();
+                                        tp.KeySpecular = settings.KeySpecular;
+                                        tp.KeyToFillRatio = !AboutZero(settings.KeyDiffuse.R) ? (settings.FillDiffuse.R / settings.KeyDiffuse.R) : 0.0f;
+                                        pWoman->Apply<AnimatedMeshNode>(tr1::bind(SetThreePoint, tp, tr1::placeholders::_1));
+                                    }
+                                }
+
                                 if (t > Constants<float>::kZeroTolerance)
                                 {
                                     if (pCameraBody.IsValid())
@@ -292,34 +437,13 @@
                                             pCameraBody->SetVelocity(Vector3::kZero);
                                         }
                                     }
+                                    bool bCameraBodyDirty = pCameraBody.IsValid() && (pCameraBody->GetVelocity().LengthSquared() > 0.0f);
                                     pRoot->Update();
-                                    if (pCameraBody.IsValid())
+                                    if (bCameraBodyDirty)
                                     {
                                         pCamera->SetWorldTranslation(pCameraBody->GetTranslation());
                                         pCamera->Update();
                                     }
-                                }
-
-                                {
-                                    ThreePointLighting::LightSettings settings;
-                                    vector<ThreePointLighting::MotivatingLight> mot;
-                                    pRoot->Apply<LightNode>(bind(GatherLights, pWoman->GetWorldBounding(), tr1::placeholders::_1, tr1::ref(mot)));
-                                    lighting.Tick(Time::GetSingleton().GetElapsedSeconds(),
-                                        man.GetInverseView(),
-                                        pWoman->GetWorldBounding(),
-                                        mot,
-                                        settings);
-
-                                    ThreePoint tp;
-                                    tp.BackDiffuse = settings.BackDiffuse;
-                                    tp.BackPosition = settings.BackTransform.GetTranslation();
-                                    tp.BackSpecular = settings.BackSpecular;
-                                    tp.FillDirection = Vector3::TransformDirection(settings.FillTransform, Vector3::kForward);
-                                    tp.KeyDiffuse = settings.KeyDiffuse;
-                                    tp.KeyPosition = settings.KeyTransform.GetTranslation();
-                                    tp.KeySpecular = settings.KeySpecular;
-                                    tp.KeyToFillRatio = !AboutZero(settings.KeyDiffuse.R) ? (settings.FillDiffuse.R / settings.KeyDiffuse.R) : 0.0f;
-                                    pWoman->Apply<AnimatedMeshNode>(tr1::bind(SetThreePoint, tp, tr1::placeholders::_1));
                                 }
                                 #pragma endregion
 
@@ -341,6 +465,11 @@
         catch (std::exception& e)
         {
             jz::LogMessage(e.what(), jz::Logger::kError);
+
+            MessageBox(jz::null,
+                e.what(),
+                "Exception",
+                MB_OK | MB_ICONERROR | MB_TASKMODAL);
         }
 
         return 0;

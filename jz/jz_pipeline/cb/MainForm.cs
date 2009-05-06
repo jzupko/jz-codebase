@@ -22,14 +22,17 @@ namespace jz.cb
         #region Private members
         private static int kMaxInstances = 80;
 
-        private static readonly int[] mkUnitBoxIndices = new int[] { 0, 1, 2, 2, 1, 3, 1, 4, 3, 3, 4, 6, 4, 5, 6, 6, 5, 7, 5, 0, 7, 7, 0, 2, 2, 3, 7, 7, 3, 6, 5, 4, 0, 0, 4, 1 };
+        private static readonly int[] mkUnitBoxIndices = new int[] { 0, 2, 1, 2, 3, 1, 1, 3, 4, 3, 6, 4, 4, 6, 5, 6, 7, 5, 5, 7, 0, 7, 2, 0, 2, 7, 3, 7, 6, 3, 5, 0, 4, 0, 1, 4 };
         private static readonly float[] mkUnitBoxVertices = new float[] { -1, -1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, 1, 1, -1, -1, 1, -1 };
         private static readonly int[] mkUnitFrustumIndices = new int[] { 0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1, 1, 4, 2, 2, 4, 3 };
-        private static readonly float[] mkUnitFrustumVertices = new float[] { 0, 0, 0, -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 };
+        private static readonly float[] mkUnitFrustumVertices = new float[] { 
+            0, 0, 0, 
+            -1, -1, -1, 
+            -1, 1, -1, 
+            1, 1, -1, 
+            1, -1, -1 };
         private static readonly int[] mkUnitQuadIndices = new int[] { 0, 1, 2, 1, 3, 2 };
         private static readonly float[] mkUnitQuadVertices = new float[] { -1, -1, 0,  -1,  1, 0,  1, -1, 0,  1,  1, 0 };
-        private static readonly int[] mkUnitSphereIndices = new int[] { 0, 2, 1, 3, 5, 4, 0, 6, 2, 3, 4, 7, 0, 8, 6, 3, 7, 9, 0, 10, 8, 3, 9, 11, 0, 12, 10, 3, 11, 13, 0, 14, 12, 3, 13, 15, 0, 16, 14, 3, 15, 17, 0, 18, 16, 3, 17, 19, 0, 20, 18, 3, 19, 21, 0, 22, 20, 3, 21, 23, 0, 24, 22, 3, 23, 25, 0, 1, 24, 3, 25, 5, 1, 27, 26, 1, 2, 27, 2, 6, 27, 27, 6, 28, 6, 29, 28, 6, 8, 29, 8, 10, 29, 29, 10, 30, 10, 31, 30, 10, 12, 31, 12, 14, 31, 31, 14, 32, 14, 33, 32, 14, 16, 33, 16, 18, 33, 33, 18, 34, 18, 35, 34, 18, 20, 35, 20, 22, 35, 35, 22, 36, 22, 37, 36, 22, 24, 37, 24, 1, 37, 37, 1, 26, 26, 27, 38, 38, 27, 39, 27, 40, 39, 27, 28, 40, 28, 29, 40, 40, 29, 41, 29, 42, 41, 29, 30, 42, 30, 31, 42, 42, 31, 43, 31, 44, 43, 31, 32, 44, 32, 33, 44, 44, 33, 45, 33, 46, 45, 33, 34, 46, 34, 35, 46, 46, 35, 47, 35, 48, 47, 35, 36, 48, 36, 37, 48, 48, 37, 49, 37, 38, 49, 37, 26, 38, 38, 51, 50, 38, 39, 51, 39, 40, 51, 51, 40, 52, 40, 53, 52, 40, 41, 53, 41, 42, 53, 53, 42, 54, 42, 55, 54, 42, 43, 55, 43, 44, 55, 55, 44, 56, 44, 57, 56, 44, 45, 57, 45, 46, 57, 57, 46, 58, 46, 59, 58, 46, 47, 59, 47, 48, 59, 59, 48, 60, 48, 61, 60, 48, 49, 61, 49, 38, 61, 61, 38, 50, 50, 51, 5, 5, 51, 4, 51, 7, 4, 51, 52, 7, 52, 53, 7, 7, 53, 9, 53, 11, 9, 53, 54, 11, 54, 55, 11, 11, 55, 13, 55, 15, 13, 55, 56, 15, 56, 57, 15, 15, 57, 17, 57, 19, 17, 57, 58, 19, 58, 59, 19, 19, 59, 21, 59, 23, 21, 59, 60, 23, 60, 61, 23, 23, 61, 25, 61, 5, 25, 61, 50, 5 };
-        private static readonly float[] mkUnitSphereVertices = new float[] { 8.71482E-10f, -0.998307f, -2.4683E-08f, 0.500784f, -0.86456f, -2.4683E-08f, 0.433692f, -0.86456f, 0.250679f, 8.71482E-10f, 0.998308f, -2.4683E-08f, 0.433692f, 0.864559f, 0.250679f, 0.500784f, 0.864559f, -2.4683E-08f, 0.250392f, -0.86456f, 0.434188f, 0.250392f, 0.864559f, 0.434188f, 8.71482E-10f, -0.86456f, 0.501357f, 8.71482E-10f, 0.864559f, 0.501357f, -0.250392f, -0.86456f, 0.434188f, -0.250392f, 0.864559f, 0.434188f, -0.433692f, -0.86456f, 0.250679f, -0.433692f, 0.864559f, 0.250679f, -0.500784f, -0.86456f, -2.4683E-08f, -0.500784f, 0.864559f, -2.4683E-08f, -0.433692f, -0.86456f, -0.250679f, -0.433692f, 0.864559f, -0.250679f, -0.250392f, -0.86456f, -0.434188f, -0.250392f, 0.864559f, -0.434188f, 8.71481E-10f, -0.86456f, -0.501357f, 8.71481E-10f, 0.864559f, -0.501357f, 0.250392f, -0.86456f, -0.434188f, 0.250392f, 0.864559f, -0.434188f, 0.433692f, -0.86456f, -0.250679f, 0.433692f, 0.864559f, -0.250679f, 0.867384f, -0.499154f, -2.4683E-08f, 0.751177f, -0.499154f, 0.434188f, 0.433692f, -0.499154f, 0.752036f, 8.71482E-10f, -0.499154f, 0.868377f, -0.433692f, -0.499154f, 0.752036f, -0.751177f, -0.499154f, 0.434188f, -0.867384f, -0.499154f, -2.4683E-08f, -0.751177f, -0.499154f, -0.434188f, -0.433692f, -0.499154f, -0.752036f, 8.71481E-10f, -0.499154f, -0.868377f, 0.433692f, -0.499154f, -0.752036f, 0.751177f, -0.499154f, -0.434188f, 1.00157f, -1.93919E-07f, -2.4683E-08f, 0.867384f, -1.93919E-07f, 0.501357f, 0.500784f, -1.93919E-07f, 0.868376f, 8.71482E-10f, -1.93919E-07f, 1.00271f, -0.500784f, -1.93919E-07f, 0.868376f, -0.867384f, -1.93919E-07f, 0.501357f, -1.00157f, -1.93919E-07f, -2.4683E-08f, -0.867384f, -1.93919E-07f, -0.501357f, -0.500784f, -1.93919E-07f, -0.868377f, 8.71481E-10f, -1.93919E-07f, -1.00271f, 0.500784f, -1.93919E-07f, -0.868377f, 0.867384f, -1.93919E-07f, -0.501357f, 0.867384f, 0.499154f, -2.4683E-08f, 0.751176f, 0.499154f, 0.434188f, 0.433692f, 0.499154f, 0.752036f, 8.71482E-10f, 0.499154f, 0.868376f, -0.433692f, 0.499154f, 0.752036f, -0.751176f, 0.499154f, 0.434188f, -0.867384f, 0.499154f, -2.4683E-08f, -0.751176f, 0.499154f, -0.434188f, -0.433692f, 0.499154f, -0.752036f, 8.71481E-10f, 0.499154f, -0.868377f, 0.433692f, 0.499154f, -0.752036f, 0.751176f, 0.499154f, -0.434188f };
         private static readonly VertexElement[] mkDeclaration = new VertexElement[]
         {
             new VertexElement(0, 0, VertexElementFormat.Vector3, VertexElementMethod.Default, VertexElementUsage.Position, 0)
@@ -92,6 +95,7 @@ namespace jz.cb
             }
         }
 
+        private bool mbDelayedQuit = false;
         private string mInDirectory = string.Empty;
         private string mOutDirectory = string.Empty;
         private volatile Thread mWorker = null;
@@ -99,20 +103,17 @@ namespace jz.cb
 
         private void _Handler(string e)
         {
-            if (mWorker != null)
+            if (Output.InvokeRequired) { Invoke(new Action<string>(_Handler), new object[] { e }); }
+            else
             {
-                if (Output.InvokeRequired) { Invoke(new Action<string>(_Handler), new object[] { e }); }
-                else
-                {
-                    string[] lines = Output.Lines;
-                    int newLength = (lines.Length >= kMaxLines) ? kMaxLines : lines.Length + 1;
+                string[] lines = Output.Lines;
+                int newLength = (lines.Length >= kMaxLines) ? kMaxLines : lines.Length + 1;
 
-                    string[] n = new string[newLength];
-                    Array.Copy(lines, 0, n, 1, (newLength - 1));
-                    n[0] = e;
+                string[] n = new string[newLength];
+                Array.Copy(lines, 0, n, 1, (newLength - 1));
+                n[0] = e;
 
-                    Output.Lines = n;
-                }
+                Output.Lines = n;
             }
         }
 
@@ -120,10 +121,17 @@ namespace jz.cb
         {
             if (mWorker != null)
             {
+                _Handler("Stopping worker...");
                 e.Cancel = true;
-                MessageBox.Show("Cannot exit during a build.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                mbDelayedQuit = true;
+
+                if (Builder.bProcessing)
+                {
+                    Builder.StopProcessing();
+                }
             }
         }
+        
 
         void _HandleKeyUp(object aSender, KeyEventArgs e)
         {
@@ -138,13 +146,17 @@ namespace jz.cb
         {
             try
             {
-                _Handler("Building...");
                 Builder.Process(mInDirectory, mOutDirectory, _Handler, mFlags);
             }
             catch (Exception e) { _Handler(e.Message); }
 
-            _Handler("Done.");
+            _Handler("Worker stopped.");
             mWorker = null;
+
+            if (mbDelayedQuit)
+            {
+                Invoke(new Action(delegate { Close(); }));
+            }
         }
         #endregion
 
@@ -200,6 +212,10 @@ namespace jz.cb
                 menuStrip1_Click(this, new EventArgs());
                 mWorker.Start();
             }
+            else
+            {
+                _Handler("Builder is already running.");
+            }
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -215,8 +231,15 @@ namespace jz.cb
 
         private const string kFilename = "built-in";
 
-        private void _Helper(int[] indices, float[] vertices, string id)
+        private void _Helper(int[] indices, float[] vertices, string id, bool abValidate)
         {
+#if DEBUG
+            if (abValidate)
+            {
+                Utilities.ValidateSealedConvexGeometry(indices, vertices);
+            }
+#endif
+
             DocInfo info;
             info.BaseFilename = kFilename;
             info.Filename = Path.Combine(mInDirectory, kFilename);
@@ -236,22 +259,31 @@ namespace jz.cb
 
         private void unitBoxToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _Helper(mkUnitBoxIndices, mkUnitBoxVertices, "unit-box");
+            _Helper(mkUnitBoxIndices, mkUnitBoxVertices, "unit-box", true);
+            _Handler("Built unit-box.");
         }
 
         private void unitFrustumToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _Helper(mkUnitFrustumIndices, mkUnitFrustumVertices, "unit-frustum");
+            _Helper(mkUnitFrustumIndices, mkUnitFrustumVertices, "unit-frustum", true);
+            _Handler("Built unit-frustum.");
         }
 
         private void unitQuadToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _Helper(mkUnitQuadIndices, mkUnitQuadVertices, "unit-quad");
+            _Helper(mkUnitQuadIndices, mkUnitQuadVertices, "unit-quad", false);
+            _Handler("Built unit-quad.");
         }
 
         private void unitSphereToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _Helper(mkUnitSphereIndices, mkUnitSphereVertices, "unit-sphere");
+            int[] indices;
+            float[] vertices;
+
+            Utilities.GenerateSphere(1.0f, 12, true, out indices, out vertices);
+
+            _Helper(indices, vertices, "unit-sphere", true);
+            _Handler("Built unit-sphere.");
         }
 
         private void instancingQuadToolStripMenuItem_Click(object sender, EventArgs e)
@@ -271,6 +303,7 @@ namespace jz.cb
             part.Vertices = Utilities.Convert(mkInstancingVertices);
 
             Helpers.Write(null, info, part);
+            _Handler("Built instancing-quad.");
         }
 
         private void processColladaToolStripMenuItem_Click(object sender, EventArgs e)

@@ -110,7 +110,7 @@ namespace jz.cb
             string outFilename = Path.Combine(aInfo.OutAbsDirectory, baseFilename) + ".dds";
 
             Write(aOut, refFilename);
-            if (!File.Exists(outFilename))
+            if (!File.Exists(outFilename) || File.GetLastWriteTime(v.Filename).Ticks > File.GetLastWriteTime(outFilename).Ticks)
             {
                 Texture conv = Texture.FromFile(Game.Manager.GraphicsDevice, v.Filename, (bDxt5) ? kTextureDxt5Parameters : kTextureWriteParameters);
                 conv.Save(outFilename, ImageFileFormat.Dds);
@@ -181,7 +181,7 @@ namespace jz.cb
                 string output = Path.Combine(aInfo.OutAbsDirectory, "engine_opengl_material.cgfx");
 
                 Write(aOut, reloutput);
-                if (!File.Exists(output))
+                if (!File.Exists(output) || File.GetLastWriteTime(input).Ticks > File.GetLastWriteTime(output).Ticks)
                 {
                     File.Copy(input, output);
                 }
@@ -194,12 +194,9 @@ namespace jz.cb
             string outFilename = Path.Combine(aInfo.OutAbsDirectory, baseFilename) + kEffectOutExtension;
 
             Write(aOut, refFilename);
-            if (!File.Exists(outFilename))
-            {
-                BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
-                writer.Write(aEffect.CompiledEffect.GetEffectCode());
-                writer.Close();
-            }
+            BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
+            writer.Write(aEffect.CompiledEffect.GetEffectCode());
+            writer.Close();
         }
 
         public static void Write(BinaryWriter aOut, DocInfo aInfo, JzMaterialContent aMaterial)
@@ -209,28 +206,25 @@ namespace jz.cb
             string outFilename = Path.Combine(aInfo.OutAbsDirectory, Path.GetFileNameWithoutExtension(aInfo.Filename) + "_" + baseFilename + kMaterialExtension);
 
             Helpers.Write(aOut, refFilename);
-            if (!File.Exists(outFilename))
+            BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
+            Helpers.Write(writer, (Int32)aMaterial.Parameters.Count);
+            foreach (JzMaterialContent.Parameter p in aMaterial.Parameters)
             {
-                BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
-                Helpers.Write(writer, (Int32)aMaterial.Parameters.Count);
-                foreach (JzMaterialContent.Parameter p in aMaterial.Parameters)
+                Helpers.Write(writer, p.Semantic);
+                Helpers.Write(writer, (Int32)p.Type);
+                switch (p.Type)
                 {
-                    Helpers.Write(writer, p.Semantic);
-                    Helpers.Write(writer, (Int32)p.Type);
-                    switch (p.Type)
-                    {
-                        case ParameterType.kSingle: Helpers.Write(writer, (float)p.Value); break;
-                        case ParameterType.kMatrix: Helpers.Write(writer, (Matrix)p.Value); break;
-                        case ParameterType.kTexture: Helpers.Write(writer, aInfo, (ExternalReference<TextureContent>)p.Value); break;
-                        case ParameterType.kVector2: Helpers.Write(writer, (Vector2)p.Value); break;
-                        case ParameterType.kVector3: Helpers.Write(writer, (Vector3)p.Value); break;
-                        case ParameterType.kVector4: Helpers.Write(writer, (Vector4)p.Value); break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
+                    case ParameterType.kSingle: Helpers.Write(writer, (float)p.Value); break;
+                    case ParameterType.kMatrix: Helpers.Write(writer, (Matrix)p.Value); break;
+                    case ParameterType.kTexture: Helpers.Write(writer, aInfo, (ExternalReference<TextureContent>)p.Value); break;
+                    case ParameterType.kVector2: Helpers.Write(writer, (Vector2)p.Value); break;
+                    case ParameterType.kVector3: Helpers.Write(writer, (Vector3)p.Value); break;
+                    case ParameterType.kVector4: Helpers.Write(writer, (Vector4)p.Value); break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
-                writer.Close();
             }
+            writer.Close();
         }
 
         public static void Write(BinaryWriter aOut, DocInfo aInfo, JzMeshContent.Part aIn)
@@ -240,20 +234,17 @@ namespace jz.cb
             string outFilename = Path.Combine(aInfo.OutAbsDirectory, Utilities.ExtractBaseFilename(Utilities.ExtractRelativeFilename(aInfo.InAbsDirectory, aInfo.Filename))) + "_" + baseFilename + kMeshExtension;
 
             if (aOut != null) { Helpers.Write(aOut, refFilename); }
-            if (!File.Exists(outFilename))
-            {
-                BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
-                Helpers.Write(writer, aIn.AABB);
-                Helpers.Write(writer, aIn.BoundingSphere);
-                Helpers.Write(writer, (Int32)aIn.PrimitiveCount);
-                Helpers.Write(writer, (Int32)aIn.PrimitiveType);
-                Helpers.Write(writer, (Int32)aIn.VertexCount);
-                Helpers.Write(writer, aInfo, aIn.VertexDeclaration);
-                Helpers.Write(writer, (Int32)aIn.VertexStrideInBytes);
-                Helpers.Write(writer, aIn.Indices);
-                Helpers.WriteBuffer(writer, aIn.Vertices);
-                writer.Close();
-            }
+            BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
+            Helpers.Write(writer, aIn.AABB);
+            Helpers.Write(writer, aIn.BoundingSphere);
+            Helpers.Write(writer, (Int32)aIn.PrimitiveCount);
+            Helpers.Write(writer, (Int32)aIn.PrimitiveType);
+            Helpers.Write(writer, (Int32)aIn.VertexCount);
+            Helpers.Write(writer, aInfo, aIn.VertexDeclaration);
+            Helpers.Write(writer, (Int32)aIn.VertexStrideInBytes);
+            Helpers.Write(writer, aIn.Indices);
+            Helpers.WriteBuffer(writer, aIn.Vertices);
+            writer.Close();
         }
 
         public static void Write(BinaryWriter aOut, DocInfo aInfo, VertexElement[] aVertexDeclaration)
@@ -263,22 +254,19 @@ namespace jz.cb
             string outFilename = Path.Combine(aInfo.OutAbsDirectory, Utilities.ExtractBaseFilename(Utilities.ExtractRelativeFilename(aInfo.InAbsDirectory, aInfo.Filename))) + "_" + baseFilename + kVertexDeclarationExtension;
 
             Write(aOut, refFilename);
-            if (!File.Exists(outFilename))
-            {
-                BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
+            BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
 
-                Write(writer, (UInt32)aVertexDeclaration.Length);
-                foreach (VertexElement e in aVertexDeclaration)
-                {
-                    Write(writer, (UInt16)e.Stream);
-                    Write(writer, (UInt16)e.Offset);
-                    Write(writer, (byte)e.VertexElementFormat);
-                    Write(writer, (byte)e.VertexElementMethod);
-                    Write(writer, (byte)e.VertexElementUsage);
-                    Write(writer, (byte)e.UsageIndex);
-                }
-                writer.Close();
+            Write(writer, (UInt32)aVertexDeclaration.Length);
+            foreach (VertexElement e in aVertexDeclaration)
+            {
+                Write(writer, (UInt16)e.Stream);
+                Write(writer, (UInt16)e.Offset);
+                Write(writer, (byte)e.VertexElementFormat);
+                Write(writer, (byte)e.VertexElementMethod);
+                Write(writer, (byte)e.VertexElementUsage);
+                Write(writer, (byte)e.UsageIndex);
             }
+            writer.Close();
         }
     }
 

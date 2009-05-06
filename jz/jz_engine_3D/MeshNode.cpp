@@ -41,6 +41,12 @@ namespace jz
             const MeshNode* p = static_cast<const MeshNode*>(apInstance);
             
             StandardEffect* pEffect = p->GetEffect().Get();
+
+            if (p->bThreePoint())
+            {
+                pEffect->SetThreePoint(p->GetThreePoint());
+            }
+
             pEffect->SetWit(p->GetWit());
             pEffect->SetWorld(p->GetWorldTransform());
 

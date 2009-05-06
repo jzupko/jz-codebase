@@ -1,8 +1,15 @@
 #ifndef _MATERIAL_FXH_
 #define _MATERIAL_FXH_
 
+#define JZ_ENABLE_SHADOW_SLOPE_SCALE_DEPTH_BIAS 0
+
 #include "../media/common.fxh"
 #include "../media/fb_common.fxh"
+
+///////////////////////////////////////////////////////////////////////////////
+// static constants
+///////////////////////////////////////////////////////////////////////////////
+static const float kSlopeScaleBiasFactor = 1.0;
 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros
@@ -341,20 +348,20 @@ float4x4 GetWorld(vsIn aIn)
 ///////////////////////////////////////////////////////////////////////////////
 vsOutShadow VertexShadow(vsIn aIn)
 {
-	vsOutShadow output;
+	vsOutShadow ret;
 	
 	float4 world = mul(aIn.Position, GetWorld(aIn));
 	float4 view = mul(world, GetView());
-	float4 proj = mul(view, GetProjection());	
+	float4 proj = mul(view, GetProjection());
 	
-	output.Position = proj;
-	output.ViewPosition = view;
+	ret.Position = proj;
+	ret.ViewPosition = view.xyz;
 	
 #   if defined(TRANSPARENT_TEXTURE)
-		output.TransparentTexCoords = aIn.TRANSPARENT_TEXCOORDS;
+		ret.TransparentTexCoords = aIn.TRANSPARENT_TEXCOORDS;
 #   endif		
 	
-	return output;
+	return ret;
 }
 
 vsOut VertexRender(vsIn aIn)
@@ -368,11 +375,6 @@ vsOut VertexRender(vsIn aIn)
 	ret.Position = proj;
 	ret.ViewPosition = view.xyz;
 	ret.ViewNormal = mul(aIn.Normal, GetWitV(aIn));
-	
-	// normals can get flipped if we're drawing two-sided or if a mesh has opposed
-	// coplanar triangles.
-	float3 ev = normalize(-view.xyz);
-	if (dot(ev, ret.ViewNormal) < 0.0) { ret.ViewNormal = -ret.ViewNormal; }
 	
 #	if defined(BUMP)
 		ret.ViewTangent = mul(aIn.Tangent, GetWitV(aIn));
@@ -609,17 +611,17 @@ float3 GetNormal(vsOut aIn)
 			return normalize(aIn.ViewNormal);
 #		endif
 #	else
-#		return float3(0, 0, 1);
+		return float3(0, 0, 1);
 #	endif
 }
 
 float3 GetLitColor(float3 nv, float3 aDiffuse, float3 aSpecular, vsOut aIn)
 {
 #	if (defined(DIFFUSE) || defined(REFLECTIVE))
-		float3 klv = (ThreePoint.KeyPosition - aIn.ViewPosition.xyz);
+		float3 klv = (mul(float4(ThreePoint.KeyPosition, 1), GetView()).xyz - aIn.ViewPosition.xyz);
 		float kd2 = dot(klv, klv);
-		float3 flv = (-ThreePoint.FillDirection);
-		float3 blv = (ThreePoint.BackPosition - aIn.ViewPosition.xyz);
+		float3 flv = (-mul(ThreePoint.FillDirection, (float3x3)GetView()));
+		float3 blv = (mul(float4(ThreePoint.BackPosition, 1), GetView()).xyz - aIn.ViewPosition.xyz);
 		float bd2 = dot(blv, blv);
 		
 		klv = normalize(klv);
@@ -658,14 +660,16 @@ float4 FragmentShadow(vsOutShadow aIn) : COLOR
 		clip(alpha - ALPHA_IS_OPAQUE_F);
 #	endif
 
-	float l = (length(aIn.ViewPosition) - GetNear()) / GetFar();
+	float l = (length(aIn.ViewPosition) - GetNear()) / (GetFar() - GetNear());
 	
-	float dx = ddx(l);
-	float dy = ddy(l);
-	
-	float l2 = (l * l) + (0.25 * ((dx * dx) + (dy * dy)));
-	
-	return float4(l, l2, 0, 0);
+#   if JZ_ENABLE_SHADOW_SLOPE_SCALE_DEPTH_BIAS
+        float dx = ddx(l);
+        float dy = ddx(l);
+
+        l = saturate(l + kSlopeScaleBiasFactor * sqrt((dx * dx) + (dy * dy)));
+#   endif
+
+	return float4(l, 0, 0, 0);
 }
 
 fullFbOut FragmentRender(vsOut aIn, uniform bool abIncludeInDeferred)
@@ -842,7 +846,9 @@ technique jz_Shadow
 # if defined(TRANSPARENT)
 		CullMode = None;
 # else
-		CullMode = BACK_FACE_CULLING;
+        // One-sided triangles should still cast shadow from both directions?
+        // The long term fix is probably to make sure all meshes are sealed, so this will not happen.
+		CullMode = None;//BACK_FACE_CULLING; 
 # endif
 
 		JZ_SHADOW_OUTPUT	
@@ -854,8 +860,13 @@ technique jz_Shadow
 		ZEnable = true;
 		ZWriteEnable = true;
 	
-		VertexShader = compile vs_2_a VertexShadow();
+#if JZ_ENABLE_SHADOW_SLOPE_SCALE_DEPTH_BIAS
+        VertexShader = compile vs_2_a VertexShadow();
 		PixelShader = compile ps_2_a FragmentShadow();
+#else
+        VertexShader = compile vs_2_0 VertexShadow();
+		PixelShader = compile ps_2_0 FragmentShadow();
+#endif
 	}
 }
 

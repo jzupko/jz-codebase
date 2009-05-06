@@ -311,17 +311,6 @@ namespace jz
             return bReturn;
         }
 
-        static Matrix4 OrthoInvert(const Matrix4& m)
-        {
-            Matrix4 ret(
-                 m.M11,  m.M21,  m.M31, 0,
-                 m.M12,  m.M22,  m.M32, 0,
-                 m.M13,  m.M23,  m.M33, 0,
-                -m.M41, -m.M42, -m.M43, 1);
-
-            return ret;
-        }
-
         static Matrix4 Invert(const Matrix4& m);
 
         static Matrix4 Lerp(const Matrix4& a, const Matrix4& b, float aWeightOfB)

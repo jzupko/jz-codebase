@@ -147,6 +147,12 @@ namespace jz
             {
                 return dynamic_cast<T*>(Clone(apParent, kSceneNodeDefaultCloneIdPostfix));
             }
+
+            template <>
+            AutoPtr<SceneNode> Clone<SceneNode>(SceneNode* apParent)
+            {
+                return Clone(apParent, kSceneNodeDefaultCloneIdPostfix);
+            }
             
             AutoPtr<SceneNode> Clone(SceneNode* apParent, const string& aCloneIdPostfix);
 
@@ -194,8 +200,8 @@ namespace jz
             SceneNode(const SceneNode&);
             SceneNode& operator=(const SceneNode&);
 
-            string mId;
             bool mbDirty;
+            string mId;
 
             typedef map<string, SceneNode*> Container;
             typedef map<string, RetrieveAction> RetrieveContainer;

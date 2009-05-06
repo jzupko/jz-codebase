@@ -50,12 +50,15 @@
 		StencilEnable = false; \
 		TwoSidedStencilMode = false;
 
+static const float3 kNtscGrayscaleFactors = float3(0.299, 0.587, 0.114);
+
 static const float3 kBlack3 = float3(0, 0, 0);
 static const float4 kBlack4 = float4(0, 0, 0, 1);
 
 static const float kInfiniteProjEpsilon = (2.4e-4 - 1.0);
 
 static const float3 kZero3 = float3(0, 0, 0);
+static const float4 kZero4 = float4(0, 0, 0, 0);
 static const float3 kOne3 = float3(1.0, 1.0, 1.0);
 
 static const float kLooseTolerance = 1e-3;
@@ -103,6 +106,68 @@ float4 ConstantColor : jz_ConstantColor = kBlack4;
 float4x4 Wit : jz_Wit = kIdentity;
 float4x4 World : jz_World = kIdentity;
 
+float ComponentMax(float3x3 v)
+{
+    float c0 = max(max(v._11, v._12), v._13);
+    float c1 = max(max(v._21, v._22), v._23);
+    float c2 = max(max(v._31, v._32), v._33);
+
+    float ret = max(max(c0, c1), c2);
+
+    return ret;
+}
+
+float ComponentMin(float3x3 v)
+{
+    float c0 = min(min(v._11, v._12), v._13);
+    float c1 = min(min(v._21, v._22), v._23);
+    float c2 = min(min(v._31, v._32), v._33);
+
+    float ret = min(min(c0, c1), c2);
+
+    return ret;
+}
+
+float ComponentMean(float3x3 v)
+{
+    static const float k = (1.0 / 9.0);
+
+    float ret = v._11 + v._12 + v._13 +
+                v._21 + v._22 + v._23 +
+                v._31 + v._32 + v._33;
+
+    ret *= k;
+
+    return ret;
+}
+
+float ComponentVariance(float3x3 v, float mean)
+{
+    static const float k = (1.0 / (9.0 - 1.0));
+
+    float3x3 c = float3x3(mean, mean, mean,
+                          mean, mean, mean,
+                          mean, mean, mean);
+
+    float3x3 t = (v - c);
+    float3x3 t2 = (t * t);
+
+    float ret = t2._11 + t2._12 + t2._13 +
+                t2._21 + t2._22 + t2._23 +
+                t2._31 + t2._32 + t2._33;
+
+    ret *= k;
+
+    return ret;
+}
+
+float ComponentStdDev(float3x3 v, float mean)
+{
+    float ret = sqrt(ComponentVariance(v, mean));
+
+    return ret;
+}
+
 float3 GammaColor(uniform float3 aColor)
 {
 	float3 ret;
@@ -115,7 +180,14 @@ float3 GammaColor(uniform float3 aColor)
 
 float4 LinearToNonLinear(float4 aColor)
 {
-	return float4(pow(aColor.rgb, (1.0 / Gamma)), aColor.a);
+#   pragma warning (push)
+#   pragma warning (disable : 3571)
+    
+    float4 ret = float4(pow(aColor.rgb, (1.0 / Gamma)), aColor.a);
+
+#   pragma warning (pop)
+
+    return ret;
 }
 
 float4 GammaColor(uniform float4 aColor)
@@ -248,11 +320,14 @@ float3x3 GetInverseTranspose(float3x3 m)
 
 float4x4 GetOrthoInverse(float4x4 m)
 {
-	float4x4 ret = float4x4(
-	    m._11,  m._21,  m._31, 0,
-	    m._12,  m._22,  m._32, 0,
-	    m._13,  m._23,  m._33, 0,
-	   -m._41, -m._42, -m._43, 1);
+    float3x3 r = transpose((float3x3)m);
+    float3 t = mul(-float3(m._41, m._42, m._43), r);
+
+    float4x4 ret = float4x4(
+        r._11, r._12, r._13, 0,
+        r._21, r._22, r._23, 0,
+        r._31, r._32, r._33, 0,
+        t.x, t.y, t.z, 1);
 	   
 	return ret;
 }

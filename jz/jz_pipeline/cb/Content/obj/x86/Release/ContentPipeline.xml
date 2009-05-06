@@ -6,10 +6,10 @@
       <TargetPlatform>Windows</TargetPlatform>
       <BuildConfiguration>Release</BuildConfiguration>
       <CompressContent>true</CompressContent>
-      <RootDirectory>D:\dev\jz\jz_pipeline\cb\Content\</RootDirectory>
-      <LoggerRootDirectory>D:\dev\jz\jz_pipeline\cb\</LoggerRootDirectory>
-      <IntermediateDirectory>D:\dev\jz\jz_pipeline\cb\Content\obj\x86\Release\</IntermediateDirectory>
-      <OutputDirectory>D:\dev\bin\release\Content\</OutputDirectory>
+      <RootDirectory>D:\jz_dev\jz\jz_pipeline\cb\Content\</RootDirectory>
+      <LoggerRootDirectory>D:\jz_dev\jz\jz_pipeline\cb\</LoggerRootDirectory>
+      <IntermediateDirectory>D:\jz_dev\jz\jz_pipeline\cb\Content\obj\x86\Release\</IntermediateDirectory>
+      <OutputDirectory>D:\jz_dev\bin\release\Content\</OutputDirectory>
     </Settings>
     <Assemblies>
       <Assembly>

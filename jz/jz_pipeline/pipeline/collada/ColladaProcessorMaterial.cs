@@ -372,6 +372,10 @@ namespace jz.pipeline.collada
                 {
                     throw new Exception("Error: standard effect building failed, \"" + compiledEffect.ErrorsAndWarnings + "\"");
                 }
+                else if (compiledEffect.ErrorsAndWarnings != string.Empty)
+                {
+                    bool bFalse = true;
+                }
 
                 arEffect = new JzEffectContent(compiledEffect);
                 arEffect.Id = Utilities.ExtractBaseFilename(kStandardEffectFile) + "_" + (effectId.GetHashCode().ToString()) + ".fx";

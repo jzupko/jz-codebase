@@ -92,23 +92,6 @@ float3 GetReflectionVector(float3 n, float3 lv, float ndotl)
     return (2.0 * ndotl * n) - lv;
 }
 
-float GetShadowFactor(sampler aSampler, float2 aShadowDelta, float4 aShadowTexCoords, float4 aShadowScaleShift, float aPixelDepth, float aBleedReduction)
-{
-	float2 coords = ((aShadowTexCoords.xy / aShadowTexCoords.w) * aShadowScaleShift.xy) + aShadowScaleShift.zw;
-	float2 moments = tex2D(aSampler, coords).xy;
-	
-	float p = (aPixelDepth <= moments.x);
-	float var = max((moments.y - (moments.x * moments.x)), kZeroTolerance);
-	
-	float d = (aPixelDepth - moments.x);
-	float p_max = var / (var + (d * d));
-	p_max = clamp(((p_max - aBleedReduction) / (1.0 - aBleedReduction)), 0.0, 1.0);
-		
-	float ret = max(p, p_max);
-	
-	return ret;
-}
-
 float GetSpecularFactor(float3 ev, float3 rv, 
                         float ndotl, float shininess)
 {

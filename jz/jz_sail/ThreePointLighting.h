@@ -90,7 +90,7 @@ namespace jz
             const LightLearner& GetLightLearner() const { return mLearner; }
             LightLearner& GetLightLearner() { return mLearner; }
 
-            void Tick(float aElapsedTime, const Matrix4& aInverseViewTransform, const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights, LightSettings& arSettings);
+            bool Tick(const Matrix4& aInverseViewTransform, const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights, LightSettings& arSettings);
 
         private:
             ThreePointLighting(const ThreePointLighting&);
@@ -111,6 +111,7 @@ namespace jz
             Radian mCameraPitch;
             Radian mDesiredCameraYaw;
             Radian mDesiredCameraPitch;
+            float mLastTick;
 
             LightLearner mLearner;
 
@@ -130,7 +131,7 @@ namespace jz
             Vector3 _GetKeyWorldDirection(const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights);
             void _GetRollYaw(const Vector3& aDirection, Radian& arRoll, Radian& arYaw);
             void _GetYawPitch(const Vector3& aDirection, Radian& arYaw, Radian& arPitch);
-            void _UpdateHelper(float aElapsedTime, const Matrix4& aInverseViewTransform, const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights, Vector3& arKeyWorldDir, Vector3& arBackWorldDir);
+            bool _UpdateHelper(float aElapsedTime, const Matrix4& aInverseViewTransform, const BoundingSphere& aTargetBS, const vector<MotivatingLight>& aMotivatingLights, Vector3& arKeyWorldDir, Vector3& arBackWorldDir);
         };
 
     }

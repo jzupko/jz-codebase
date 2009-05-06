@@ -86,7 +86,7 @@ namespace jz
                     natural WindowTopBorder;
                 };
 
-                Graphics();
+                Graphics(bool abStartFullscreen = false);
                 ~Graphics();
 
                 bool Begin(const ColorRGBA& aClearColor = ColorRGBA::kBlack, bool abClear = true);

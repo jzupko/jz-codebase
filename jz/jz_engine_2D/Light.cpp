@@ -34,11 +34,10 @@ namespace jz
     namespace engine_2D
     {
 
-        static const float kMinLuminance = (float)(1.0 / 255.0);
         static float CalculateLightRange(const ColorRGB& v)
         {
             float val = v.Max();
-            float ret = Sqrt(val / kMinLuminance);
+            float ret = Sqrt(val / Constants<float>::kMinLuminance);
 
             return ret;
         }

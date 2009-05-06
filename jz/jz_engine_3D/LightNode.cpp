@@ -33,7 +33,6 @@ namespace jz
         static const float kNearPlaneScale = 4.38e-4f;
         static const float kFarPlaneScale = 1.0f;
         static const float kMaxLightRange = Sqrt(Constants<float>::kMax * 0.5f);
-        static const float kMinLuminance = 0.004f;
 
         float CalculateLightRange(const Vector3& aLightAttenuation, const Vector3& aLightDiffuse)
         {
@@ -45,19 +44,27 @@ namespace jz
                 // max / (x + (y * d) + (z * d * d)) = kMinLuminance
                 // (max / kMinLuminance) = (x + (y * d) + (z * d * d))
                 // 0 = ((x - (max / kMinLuminance)) + (y * d) + (z * d * d))
+                
+                // Quadratic equation                
+                // 0 = c + (y * d) + (z * (d *d))
+                // 0 = c + (b * d) + (a * d^2)
                 float a = aLightAttenuation.Z;
                 float b = aLightAttenuation.Y;
-                float c = (aLightAttenuation.X - (max / kMinLuminance));
+                float c = (aLightAttenuation.X - (max / Constants<float>::kMinLuminance));
 
+                // Quadratic formula
                 ret = (-b + Sqrt((b * b) - (4 * a * c))) / (2.0f * a);
             }
             else if (!AboutZero(aLightAttenuation.Y))
             {
-                ret = ((max / kMinLuminance) - aLightAttenuation.X) / aLightAttenuation.Y;
+                ret = ((max / Constants<float>::kMinLuminance) - aLightAttenuation.X) / aLightAttenuation.Y;
             }
-            else if (!AboutZero(aLightAttenuation.X))
+            else if (aLightAttenuation.X >= Constants<float>::kMinLuminance)
             {
-                ret = kMaxLightRange;
+                if (max >= Constants<float>::kMinLuminance)
+                {
+                    ret = kMaxLightRange;
+                }
             }
 
             return ret;
@@ -168,11 +175,6 @@ namespace jz
                         mWorldBounding = bounding;
                         mbValidBounding = true;
                     }
-
-                    //Jare jare = Jare.Singleton;
-                    //jare.Lights.Remove(this);
-                    //mAABB = BoundingBox.CreateFromSphere(mWorldBounding);
-                    //jare.Lights.Add(this);
                 }
                 #pragma endregion
 

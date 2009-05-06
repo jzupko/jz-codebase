@@ -24,8 +24,6 @@
 #ifndef _JZ_ENGINE_3D_STANDARD_EFFECT_H_
 #define _JZ_ENGINE_3D_STANDARD_EFFECT_H_
 
-#include <jz_core/Color.h>
-#include <jz_core/Vector3.h>
 #include <jz_graphics/Effect.h>
 #include <string>
 
@@ -35,18 +33,7 @@ namespace jz
     namespace engine_3D
     {
 
-        struct ThreePoint
-        {
-	        Vector3 KeyPosition;
-	        ColorRGB KeyDiffuse;
-	        ColorRGB KeySpecular;
-	        Vector3 FillDirection;
-	        float KeyToFillRatio;
-	        Vector3 BackPosition;
-	        ColorRGB BackDiffuse;
-	        ColorRGB BackSpecular;
-        };
-
+        struct ThreePoint;
         class StandardEffect : public graphics::Effect
         {
         public:
