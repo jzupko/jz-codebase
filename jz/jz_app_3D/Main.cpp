@@ -29,6 +29,7 @@
 #define START_FULLSCREEN 0
 #define ADD_CAMERA_LIGHT 0
 #define DISABLE_ENVIRONMENT_LIGHTS 0
+#define ADD_MIRROR 1
 
 // Note: deferred must currently always be enabled. Forward rendering has not been completely implemented.
 #define DEFERRED 1
@@ -43,6 +44,8 @@
 #include <jz_engine_3D/IShadowable.h>
 #include <jz_engine_3D/MeshNode.h>
 #include <jz_engine_3D/PhysicsNode.h>
+#include <jz_engine_3D/PickMan.h>
+#include <jz_engine_3D/ReflectivePlaneNode.h>
 #include <jz_engine_3D/RenderMan.h>
 #include <jz_engine_3D/SceneNode.h>
 #include <jz_engine_3D/SceneReader.h>
@@ -185,10 +188,38 @@
         }
     }
 
+    static void Reflect(const ::jz::Region& aReflectedFrustum, ::jz::engine_3D::ReflectivePlaneNode* apNode, ::jz::engine_3D::IReflectable* p)
+    {
+        if (aReflectedFrustum.Test(p->GetAABB()) != jz::Geometric::kDisjoint)
+        {
+            p->PoseForReflection(apNode);
+        }
+    }
+
+    static void Reflector(const ::jz::Region& aViewFrustum, const ::jz::engine_3D::SceneNodePtr& apRoot, ::jz::engine_3D::ReflectivePlaneNode* p)
+    {
+        if (p->GetReflectionHandle() >= 0)
+        {
+            if (aViewFrustum.Test(p->GetWorldBounding()) != jz::Geometric::kDisjoint)
+            {
+                const ::jz::Plane& plane = p->GetReflectionPlane();
+                size_t size = aViewFrustum.Planes.size();
+                ::jz::Matrix4 m = ::jz::Matrix4::CreateReflection(plane);
+
+                ::jz::Region reflectedFrustum(::jz::Vector3::TransformPosition(m, aViewFrustum.Center), aViewFrustum.Planes.size());
+
+                for (size_t i = 0u; i < size; i++)
+                {
+                    reflectedFrustum.Planes[i] = ::jz::Plane::Transform(m, aViewFrustum.Planes[i]);
+                }
+
+                apRoot->Apply<::jz::engine_3D::IReflectable>(std::tr1::bind(Reflect, reflectedFrustum, p, std::tr1::placeholders::_1));
+            }
+        }
+    }
+
     // Called "control term" to allow for testing different shadow techniques.
-    // Currently, a scaling factor for a smoothstep depth biasing scheme.
-    // Should be > 0 to reduce shadow acne. Higher values create a fake soft
-    // shadowing effect.
+    // Currently, a scaling factor for an exp() depth biasing scheme.
     // This is currently a global term. Eventually, it should be attached to individal LightNodes.
     static const float kShadowControlStep = 0.01f;
     static const float kGaussianStdDevStep = 0.1f;
@@ -243,6 +274,94 @@
         }
 #   endif
 
+    namespace jz
+    {
+        static engine_3D::SceneNode* gspRoot = null;
+        static Vector3 gsLocalPickPoint = Vector3::kZero;
+        static float gsPickedDepth = 0.0f;
+        static engine_3D::MeshNode* gspPickedNode = null;
+
+        static void PickHelper(engine_3D::MeshNode* p, const Ray3D& ray)
+        {
+            float distance;
+            if (ray.Intersects(p->GetAABB(), distance))
+            {
+                p->Pick(ray);
+            }
+        }
+
+        static void PickMoveHandler(natural x, natural y)
+        {
+            if (gspPickedNode)
+            {
+                Vector3 vp = Vector3::TransformPosition(gspPickedNode->GetWorldTransform(), gsLocalPickPoint);
+                Vector3 vpp = engine_3D::PickMan::GetSingleton().Project(vp);
+                
+                vpp.X = (float)x;
+                vpp.Y = (float)y;
+
+                Vector3 up = engine_3D::PickMan::GetSingleton().UnProject(vpp);
+
+                gspPickedNode->SetWorldTranslation(
+                    gspPickedNode->GetWorldTranslation() + (up - vp));
+            }
+        }
+
+        static bool PickHandler(system::Mouse::Button aButton, system::Mouse::State aState)
+        {
+            using namespace engine_3D;
+            using namespace system;
+            
+            if (aButton == Mouse::kRight)
+            {
+                if (aState == Mouse::kPressed && !gspPickedNode)
+                {
+                    natural x = Input::GetSingleton().GetMouseX();
+                    natural y = Input::GetSingleton().GetMouseY();
+
+                    Ray3D ray = PickMan::GetSingleton().GetPickingRay(x, y);
+
+                    gspRoot->Apply<MeshNode>(tr1::bind(PickHelper, tr1::placeholders::_1, ray));
+
+                    #pragma region Render and handle pick
+                    {
+                        IPickable* p;
+                        float depth;
+                        RectangleU rect;
+                        rect.Top = y;
+                        rect.Bottom = (y + 1);
+                        rect.Left = x;
+                        rect.Right = (x + 1);
+
+                        if (PickMan::GetSingleton().Pick(rect, p, depth))
+                        {
+                            gspPickedNode = dynamic_cast<engine_3D::MeshNode*>(p);
+
+                            if (gspPickedNode)
+                            {
+                                gsPickedDepth = depth;
+
+                                Vector3 v = Vector3((float)x, (float)y, depth);
+                                Vector3 wv = PickMan::GetSingleton().UnProject(v);
+                                gsLocalPickPoint = Vector3::TransformPosition(Matrix4::Invert(gspPickedNode->GetWorldTransform()), wv);
+                            }
+                        }
+                    }
+                    #pragma endregion
+                }
+                else
+                {
+                    gsLocalPickPoint = Vector3::kZero;
+                    gspPickedNode = null;
+                    gsPickedDepth = 0.0f;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+    }
 
     int WINAPI WinMain(HINSTANCE aWindowInstance, HINSTANCE, LPSTR, int)
     {
@@ -287,6 +406,13 @@
 #endif
                     {
                         RenderMan man;
+                        PickMan pm;
+
+                        Input::ButtonEvent::Entry pickConnection;
+                        Input::MouseMoveEvent::Entry pickMoveConnection;
+
+                        input.OnButton.Add<PickHandler>(pickConnection);
+                        input.OnMouseMoveAbsolute.Add<PickMoveHandler>(pickMoveConnection);
 
 #                       ifdef DEFERRED
                             Deferred::GetSingleton().SetActive(true);
@@ -310,6 +436,7 @@
 
                         //files.AddArchive(new ZipArchive("compiled.zip"));
                         SceneNodePtr pRoot(LoadScene("1930\\1930_room.scn"));
+                        jz::gspRoot = pRoot.Get();
                         pWoman->SetParent(pRoot.Get());
                         pWoman->Apply<AnimatedMeshNode>(ActivateAnimation);
 
@@ -337,6 +464,16 @@
                             pCameraLight->SetFalloffExponent(10.0f);
                             pCameraLight->SetLocalTranslation(Vector3::kBackward * 0.25f + Vector3::kRight * 0.25f);
                         }   
+#                       endif
+
+#                       if ADD_MIRROR
+                        {
+                            ReflectivePlaneNodePtr pMirror(new ReflectivePlaneNode());
+                            pMirror->SetReflectionPlane(Plane(Vector3::kBackward, 0.0f));
+                            pMirror->SetParent(pRoot.Get());
+                            pMirror->SetEffect(graphics.Create<StandardEffect>("..\\media\\mirror.cfx"));
+                            pMirror->SetMesh(RenderMan::GetSingleton().GetUnitQuadMesh());
+                        }
 #                       endif
 
                         float ar = ((float)graphics.GetViewportWidth()) / ((float)graphics.GetViewportHeight());
@@ -371,6 +508,12 @@
                         ideal.Yaw =0.8952829f;
                         lighting.SetIdeal(ideal);
 
+                        // Temp: FPS
+                        float timeDelta = 0.0f;
+                        float fps = 0.0f;
+                        unatural frameCount = 0u;
+                        // End Temp:
+
                         MSG msg; 
                         memset(&msg, 0, sizeof(MSG));
                         while (msg.message != WM_QUIT)
@@ -386,6 +529,17 @@
                                 Time::GetSingleton().Tick();
                                 float t = Time::GetSingleton().GetElapsedSeconds();
                                 loader.Tick();
+
+                                // FPS
+                                timeDelta += t;
+                                frameCount++;
+                                if (timeDelta > 1.0f)
+                                {
+                                    fps = (frameCount / timeDelta);
+                                    timeDelta = 0.0f;
+                                    frameCount = 0u;
+                                }
+                                // End
 
                                 womanPosition += (kWomanMovement * womanDirection * t);
                                 if (womanPosition < kWomanMin) { womanPosition = kWomanMin; womanDirection = -womanDirection; }
@@ -428,6 +582,7 @@
                                         Vector3 prev = (pCamera->GetWorldTranslation());
                                         pCamera->Update();
                                         Vector3 lv = (pCamera->GetWorldTranslation() - prev) / t;
+
                                         if (lv.LengthSquared() > Constants<float>::kZeroTolerance)
                                         {
                                             pCameraBody->SetVelocity(lv);
@@ -437,12 +592,17 @@
                                             pCameraBody->SetVelocity(Vector3::kZero);
                                         }
                                     }
-                                    bool bCameraBodyDirty = pCameraBody.IsValid() && (pCameraBody->GetVelocity().LengthSquared() > 0.0f);
+
                                     pRoot->Update();
-                                    if (bCameraBodyDirty)
+                                    
+                                    if (!Vector3::AboutEqual(pCamera->GetWorldTranslation(), pCameraBody->GetTranslation(), Constants<float>::kLooseTolerance))
                                     {
+                                        // Ewwwwww.
                                         pCamera->SetWorldTranslation(pCameraBody->GetTranslation());
+                                        float moveRate = pCamera->GetMoveRate();
+                                        pCamera->SetMoveRate(0.0f);
                                         pCamera->Update();
+                                        pCamera->SetMoveRate(moveRate);
                                     }
                                 }
                                 #pragma endregion
@@ -451,6 +611,11 @@
                                 Region frustum(-man.GetView().GetTranslation(), man.GetView() * man.GetProjection());
                                 pRoot->Apply<IRenderable>(tr1::bind(Poser, frustum, tr1::placeholders::_1));
                                 pRoot->Apply<LightNode>(tr1::bind(Lighter, frustum, pRoot, tr1::placeholders::_1));
+                                pRoot->Apply<ReflectivePlaneNode>(tr1::bind(Reflector, frustum, pRoot, tr1::placeholders::_1));
+                                #pragma endregion
+
+                                #pragma region Debug text
+                                // man.AddConsoleLine("FPS: " + StringUtility::ToString(fps));
                                 #pragma endregion
 
                                 #pragma region Draw

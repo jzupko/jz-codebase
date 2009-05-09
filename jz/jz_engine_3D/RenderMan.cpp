@@ -25,6 +25,7 @@
 #include <jz_engine_3D/Deferred.h>
 #include <jz_engine_3D/MeshNode.h>
 #include <jz_engine_3D/RenderMan.h>
+#include <jz_engine_3D/ReflectionMan.h>
 #include <jz_engine_3D/ShadowMan.h>
 #include <jz_engine_3D/SimpleEffect.h>
 #include <jz_engine_3D/StandardEffect.h>
@@ -36,6 +37,9 @@
 #include <jz_graphics/RenderOps.h>
 #include <jz_graphics/VertexDeclaration.h>
 #include <algorithm>
+
+// Temp:
+#include <jz_graphics/Font.h>
 
 namespace jz
 {
@@ -85,6 +89,10 @@ namespace jz
             using namespace graphics;
             Graphics& graphics = Graphics::GetSingleton();
 
+            // Temp:
+            mpConsole = graphics.Create<Font>(16u, 32u, 0u, "Arial");
+            // End Temp:
+
             mpSimpleEffect = graphics.Create<SimpleEffect>(kSimpleEffect);
             mpUnitBox = graphics.Create<Mesh>(kUnitBox);
             mpUnitFrustum = graphics.Create<Mesh>(kUnitFrustum);
@@ -102,12 +110,14 @@ namespace jz
 #           undef JZ_HELPER
 
             mpDeferred = new Deferred();
+            mpReflectionMan = new ReflectionMan();
             mpShadowMan = new ShadowMan();
         }
 
         RenderMan::~RenderMan()
         {
             SafeDelete(mpShadowMan);
+            SafeDelete(mpReflectionMan);
             SafeDelete(mpDeferred);
 
             mpUnitSphere.Reset();
@@ -118,24 +128,31 @@ namespace jz
             mpSimpleEffect.Reset();
         }
 
-        const graphics::MeshPtr& RenderMan::GetUnitBoxMesh() const
+        // Temp:
+        void RenderMan::AddConsoleLine(const string& s)
         {
-            return mpUnitBox;
+            mConsoleText += (s + "\n");
+        }
+        // End temp:
+
+        graphics::Mesh* RenderMan::GetUnitBoxMesh() const
+        {
+            return (mpUnitBox.Get());
         }
 
-        const graphics::MeshPtr& RenderMan::GetUnitQuadMesh() const
+        graphics::Mesh* RenderMan::GetUnitQuadMesh() const
         {
-            return mpUnitQuad;
+            return (mpUnitQuad.Get());
         }
 
-        const graphics::MeshPtr& RenderMan::GetUnitFrustumMesh() const
+        graphics::Mesh* RenderMan::GetUnitFrustumMesh() const
         {
-            return mpUnitFrustum;
+            return (mpUnitFrustum.Get());
         }
 
-        const graphics::MeshPtr& RenderMan::GetUnitSphereMesh() const
+        graphics::Mesh* RenderMan::GetUnitSphereMesh() const
         {
-            return mpUnitSphere;
+            return (mpUnitSphere.Get());
         }
 
         inline float SortForOpaque(float v) { return -v; }
@@ -147,7 +164,7 @@ namespace jz
             if ((r.Flags & RenderPack::kTransparent) != 0)
             {
                 float sort = SortForTransparent(r.Sort);
-                RenderNode* node = &mRenderTransparent;
+                RenderNode* node = ((r.Flags & RenderPack::kReflection) != 0) ? &mRenderReflectionTransparent : &mRenderTransparent;
                 if (r.PreEffectFunc) { node = node->AdoptSorted(r.PreEffectFunc, r.PreEffectFuncParam, sort); }
                 if (r.pEffect.IsValid()) { node = node->AdoptSorted(RenderOperations::SetEffect, r.pEffect.Get(), sort); }
                 if (r.PostEffectFunc) { node = node->AdoptSorted(r.PostEffectFunc, r.PostEffectFuncParam, sort); }
@@ -160,7 +177,7 @@ namespace jz
             else if ((r.Flags & RenderPack::kOpaque) != 0)
             {
                 float sort = SortForOpaque(r.Sort);
-                RenderNode* node = &mRenderOpaque;
+                RenderNode* node = ((r.Flags & RenderPack::kReflection) != 0) ? &mRenderReflectionOpaque : &mRenderOpaque;
                 if (r.PreEffectFunc) { node = node->AdoptAndUpdateSort(r.PreEffectFunc, r.PreEffectFuncParam, sort); }
                 if (r.pEffect.IsValid()) { node = node->AdoptAndUpdateSort(RenderOperations::SetEffect, r.pEffect.Get(), sort); }
                 if (r.PostEffectFunc) { node = node->AdoptAndUpdateSort(r.PostEffectFunc, r.PostEffectFuncParam, sort); }
@@ -194,20 +211,55 @@ namespace jz
             {
                 if (mpDeferred->bActive())
                 {
+                    graphics.BeginGraphicsEventMark("Shadow map generation.");
                     mpShadowMan->Pre();
                     mRenderShadow.RenderChildren();
                     mpShadowMan->Post();
+                    graphics.EndGraphicsEventMark();
 
+                    graphics.BeginGraphicsEventMark("Reflection map generation.");
+                    SetStandardParameters();
+                    mpReflectionMan->Pre();
+                    graphics.BeginGraphicsEventMark("Opaque.");
+                    mRenderReflectionOpaque.RenderChildren();
+                    graphics.EndGraphicsEventMark();
+                    graphics.BeginGraphicsEventMark("Transparent.");
+                    mRenderReflectionTransparent.RenderChildren();
+                    graphics.EndGraphicsEventMark();
+                    mpReflectionMan->Post();
+                    graphics.EndGraphicsEventMark();
+
+                    graphics.BeginGraphicsEventMark("Main pass.");
                     mpDeferred->Begin(mClearColor);
                 }
+                else
+                {
+                    graphics.BeginGraphicsEventMark("Main pass.");
+                    SetStandardParameters();
+                }
 
-                _SetStandardParameters();
-
+                graphics.BeginGraphicsEventMark("Opaque.");
                 mRenderOpaque.RenderChildren();
+                graphics.EndGraphicsEventMark();
 
+                graphics.BeginGraphicsEventMark("Transparent.");
                 if (mpDeferred->bActive()) { mpDeferred->PreTransparency(); }
                 mRenderTransparent.RenderChildren();
+                graphics.EndGraphicsEventMark();
                 if (mpDeferred->bActive()) { mpDeferred->End(); }
+                graphics.EndGraphicsEventMark();
+
+                // Temp:
+                if (mConsoleText.size() > 0u)
+                {
+                    if (mpConsole->IsReset()) 
+                    {
+                        mpConsole->RenderText(mConsoleText.c_str(),
+                            0, 0, graphics.GetViewportWidth(), (natural)(graphics.GetViewportHeight() * 0.5), 0, ColorRGBA::kWhite);
+                    }
+                    mConsoleText.clear();
+                }
+                // End Temp:
 
                 graphics.End();
 
@@ -221,12 +273,14 @@ namespace jz
         void RenderMan::_ResetTrees()
         {
             mRenderOpaque.Reset();
+            mRenderReflectionOpaque.Reset();
+            mRenderReflectionTransparent.Reset();
             mRenderShadow.Reset();
             mRenderTransparent.Reset();
             graphics::RenderNode::ResetGlobal();
         }
 
-        void RenderMan::_SetStandardParameters()
+        void RenderMan::SetStandardParameters()
         {
             using namespace graphics;
             Graphics& g = Graphics::GetSingleton();

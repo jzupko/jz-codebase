@@ -43,7 +43,9 @@ namespace jz
             AnimatedMeshNode(const string& aId);
             virtual ~AnimatedMeshNode();
 
+            virtual void Pick(const Ray3D& aRay) override;
             virtual void PoseForRender() override;
+            virtual void PoseForShadow(LightNode* apLight) override;
 
             const AnimationControlPtr& GetAnimationControl() const { return mpAnimationControl; }
             

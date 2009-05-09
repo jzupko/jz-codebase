@@ -40,14 +40,20 @@ namespace jz
             bool IsAlpha1Bit() const;
             bool IsAnimated() const;
             bool IsNonDeferred() const;
+            bool IsPickable() const;
+            bool IsReflectable() const;
             bool IsShadowable() const;
             bool IsThreePoint() const;
             bool IsTransparent() const;
                    
+            graphics::Technique GetPickingTechnique() const { return mPickingTechnique; }
             graphics::Technique GetRenderTechnique() const { return mRenderTechnique; }
+            graphics::Technique GetReflectionTechnique() const { return mReflectionTechnique; }
             graphics::Technique GetShadowTechnique() const { return mShadowTechnique; }
             graphics::Technique GetNonDeferredTechnique() const { return mNonDeferredTechnique; }
 
+            void SetConstantColor(const ColorRGBAu& c) { SetConstantColor(ColorRGBA(c)); }
+            void SetConstantColor(const ColorRGBA& c);
             void SetSkinning(const MemoryBuffer<Vector4>& m);
             void SetThreePoint(const ThreePoint& tp);
             void SetWit(const Matrix4& m);
@@ -60,8 +66,11 @@ namespace jz
             JZ_EXPORT virtual State _Unload() override;
 
             graphics::Technique mNonDeferredTechnique;
+            graphics::Technique mPickingTechnique;
+            graphics::Technique mReflectionTechnique;
             graphics::Technique mRenderTechnique;
             graphics::Technique mShadowTechnique;
+            graphics::Parameter<ColorRGBA> mConstantColorParameter;
             graphics::Parameter<Vector4> mSkinningParameter;
             graphics::Parameter<ThreePoint> mThreePointParameter;
             graphics::Parameter<Matrix4> mWorldParameter;

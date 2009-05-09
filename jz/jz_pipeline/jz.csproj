@@ -78,6 +78,7 @@
   <ItemGroup>
     <Compile Include="AnimationKeyFrame.cs" />
     <Compile Include="ConfigFile.cs" />
+    <Compile Include="Matrix3.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tree.cs" />
     <Compile Include="Triangle.cs" />

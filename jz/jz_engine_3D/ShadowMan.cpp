@@ -86,6 +86,11 @@ namespace jz
             return ret;
         }
 
+        graphics::DepthStencilSurface* ShadowMan::GetShadowDepthStencil() const
+        {
+            return (mpDsSurface.Get());
+        }
+
         graphics::Target* ShadowMan::GetShadowTarget() const
         {
             return (mpShadowTarget.Get());

@@ -276,6 +276,16 @@ struct vsIn
 
 };
 
+struct vsOutPicking
+{
+	float4 Position : POSITION;
+	float4 PositionH : TEXCOORD0;
+	
+#	if defined(TRANSPARENT_TEXTURE)
+		float2 TransparentTexCoords : TEXCOORD1;
+#	endif	
+};
+
 struct vsOutShadow
 {
 	float4 Position : POSITION;
@@ -313,6 +323,23 @@ struct vsOut
 #	endif
 };
 
+struct vsOutReflection
+{
+	float4 Position : POSITION;
+
+#	if defined(DIFFUSE_TEXTURE) || defined(AMBIENT_TEXTURE)
+		float4 DiffuseAmbientTexCoords : TEXCOORD0;
+#	endif	
+	
+#	if defined(EMISSION_TEXTURE) || defined(TRANSPARENT_TEXTURE)
+		float4 EmissionTransparentTexCoords : TEXCOORD1;
+#	endif
+
+#	if defined(REFLECTIVE_TEXTURE)
+		float2 ReflectiveTexCoords : TEXCOORD2;
+#	endif
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -346,6 +373,24 @@ float4x4 GetWorld(vsIn aIn)
 ///////////////////////////////////////////////////////////////////////////////
 // vertex shaders
 ///////////////////////////////////////////////////////////////////////////////
+vsOutPicking VertexPicking(vsIn aIn)
+{
+	vsOutPicking ret;
+	
+	float4 world = mul(aIn.Position, GetWorld(aIn));
+	float4 view = mul(world, GetView());
+	float4 proj = mul(view, GetProjection());
+	
+	ret.Position = proj;
+	ret.PositionH = proj;
+	
+#   if defined(TRANSPARENT_TEXTURE)
+		ret.TransparentTexCoords = aIn.TRANSPARENT_TEXCOORDS;
+#   endif	
+	
+	return ret;
+}
+
 vsOutShadow VertexShadow(vsIn aIn)
 {
 	vsOutShadow ret;
@@ -362,6 +407,47 @@ vsOutShadow VertexShadow(vsIn aIn)
 #   endif		
 	
 	return ret;
+}
+
+vsOutReflection VertexRenderReflection(vsIn aIn)
+{
+	vsOutReflection ret;
+
+    float4x4 reflection = GetReflection(GetReflectionPlane());
+
+	float4 world = mul(aIn.Position, mul(GetWorld(aIn), reflection));
+    float4 view = mul(world, GetView());
+	float4 proj = mul(view, GetProjection());
+
+    ret.Position = proj;
+
+#	if defined(DIFFUSE_TEXTURE)
+		ret.DiffuseAmbientTexCoords.xy = aIn.DIFFUSE_TEXCOORDS;
+#	elif defined(AMBIENT_TEXTURE)
+		ret.DiffuseAmbientTexCoords.xy = float2(0, 0);
+#	endif
+#	if defined(AMBIENT_TEXTURE)
+		ret.DiffuseAmbientTexCoords.zw = aIn.AMBIENT_TEXCOORDS;
+#	elif defined(DIFFUSE_TEXTURE)
+		ret.DiffuseAmbientTexCoords.zw = float2(0, 0);
+#	endif
+
+#	if defined(EMISSION_TEXTURE)
+		ret.EmissionTransparentTexCoords.xy = aIn.EMISSION_TEXCOORDS;
+#	elif defined(TRANSPARENT_TEXTURE)
+		ret.EmissionTransparentTexCoords.xy = float2(0, 0);
+#	endif
+#	if defined(TRANSPARENT_TEXTURE)
+		ret.EmissionTransparentTexCoords.zw = aIn.TRANSPARENT_TEXCOORDS;
+#	elif defined(EMISSION_TEXTURE)
+		ret.EmissionTransparentTexCoords.zw = float2(0, 0);
+#	endif
+
+#	if defined(REFLECTIVE_TEXTURE)
+		ret.ReflectiveTexCoords.xy = aIn.REFLECTIVE_TEXCOORDS;
+#	endif
+
+    return ret;
 }
 
 vsOut VertexRender(vsIn aIn)
@@ -440,31 +526,53 @@ float GetAlpha(float4 c)
 #	endif
 }
 
-float4 GetAmbient(vsOut aIn)
+float4 _GetAmbient(float2 tc)
 {
 #	if defined(AMBIENT_COLOR)
 		return GammaColor(AmbientColor);
 #	elif defined(AMBIENT_TEXTURE)
-		return GammaTex2D(AmbientSampler, aIn.DiffuseAmbientTexCoords.zw);
+		return GammaTex2D(AmbientSampler, tc);
 #	else
 		return kBlack4;		
 #	endif
 }
 
-float4 GetDiffuse(vsOut aIn)
+float4 GetAmbient(vsOut aIn)
+{
+#   if defined(AMBIENT_TEXTURE)
+        float2 tc = aIn.DiffuseAmbientTexCoords.zw;
+#   else
+        float2 tc = float2(0, 0);
+#   endif
+
+    return (_GetAmbient(tc));
+}
+
+float4 GetAmbient(vsOutReflection aIn)
+{
+#   if defined(AMBIENT_TEXTURE)
+        float2 tc = aIn.DiffuseAmbientTexCoords.zw;
+#   else
+        float2 tc = float2(0, 0);
+#   endif
+
+    return (_GetAmbient(tc));
+}
+
+float4 _GetDiffuse(float2 aDiffuseTc, float2 aReflectiveTc)
 {
 	float4 ret;
 	
 #	if defined(DIFFUSE_COLOR)
 		float4 diffuse = GammaColor(DiffuseColor);
 #	elif defined(DIFFUSE_TEXTURE)
-		float4 diffuse = GammaTex2D(DiffuseSampler, aIn.DiffuseAmbientTexCoords.xy);
+		float4 diffuse = GammaTex2D(DiffuseSampler, aDiffuseTc);
 #	endif
 
 #	if defined(REFLECTIVE_COLOR)
 		float4 reflective = GammaColor(ReflectiveColor);
 #	elif defined(REFLECTIVE_TEXTURE)
-		float4 reflective = GammaTex2D(ReflectiveSampler, aIn.ReflectiveSpecularTexCoords.xy);
+		float4 reflective = GammaTex2D(ReflectiveSampler, aReflectiveTc);
 #	endif
 
 #	if defined(REFLECTIVE)
@@ -480,15 +588,71 @@ float4 GetDiffuse(vsOut aIn)
 #	endif
 }
 
-float4 GetEmission(vsOut aIn)
+float4 GetDiffuse(vsOut aIn)
+{
+#   if defined(DIFFUSE_TEXTURE)
+        float2 dtc = aIn.DiffuseAmbientTexCoords.xy;
+#   else
+        float2 dtc = float2(0, 0);
+#   endif
+
+#   if defined(REFLECTIVE_TEXTURE)
+        float2 rtc = aIn.ReflectiveSpecularTexCoords.xy;
+#   else
+        float2 rtc = float2(0, 0);
+#   endif
+
+    return (_GetDiffuse(dtc, rtc));
+}
+
+float4 GetDiffuse(vsOutReflection aIn)
+{
+#   if defined(DIFFUSE_TEXTURE)
+        float2 dtc = aIn.DiffuseAmbientTexCoords.xy;
+#   else
+        float2 dtc = float2(0, 0);
+#   endif
+
+#   if defined(REFLECTIVE_TEXTURE)
+        float2 rtc = aIn.ReflectiveTexCoords.xy;
+#   else
+        float2 rtc = float2(0, 0);
+#   endif
+
+    return (_GetDiffuse(dtc, rtc));
+}
+
+float4 _GetEmission(float2 tc)
 {
 #	if defined(EMISSION_COLOR)
 		return GammaColor(EmissionColor);
 #	elif defined(EMISSION_TEXTURE)
-		return GammaTex2D(EmissionSampler, aIn.EmissionTransparentTexCoords.xy);
+		return GammaTex2D(EmissionSampler, tc);
 #	else
 		return kBlack4;		
 #	endif
+}
+
+float4 GetEmission(vsOut aIn)
+{
+#   if defined(EMISSION_TEXTURE)
+        float2 tc = aIn.EmissionTransparentTexCoords.xy;
+#   else
+        float2 tc = float2(0, 0);
+#   endif
+
+    return (_GetEmission(tc));
+}
+
+float4 GetEmissionForReflection(vsOutReflection aIn)
+{
+#   if defined(EMISSION_TEXTURE)
+        float2 tc = aIn.EmissionTransparentTexCoords.xy;
+#   else
+        float2 tc = float2(0, 0);
+#   endif
+
+    return (_GetEmission(tc));
 }
 
 float4 GetSpecular(vsOut aIn)
@@ -502,33 +666,59 @@ float4 GetSpecular(vsOut aIn)
 #	endif
 }
 
-float4 GetTransparent(float2 coords)
+float4 _GetTransparent(float2 tc)
 {
-#	if defined(TRANSPARENT_TEXTURE)
-		return GammaTex2D(TransparentSampler, coords);
+#	if defined(TRANSPARENT_COLOR)
+		return GammaColor(TransparentColor);
+#	elif defined(TRANSPARENT_TEXTURE)
+		return GammaTex2D(TransparentSampler, tc);
+#	else
+		return kBlack4;
 #	endif
 }
 
 float4 GetTransparent(vsOut aIn)
 {
-#	if defined(TRANSPARENT_COLOR)
-		return GammaColor(TransparentColor);
-#	elif defined(TRANSPARENT_TEXTURE)
-		return GetTransparent(aIn.EmissionTransparentTexCoords.zw);
-#	else
-		return kBlack4;
-#	endif
+#   if defined (TRANSPARENT_TEXTURE)
+        float2 tc = aIn.EmissionTransparentTexCoords.zw;
+#   else
+        float2 tc = float2(0, 0);
+#   endif
+
+    return (_GetTransparent(tc));
+}
+
+float4 GetTransparent(vsOutPicking aIn)
+{
+#   if defined (TRANSPARENT_TEXTURE)
+        float2 tc = aIn.TransparentTexCoords.xy;
+#   else
+        float2 tc = float2(0, 0);
+#   endif
+
+    return (_GetTransparent(tc));
+}
+
+float4 GetTransparentForReflection(vsOutReflection aIn)
+{
+#   if defined (TRANSPARENT_TEXTURE)
+        float2 tc = aIn.EmissionTransparentTexCoords.zw;
+#   else
+        float2 tc = float2(0, 0);
+#   endif
+
+    return (_GetTransparent(tc));
 }
 
 float4 GetTransparent(vsOutShadow aIn)
 {
-#	if defined(TRANSPARENT_COLOR)
-		return GammaColor(TransparentColor);
-#	elif defined(TRANSPARENT_TEXTURE)
-		return GetTransparent(aIn.TransparentTexCoords.xy);
-#	else
-		return kBlack4;
-#	endif
+#   if defined (TRANSPARENT_TEXTURE)
+        float2 tc = aIn.TransparentTexCoords.xy;
+#   else
+        float2 tc = float2(0, 0);
+#   endif
+
+    return (_GetTransparent(tc));
 }
 
 float3 GetBaseColor(float3 aDiffuse, float3 aEmission, float3 aAmbient)
@@ -615,6 +805,7 @@ float3 GetNormal(vsOut aIn)
 #	endif
 }
 
+// TODO: implement specular for key and back lights.
 float3 GetLitColor(float3 nv, float3 aDiffuse, float3 aSpecular, vsOut aIn)
 {
 #	if (defined(DIFFUSE) || defined(REFLECTIVE))
@@ -651,6 +842,21 @@ float3 ApplyAlpha(float3 aFbColor, float aAlpha)
 ///////////////////////////////////////////////////////////////////////////////
 // fragment shaders
 ///////////////////////////////////////////////////////////////////////////////
+float4 FragmentPicking(vsOutPicking aIn) : COLOR
+{
+#	if defined(TRANSPARENT)
+		float4 transparent = GetTransparent(aIn);
+		float alpha = GetAlpha(transparent);
+		
+		clip(alpha - ALPHA_IS_OPAQUE_F);
+#	endif
+
+	return float4(
+		(aIn.PositionH.z / aIn.PositionH.w),
+		ConstantColor.gb,
+		1.0);
+}
+
 float4 FragmentShadow(vsOutShadow aIn) : COLOR
 {
 #	if defined(TRANSPARENT)
@@ -676,25 +882,54 @@ fullFbOut FragmentRender(vsOut aIn, uniform bool abIncludeInDeferred)
 {
 	float alpha = GetAlpha(GetTransparent(aIn));
 	
-	float3 ambient = GetAmbient(aIn);
-	float3 emissiv = GetEmission(aIn);
+	float3 ambient = GetAmbient(aIn).rgb;
+	float3 emissiv = GetEmission(aIn).rgb;
 	
-	float3 diffuse = GetDiffuse(aIn);
-	float3 speculr = GetSpecular(aIn);
+	float3 diffuse = GetDiffuse(aIn).rgb;
+	float3 specular = GetSpecular(aIn).rgb;
 
 	float3 base = GetBaseColor(diffuse, emissiv, ambient);
 	float3 nv   = GetNormal(aIn); 
-	float3 lit  = GetLitColor(nv, diffuse, speculr, aIn);
+	float3 lit  = GetLitColor(nv, diffuse, specular, aIn);
 	
 	float3 ret = ApplyAlpha(base + lit, alpha);
 
-#	if (defined(DIFFUSE) || defined(REFLECTIVE))
-		fullFbOut fbOut = Out(float4(ret, alpha), nv, aIn.ViewPosition.z, (abIncludeInDeferred) ? float4(diffuse, 1.0) : kBlack4);
+#	if (defined(DIFFUSE) || defined(REFLECTIVE) || defined(SPECULAR))
+        fullFbOut fbOut;
+        if (abIncludeInDeferred)
+        {
+#           if defined(SPECULAR)
+                fbOut = Out(float4(ret, alpha), nv, aIn.ViewPosition.z, float4(diffuse, 1.0), specular, Shininess);
+#           else
+                fbOut = Out(float4(ret, alpha), nv, aIn.ViewPosition.z, float4(diffuse, 1.0), kBlack3, 0.0);
+#           endif
+        }
+        else
+        {
+            fbOut = Out(float4(ret, alpha), nv, aIn.ViewPosition.z, kBlack4, kBlack3, 0.0);
+        }
 #	else
-		fullFbOut fbOut = Out(float4(ret, alpha), nv, aIn.ViewPosition.z, kBlack4);
+		fullFbOut fbOut = Out(float4(ret, alpha), nv, aIn.ViewPosition.z, kBlack4, kBlack3, 0.0);
 #	endif
    
     return fbOut;
+}
+
+float4 FragmentRenderReflection(vsOutReflection aIn) : COLOR0
+{
+	float alpha = GetAlpha(GetTransparentForReflection(aIn));
+	
+	float3 ambient = GetAmbient(aIn).rgb;
+	float3 emissiv = GetEmissionForReflection(aIn).rgb;
+	
+	float3 diffuse = GetDiffuse(aIn).rgb;
+
+	float3 base = GetBaseColor(diffuse, emissiv, ambient);
+	
+	float3 ret = ApplyAlpha(base + diffuse, alpha);
+
+    // Convert back to linear, reflection buffers are expected to be ldr 8-bit textures.
+    return LinearToNonLinear(float4(ret, alpha));
 }
 
 technique jz_Render
@@ -726,7 +961,8 @@ technique jz_Render
 		pass Pass1
 		{
 			JZ_FULL_OUTPUT 
-			
+			DISABLE_STENCIL
+
 			AlphaBlendEnable = true;
 			AlphaTestEnable = true;
 			AlphaFunc = Less;
@@ -735,7 +971,6 @@ technique jz_Render
 			DestBlend = InvSrcAlpha;
 			FillMode = Solid;
 			SrcBlend = One;		
-			StencilEnable = false;	
 			ZEnable = true;
 			ZWriteEnable = false;
 			
@@ -746,7 +981,8 @@ technique jz_Render
 		pass Pass2
 		{
 			JZ_FULL_OUTPUT 
-			
+			DISABLE_STENCIL
+
 			AlphaBlendEnable = true;
 			AlphaTestEnable = true;
 			AlphaFunc = Less;
@@ -755,7 +991,6 @@ technique jz_Render
 			DestBlend = InvSrcAlpha;
 			FillMode = Solid;
 			SrcBlend = One;			
-			StencilEnable = false;
 			ZEnable = true;
 			ZWriteEnable = false;
 			
@@ -767,14 +1002,14 @@ technique jz_Render
 	pass Pass0
 	{
 		JZ_FULL_OUTPUT 
-		
+		DISABLE_STENCIL
+
 		AlphaBlendEnable = true;
 		AlphaTestEnable = false;
 		CullMode = FRONT_FACE_CULLING;
 		DestBlend = InvSrcAlpha;
 		FillMode = Solid;
 		SrcBlend = One;		
-		StencilEnable = false;	
 		ZEnable = true;
 		ZWriteEnable = false;
 		
@@ -785,14 +1020,14 @@ technique jz_Render
 	pass Pass1
 	{
 		JZ_FULL_OUTPUT 
-		
+		DISABLE_STENCIL
+
 		AlphaBlendEnable = true;
 		AlphaTestEnable = false;
 		CullMode = BACK_FACE_CULLING;
 		DestBlend = InvSrcAlpha;
 		FillMode = Solid;
 		SrcBlend = One;		
-		StencilEnable = false;	
 		ZEnable = true;
 		ZWriteEnable = false;
 		
@@ -803,12 +1038,12 @@ technique jz_Render
 	pass Pass0
 	{
 		JZ_FULL_OUTPUT 
-		
+		DISABLE_STENCIL
+
 		AlphaBlendEnable = false;
 		AlphaTestEnable = false;
 		CullMode = BACK_FACE_CULLING;
 		FillMode = Solid;
-		StencilEnable = false;
 		ZEnable = true;
 		ZWriteEnable = true;
 		
@@ -824,12 +1059,12 @@ technique jz_Render
 		pass Pass0
 		{
 			JZ_FULL_OUTPUT 
-			
+			DISABLE_STENCIL
+
 			AlphaBlendEnable = false;
 			AlphaTestEnable = false;
 			CullMode = BACK_FACE_CULLING;
 			FillMode = Solid;
-			StencilEnable = false;
 			ZEnable = true;
 			ZWriteEnable = true;
 			
@@ -838,6 +1073,30 @@ technique jz_Render
 		}
 	}
 #endif
+
+technique jz_Pick
+{
+	pass
+	{
+# if defined(TRANSPARENT)
+		CullMode = None;
+# else
+		CullMode = BACK_FACE_CULLING;
+# endif
+
+		JZ_LIT_OUTPUT	
+		DISABLE_STENCIL
+		
+		AlphaTestEnable = false;
+		AlphaBlendEnable = false;
+		FillMode = Solid;
+		ZEnable = true;
+		ZWriteEnable = true;
+	
+		VertexShader = compile vs_2_0 VertexPicking();
+		PixelShader = compile ps_2_0 FragmentPicking();
+	}
+}
 
 technique jz_Shadow
 {
@@ -868,6 +1127,128 @@ technique jz_Shadow
 		PixelShader = compile ps_2_0 FragmentShadow();
 #endif
 	}
+}
+
+// Render for reflection - note that all the culling states are flipped.
+technique jz_RenderReflection
+#if defined(TRANSPARENT_TEXTURE) && defined(TRANSPARENT_TEXTURE_1_BIT)
+	<bool jz_IsTransparent = true; bool jz_IsAlpha1Bit = true;>
+#elif defined(TRANSPARENT)
+	<bool jz_IsTransparent = true;>
+#endif
+{ 
+#if defined(TRANSPARENT_TEXTURE)
+	pass Pass0
+	{
+		JZ_LIT_OUTPUT 
+		DISABLE_STENCIL
+		
+		AlphaBlendEnable = false;
+		AlphaTestEnable = true;
+		AlphaFunc = GreaterEqual;
+		AlphaRef = ALPHA_IS_OPAQUE;
+		CullMode = None;
+		FillMode = Solid;
+		ZEnable = true;
+		ZWriteEnable = true;
+		
+		VertexShader = compile vs_2_a VertexRenderReflection();
+		PixelShader = compile ps_2_a FragmentRenderReflection();
+	}
+#	if !defined(TRANSPARENT_TEXTURE_1_BIT)
+		pass Pass1
+		{
+			JZ_LIT_OUTPUT 
+			DISABLE_STENCIL
+
+			AlphaBlendEnable = true;
+			AlphaTestEnable = true;
+			AlphaFunc = Less;
+			AlphaRef = ALPHA_IS_OPAQUE;
+			CullMode = BACK_FACE_CULLING;
+			DestBlend = InvSrcAlpha;
+			FillMode = Solid;
+			SrcBlend = One;		
+			ZEnable = true;
+			ZWriteEnable = false;
+			
+			VertexShader = compile vs_2_a VertexRenderReflection();
+			PixelShader = compile ps_2_a FragmentRenderReflection();			
+		}
+			
+		pass Pass2
+		{
+			JZ_LIT_OUTPUT 
+            DISABLE_STENCIL
+			
+			AlphaBlendEnable = true;
+			AlphaTestEnable = true;
+			AlphaFunc = Less;
+			AlphaRef = ALPHA_IS_OPAQUE;
+			CullMode = FRONT_FACE_CULLING;
+			DestBlend = InvSrcAlpha;
+			FillMode = Solid;
+			SrcBlend = One;			
+			ZEnable = true;
+			ZWriteEnable = false;
+			
+			VertexShader = compile vs_2_a VertexRenderReflection();
+			PixelShader = compile ps_2_a FragmentRenderReflection();			
+		}
+#	endif
+#elif defined(TRANSPARENT)
+	pass Pass0
+	{
+		JZ_LIT_OUTPUT 
+		DISABLE_STENCIL
+
+		AlphaBlendEnable = true;
+		AlphaTestEnable = false;
+		CullMode = BACK_FACE_CULLING;
+		DestBlend = InvSrcAlpha;
+		FillMode = Solid;
+		SrcBlend = One;		
+		ZEnable = true;
+		ZWriteEnable = false;
+		
+		VertexShader = compile vs_2_a VertexRenderReflection();
+		PixelShader = compile ps_2_a FragmentRenderReflection();			
+	}
+		
+	pass Pass1
+	{
+		JZ_LIT_OUTPUT 
+		DISABLE_STENCIL
+
+		AlphaBlendEnable = true;
+		AlphaTestEnable = false;
+		CullMode = FRONT_FACE_CULLING;
+		DestBlend = InvSrcAlpha;
+		FillMode = Solid;
+		SrcBlend = One;		
+		ZEnable = true;
+		ZWriteEnable = false;
+		
+		VertexShader = compile vs_2_a VertexRenderReflection();
+		PixelShader = compile ps_2_a FragmentRenderReflection();			
+	}
+#else
+	pass Pass0
+	{
+		JZ_LIT_OUTPUT 
+		DISABLE_STENCIL
+
+		AlphaBlendEnable = false;
+		AlphaTestEnable = false;
+		CullMode = FRONT_FACE_CULLING;
+		FillMode = Solid;
+		ZEnable = true;
+		ZWriteEnable = true;
+		
+		VertexShader = compile vs_2_a VertexRenderReflection();
+		PixelShader = compile ps_2_a FragmentRenderReflection();
+	}
+#endif
 }
 
 #endif

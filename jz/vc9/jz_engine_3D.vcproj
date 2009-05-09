@@ -272,6 +272,14 @@
 			>
 		</File>
 		<File
+			RelativePath="..\jz_engine_3D\IPickable.h"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\IReflectable.h"
+			>
+		</File>
+		<File
 			RelativePath="..\jz_engine_3D\IRenderable.h"
 			>
 		</File>
@@ -309,6 +317,30 @@
 		</File>
 		<File
 			RelativePath="..\jz_engine_3D\PhysicsNode.h"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\PickMan.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\PickMan.h"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\ReflectionMan.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\ReflectionMan.h"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\ReflectivePlaneNode.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\ReflectivePlaneNode.h"
 			>
 		</File>
 		<File

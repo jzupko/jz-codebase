@@ -123,6 +123,9 @@ namespace jz
             }
         }
 
+        static Vector3 ReflectDirection(const Vector3& v, const Plane& p);
+        static Vector3 ReflectPosition(const Vector3& v, const Plane& p);
+
         static Vector3 ProjectOnto(const Vector3& v, const Plane& p);
         static Plane Transform(const Matrix4& aTransform, const Plane& aPlane);
 

@@ -22,6 +22,7 @@
 
 #include <jz_core/Matrix3.h>
 #include <jz_core/Matrix4.h>
+#include <jz_core/Plane.h>
 #include <jz_core/Quaternion.h>
 
 namespace jz
@@ -29,47 +30,75 @@ namespace jz
 
     Matrix4 Matrix4::Invert(const Matrix4& m)
     {
-        float a0 = (m[0] * m[5]) - (m[1] * m[4]);
-        float a1 = (m[0] * m[6]) - (m[2] * m[4]);
-        float a2 = (m[0] * m[7]) - (m[3] * m[4]);
-        float a3 = (m[1] * m[6]) - (m[2] * m[5]);
-        float a4 = (m[1] * m[7]) - (m[3] * m[5]);
-        float a5 = (m[2] * m[7]) - (m[3] * m[6]);
-        float b0 = (m[8] * m[13]) - (m[9] * m[12]);
-        float b1 = (m[8] * m[14]) - (m[10] * m[12]);
-        float b2 = (m[8] * m[15]) - (m[11] * m[12]);
-        float b3 = (m[9] * m[14]) - (m[10] * m[13]);
-        float b4 = (m[9] * m[15]) - (m[11] * m[13]);
-        float b5 = (m[10] * m[15]) - (m[11] * m[14]);
+        const float m00 = m(0, 0);
+        const float m01 = m(0, 1);
+        const float m02 = m(0, 2);
+        const float m03 = m(0, 3);
+        const float m10 = m(1, 0);
+        const float m11 = m(1, 1);
+        const float m12 = m(1, 2);
+        const float m13 = m(1, 3);
+        const float m20 = m(2, 0);
+        const float m21 = m(2, 1);
+        const float m22 = m(2, 2);
+        const float m23 = m(2, 3);
+        const float m30 = m(3, 0);
+        const float m31 = m(3, 1);
+        const float m32 = m(3, 2);
+        const float m33 = m(3, 3);
 
-        float det = (a0 * b5) - (a1 * b4) 
-                  + (a2 * b3) + (a3 * b2) 
-                  - (a4 * b1) + (a5 * b0);
+        float p0 = (m20 * m31) - (m21 * m30);
+        float p1 = (m20 * m32) - (m22 * m30);
+        float p2 = (m20 * m33) - (m23 * m30);
+        float p3 = (m21 * m32) - (m22 * m31);
+        float p4 = (m21 * m33) - (m23 * m31);
+        float p5 = (m22 * m33) - (m23 * m32);
 
-        if (AboutZero(det)) { return Matrix4::kZero; }
+        const float t00 =  ((p5 * m11) - (p4 * m12) + (p3 * m13));
+        const float t10 = -((p5 * m10) - (p2 * m12) + (p1 * m13));
+        const float t20 =  ((p4 * m10) - (p2 * m11) + (p0 * m13));
+        const float t30 = -((p3 * m10) - (p1 * m11) + (p0 * m12));
 
-        const float kInvDet = (1.0f / det);
+        const float invDet = 1.0f / ((t00 * m00) + (t10 * m01) + (t20 * m02) + (t30 * m03));
 
-        Matrix4 ret;
-        ret[0]  =  (m[5] * b5)  - (m[6] * b4)  + (m[7] * b3);
-        ret[1]  = -(m[1] * b5)  + (m[2] * b4)  - (m[3] * b3);
-        ret[2]  =  (m[13] * a5) - (m[14] * a4) + (m[15] * a3);
-        ret[3]  = -(m[9] * a5)  + (m[10] * a4) - (m[11] * a3);
-        ret[4]  = -(m[4] * b5)  + (m[6] * b2)  - (m[7] * b1);
-        ret[5]  =  (m[0] * b5)  - (m[2] * b2)  + (m[3] * b1);
-        ret[6]  = -(m[12] * a5) + (m[14] * a2) - (m[15] * a1);
-        ret[7]  =  (m[8] * a5)  - (m[10] * a2) + (m[11] * a1);
-        ret[8]  =  (m[4] * b4)  - (m[5] * b2)  + (m[7] * b0);
-        ret[9]  = -(m[0] * b4)  + (m[1] * b2)  - (m[3] * b0);
-        ret[10] =  (m[12] * a4) - (m[13] * a2) + (m[15] * a0);
-        ret[11] = -(m[8] * a4)  + (m[9] * a2)  - (m[11] * a0);
-        ret[12] = -(m[4] * b3)  + (m[5] * b1)  - (m[6] * b0);
-        ret[13] =  (m[0] * b3)  - (m[1] * b1)  + (m[2] * b0);
-        ret[14] = -(m[12] * a3) + (m[13] * a1) - (m[14] * a0);
-        ret[15] =  (m[8] * a3)  - (m[9] * a1)  + (m[10] * a0);
-        ret *= kInvDet;
+        const float d00 = (t00 * invDet);
+        const float d10 = (t10 * invDet);
+        const float d20 = (t20 * invDet);
+        const float d30 = (t30 * invDet);
 
-        return ret;
+        const float d01 = -((p5 * m01) - (p4 * m02) + (p3 * m03)) * invDet;
+        const float d11 =  ((p5 * m00) - (p2 * m02) + (p1 * m03)) * invDet;
+        const float d21 = -((p4 * m00) - (p2 * m01) + (p0 * m03)) * invDet;
+        const float d31 =  ((p3 * m00) - (p1 * m01) + (p0 * m02)) * invDet;
+
+        p0 = (m10 * m31) - (m11 * m30);
+        p1 = (m10 * m32) - (m12 * m30);
+        p2 = (m10 * m33) - (m13 * m30);
+        p3 = (m11 * m32) - (m12 * m31);
+        p4 = (m11 * m33) - (m13 * m31);
+        p5 = (m12 * m33) - (m13 * m32);
+
+        const float d02 =  ((p5 * m01) - (p4 * m02) + (p3 * m03)) * invDet;
+        const float d12 = -((p5 * m00) - (p2 * m02) + (p1 * m03)) * invDet;
+        const float d22 =  ((p4 * m00) - (p2 * m01) + (p0 * m03)) * invDet;
+        const float d32 = -((p3 * m00) - (p1 * m01) + (p0 * m02)) * invDet;
+
+        p0 = (m21 * m10) - (m20 * m11);
+        p1 = (m22 * m10) - (m20 * m12);
+        p2 = (m23 * m10) - (m20 * m13);
+        p3 = (m22 * m11) - (m21 * m12);
+        p4 = (m23 * m11) - (m21 * m13);
+        p5 = (m23 * m12) - (m22 * m13);
+
+        const float d03 = -((p5 * m01) - (p4 * m02) + (p3 * m03)) * invDet;
+        const float d13 =  ((p5 * m00) - (p2 * m02) + (p1 * m03)) * invDet;
+        const float d23 = -((p4 * m00) - (p2 * m01) + (p0 * m03)) * invDet;
+        const float d33 =  ((p3 * m00) - (p1 * m01) + (p0 * m02)) * invDet;
+
+        return Matrix4(d00, d01, d02, d03,
+                       d10, d11, d12, d13,
+                       d20, d21, d22, d23,
+                       d30, d31, d32, d33);
     }
 
     Matrix3 Matrix4::GetOrientation() const
@@ -103,13 +132,7 @@ namespace jz
 
     Matrix4 Matrix4::CreateNormalTransform(const Matrix4& m)
     {
-        Matrix3 m3 = Matrix3::Transpose(Matrix3::Invert(Matrix3::CreateFromUpperLeft(m)));
-        
-        Matrix4 ret = Matrix4(
-            m3.M11, m3.M12, m3.M13, m.M14,
-            m3.M21, m3.M22, m3.M23, m.M24,
-            m3.M31, m3.M32, m3.M33, m.M34,
-             m.M41,  m.M42,  m.M43, m.M44);
+        Matrix4 ret = Matrix4::Transpose(Matrix4::Invert(m));
 
         return ret;
     }
@@ -198,6 +221,75 @@ namespace jz
         m = CreatePerspectiveOffCenterOpenGL(l, r, b, t, n, f);
 
         return m;
+    }
+
+    // DC = (n.x * v.x + n.y * v.y + n.z * v.z + [1.0|0.0] * d)
+    // ret = (v - (2.0f * DC * n))
+
+    // ret.x = v.x - (2.0 * DC * n.x)
+    // ret.y = v.y - (2.0 * DC * n.y)
+    // ret.z = v.z - (2.0 * DC * n.z)
+
+    // ret.x = v.x - ((2.0 * n.x) * (n.x * v.x + n.y * v.y + n.z * v.z + [1.0|0.0] * d))
+    // ret.y = v.y - ((2.0 * n.y) * (n.x * v.x + n.y * v.y + n.z * v.z + [1.0|0.0] * d))
+    // ret.z = v.z - ((2.0 * n.z) * (n.x * v.x + n.y * v.y + n.z * v.z + [1.0|0.0] * d))
+
+    // ret.x = v.x - ((2.0 * n.x * n.x * v.x) +
+    //                (2.0 * n.x * n.y * v.y) +
+    //                (2.0 * n.x * n.z * v.z) +
+    //                (2.0 * n.x * [1|0] * d))
+    // ret.y = v.y - ((2.0 * n.y * n.x * v.x) +
+    //                (2.0 * n.y * n.y * v.y) +
+    //                (2.0 * n.y * n.z * v.z) +
+    //                (2.0 * n.y * [1|0] * d))
+    // ret.z = v.z - ((2.0 * n.z * n.x * v.x) +
+    //                (2.0 * n.z * n.y * v.y) +
+    //                (2.0 * n.z * n.z * v.z) +
+    //                (2.0 * n.z * [1|0] * d))
+
+    // ret.x = v.x - (2.0 * n.x * n.x * v.x) -
+    //               (2.0 * n.x * n.y * v.y) -
+    //               (2.0 * n.x * n.z * v.z) -
+    //               (2.0 * n.x * [1|0] * d)
+    // ret.y = v.y - (2.0 * n.y * n.x * v.x) -
+    //               (2.0 * n.y * n.y * v.y) -
+    //               (2.0 * n.y * n.z * v.z) -
+    //               (2.0 * n.y * [1|0] * d)
+    // ret.z = v.z - (2.0 * n.z * n.x * v.x) -
+    //               (2.0 * n.z * n.y * v.y) -
+    //               (2.0 * n.z * n.z * v.z) -
+    //               (2.0 * n.z * [1|0] * d)
+
+    // ret.x = v.x * (1 - (2 * n.x * n.x)) -
+    //               (2.0 * n.x * n.y * v.y) -
+    //               (2.0 * n.x * n.z * v.z) -
+    //               (2.0 * n.x * [1|0] * d)
+    // ret.y =     - (2.0 * n.y * n.x * v.x) -
+    //         v.y * (1 - (2 * n.y * n.y)) -
+    //               (2.0 * n.y * n.z * v.z) -
+    //               (2.0 * n.y * [1|0] * d)
+    // ret.z =     - (2.0 * n.z * n.x * v.x) -
+    //               (2.0 * n.z * n.y * v.y) -
+    //         v.z * (1 - (2 * n.z * n.z)) -
+    //               (2.0 * n.z * [1|0] * d)
+
+    // Transform = 
+    //     [1 - (2 * n.x * n.x)] [  - (2 * n.y * n.x)] [  - (2 * n.z * n.x)] [0]
+    //     [  - (2 * n.x * n.y)] [1 - (2 * n.y * n.y)] [  - (2 * n.z * n.y)] [0]
+    //     [  - (2 * n.x * n.z)] [  - (2 * n.y * n.z)] [1 - (2 * n.z * n.z)] [0]
+    //     [  - (2 * n.x * d)  ] [  - (2 * n.y * d)  ] [  - (2 * n.z * d)  ] [1]
+    Matrix4 Matrix4::CreateReflection(const Plane& p)
+    {
+        float d = p.GetD();
+        const Vector3& n = p.GetNormal();
+
+        Matrix4 ret;
+        ret.M11 = 1.0f - (2.0f * n.X * n.X); ret.M12 =      - (2.0f * n.Y * n.X); ret.M13 =      - (2.0f * n.Z * n.X); ret.M14 = 0.0f;
+        ret.M21 =      - (2.0f * n.X * n.Y); ret.M22 = 1.0f - (2.0f * n.Y * n.Y); ret.M23 =      - (2.0f * n.Z * n.Y); ret.M24 = 0.0f;
+        ret.M31 =      - (2.0f * n.X * n.Z); ret.M32 =      - (2.0f * n.Y * n.Z); ret.M33 = 1.0f - (2.0f * n.Z * n.Z); ret.M34 = 0.0f;
+        ret.M41 =      - (2.0f * n.X * d);   ret.M42 =      - (2.0f * n.Y * d);   ret.M43 =      - (2.0f * n.Z * d);   ret.M44 = 1.0f;
+
+        return ret;
     }
 
     Matrix4 Matrix4::CreateRotationX(Radian a)

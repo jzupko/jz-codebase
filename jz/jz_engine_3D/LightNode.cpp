@@ -108,6 +108,13 @@ namespace jz
 
         LightNode::~LightNode()
         {
+            if (mShadowHandle >= 0)
+            {
+                if (ShadowMan::GetSingletonExists())
+                {
+                    ShadowMan::GetSingleton().Release(mShadowHandle);
+                }
+            }
         }
 
         void LightNode::PoseForRender()

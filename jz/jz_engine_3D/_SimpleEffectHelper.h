@@ -23,6 +23,7 @@
 #   if defined(JZ_SIMPLE_PARAM)
         JZ_SIMPLE_PARAM(CameraFocalLength);
         JZ_SIMPLE_PARAM(Projection);
+        JZ_SIMPLE_PARAM(ReflectionPlane);
         JZ_SIMPLE_PARAM(ScreenDimensions);
         JZ_SIMPLE_PARAM(View);
 
@@ -30,6 +31,7 @@
 #   elif defined(JZ_SIMPLE_SETTER)
         JZ_SIMPLE_SETTER(CameraFocalLength, Vector2);
         JZ_SIMPLE_SETTER(Projection, Matrix4);
+        JZ_SIMPLE_SETTER(ReflectionPlane, Vector4);
         JZ_SIMPLE_SETTER(ScreenDimensions, Vector2);
         JZ_SIMPLE_SETTER(View, Matrix4);
 

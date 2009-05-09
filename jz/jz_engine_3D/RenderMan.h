@@ -37,6 +37,8 @@ namespace jz
 {
     namespace graphics
     {
+        // Temp:
+        class Font; typedef AutoPtr<Font> FontPtr;
         class Mesh; typedef AutoPtr<Mesh> MeshPtr;
     }
 
@@ -46,6 +48,7 @@ namespace jz
         BoundingSphere CalculateFrustumBoundingSphere(const Matrix4& aProjection, const Matrix4& aInverseView);
 
         class Deferred;
+        class ReflectionMan;
         class ShadowMan;
         class SimpleEffect; typedef AutoPtr<SimpleEffect> SimpleEffectPtr;
         class RenderMan sealed : public Singleton<RenderMan>
@@ -57,12 +60,12 @@ namespace jz
             JZ_EXPORT void Pose(const graphics::RenderPack& r);
             JZ_EXPORT void Render();
 
-            const SimpleEffectPtr& GetSimpleEffect() const { return mpSimpleEffect; }
+            SimpleEffect* GetSimpleEffect() const { return (mpSimpleEffect.Get()); }
 
-            const graphics::MeshPtr& GetUnitBoxMesh() const;
-            const graphics::MeshPtr& GetUnitQuadMesh() const;
-            const graphics::MeshPtr& GetUnitFrustumMesh() const;
-            const graphics::MeshPtr& GetUnitSphereMesh() const;
+            graphics::Mesh* GetUnitBoxMesh() const;
+            graphics::Mesh* GetUnitQuadMesh() const;
+            graphics::Mesh* GetUnitFrustumMesh() const;
+            graphics::Mesh* GetUnitSphereMesh() const;
 
             const Matrix4& GetInverseView() const { return mInverseView; }
             const Matrix4& GetProjection() const { return mProjection; }
@@ -97,7 +100,17 @@ namespace jz
                 mWorldFrustumBoundingSphere = CalculateFrustumBoundingSphere(mProjection, mInverseView);
             }
 
+            // Temp: until a real GUI system is added.
+            void AddConsoleLine(const string& s);
+
+            // Pushes standard shared parameters to the effect system.
+            void SetStandardParameters();
+
         private:
+            // Temp:
+            graphics::FontPtr mpConsole;
+            string mConsoleText;
+
             ColorRGBA mClearColor;
             SimpleEffectPtr mpSimpleEffect;
 
@@ -116,18 +129,19 @@ namespace jz
             float mGamma;
 
             Deferred* mpDeferred;
+            ReflectionMan* mpReflectionMan;
             ShadowMan* mpShadowMan;
 
             RenderMan(const RenderMan&);
             RenderMan& operator=(const RenderMan&);
 
             graphics::RenderNode mRenderOpaque;
+            graphics::RenderNode mRenderReflectionOpaque;
+            graphics::RenderNode mRenderReflectionTransparent;
             graphics::RenderNode mRenderShadow;
             graphics::RenderNode mRenderTransparent;
 
             void _ResetTrees();
-
-            void _SetStandardParameters();
         };
 
     }

@@ -184,16 +184,12 @@ namespace jz
 
             if (GreaterThan(lenSq, 0.0f))
             {
-                arAngle = Radian(2) * ACos(W);
-                
-                float invLen = 1.0f / Sqrt(lenSq);
-                arAxis.X = X * invLen;
-                arAxis.Y = Y * invLen;
-                arAxis.Z = Z * invLen;
+                arAngle = 2.0f * ACos(W);
+                arAxis = Vector3::Normalize(Vector3(X, Y, Z));
             }
             else
             {
-                arAngle = Radian(0);
+                arAngle = Radian::kZero;
                 arAxis  = Vector3::kForward;
             }
         }

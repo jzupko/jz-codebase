@@ -201,6 +201,13 @@ namespace jz
                 void SetFullscreen(bool abFullscreen);
                 void SetMinimized(bool abMinimized);
 
+                void EnableClipPlane(unatural aIndex);
+                void DisableClipPlanes();
+                void SetClipPlane(unatural aIndex, const Vector4& v);
+
+                void BeginGraphicsEventMark(const string& s);
+                void EndGraphicsEventMark();
+
             private:
                 Graphics(const Graphics& n);
                 Graphics& operator=(const Graphics& n); 

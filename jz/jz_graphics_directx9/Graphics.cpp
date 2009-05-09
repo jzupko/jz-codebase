@@ -425,6 +425,31 @@ namespace jz
             JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetViewport(&vp));
         }
 
+        void Graphics::EnableClipPlane(unatural aIndex)
+        {
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetRenderState(D3DRS_CLIPPLANEENABLE, (1 << aIndex)));
+        }
+
+        void Graphics::DisableClipPlanes()
+        {
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetRenderState(D3DRS_CLIPPLANEENABLE, 0u));
+        }
+
+        void Graphics::SetClipPlane(unatural aIndex, const Vector4& v)
+        {
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetClipPlane(aIndex, v.pData));
+        }
+
+        void Graphics::BeginGraphicsEventMark(const string& s)
+        {
+            D3DPERF_BeginEvent(D3DCOLOR_ARGB(255, 255, 255, 255), StringUtility::Convert(s).c_str());
+        }
+
+        void Graphics::EndGraphicsEventMark()
+        {
+            D3DPERF_EndEvent();
+        }
+
         inline DWORD Convert(float v)
         {
             return *((DWORD*)&v);

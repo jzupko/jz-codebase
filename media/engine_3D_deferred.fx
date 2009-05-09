@@ -26,6 +26,7 @@
 #define JZ_DEBUG_AO 0
 #define JZ_DISABLE_BLUR 0
 #define JZ_DISABLE_DIRECTIONAL_AO 0
+#define JZ_MATH_CORRECT_SHADOW_FILTERING 0
 
 #include "../media/fb_common.fxh"
 #include "../media/lighting_common.fxh"
@@ -90,36 +91,39 @@ float3 GetNonDirectionalLight(vsOut aIn, out float3 arLv, out float arDistance, 
 {
 	float4 nd = GetDeferredNormalAndDepth(aIn.ScreenHTexCoords);
 	float3 diffuse = GetDeferredDiffuse(aIn.ScreenHTexCoords);
+    float4 specularShininess = GetDeferredSpecularAndShininess(aIn.ScreenHTexCoords);
 	arViewPos = GetViewPosition(aIn.ScreenHTexCoords, nd.w);
 
     arLv = (LightV - arViewPos);
     float distanceSquare = dot(arLv, arLv);
     arDistance = sqrt(distanceSquare);
     if (arDistance > kZeroTolerance) { arLv = normalize(arLv); }
-	
-	float att = GetLightAttenuation(LightAttenuation, arDistance, distanceSquare);
-	
+
+    float3 ev = normalize(-arViewPos);
 	float3 nv = (nd.xyz);
 	float ndotl = dot(nv, arLv);
 
-	float3 lightColor = max(ndotl, 0.0) * LightColor;
-	float3 color = (att * diffuse * lightColor);
+    float3 color = GetLitColorAtt(
+        LightColor, 
+        diffuse, GetDiffuseFactor(ndotl), 
+        specularShininess.rgb, GetSpecularFactor(ev, GetReflectionVector(nv, arLv, ndotl), ndotl, specularShininess.a),
+        GetLightAttenuation(LightAttenuation, arDistance, distanceSquare));
 	
 	return color;
 }
 
 float GetShadowFactor(sampler aSampler, float2 aShadowDelta, float4 aShadowTexCoords, float4 aShadowScaleShift, float aPixelDepth, float aShadowControlTerm)
 {
-	float2 coords = ((aShadowTexCoords.xy / aShadowTexCoords.w) * aShadowScaleShift.xy) + aShadowScaleShift.zw;
+	//float2 coords = ((aShadowTexCoords.xy / aShadowTexCoords.w) * aShadowScaleShift.xy) + aShadowScaleShift.zw;
+    float4 coords =
+        float4(aShadowTexCoords.xy * aShadowScaleShift.xy + (aShadowTexCoords.w * aShadowScaleShift.zw),
+        aShadowTexCoords.zw);
 
     float pd = (aPixelDepth);
-    float sd = tex2D(aSampler, coords).r;
+    // float sd = tex2D(aSampler, coords).r;
+    float sd = tex2Dproj(aSampler, coords).r;
 
-    float minD = (sd + kZeroTolerance);
-    float maxD = min(minD + (aShadowControlTerm * smoothstep(0.0, 1.0, minD)), 1.0);
-
-    float t = (pd - minD) / (maxD - minD);
-    float ret = 1.0 - ((t < 0.0) ? 0.0 : ((t > 1.0) ? 1.0 : t));
+    float ret = exp(512.0 * aShadowControlTerm * min(sd - pd, 0.0));
 
     return ret;
 }
@@ -179,6 +183,42 @@ float GetShadowFiltered(float4 huv)
 	return tex2Dproj(ShadowSamplerFilterable, huv).r;
 }
 
+#if JZ_MATH_CORRECT_SHADOW_FILTERING
+float LogConvolution(float c0, float c1, float a, float b)
+{
+    return (a + log(c1 * exp(b - a) + c0));
+}
+
+float GetShadowBlurPass1(float4 huv)
+{
+	float ret = 0.0;
+	int max = (kKernelRadius - 1);
+	
+    ret = LogConvolution(0.5, 0.5, GetShadowFiltered(OffsetHuvH(huv, -max)), GetShadowFiltered(OffsetHuvH(huv, -max + 1)));
+
+    for (int i = (-max + 2); i <= max; i++)
+    {
+        ret = LogConvolution(0.5, 0.5, GetShadowFiltered(OffsetHuvH(huv, i)), ret);
+    }
+	
+	return ret;
+}
+
+float GetShadowBlurPass2(float4 huv)
+{
+	float ret = 0.0;
+	int max = (kKernelRadius - 1);
+	
+    ret = LogConvolution(0.5, 0.5, GetShadowFiltered(OffsetHuvV(huv, -max)), GetShadowFiltered(OffsetHuvV(huv, -max + 1)));
+
+    for (int i = (-max + 2); i <= max; i++)
+    {
+        ret = LogConvolution(0.5, 0.5, GetShadowFiltered(OffsetHuvV(huv, i)), ret);
+    }
+	
+	return ret;
+}
+#else
 float GetShadowBlurPass1(float4 huv)
 {
 	float ret = 0.0;
@@ -218,6 +258,7 @@ float GetShadowBlurPass2(float4 huv)
 	
 	return ret;
 }
+#endif
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // vertexes
@@ -487,7 +528,9 @@ float4 FragmentMotionBlur(vsOut aIn) : COLOR0
 
     float2 displacement = (prev - current);
     float2 step = MotionBlurAmount * (displacement * kInverseTaps);
-    float4 offset = float4(step * 0.5, 0, 0);
+
+    // Scale from [-2, 2] to [-1, 1] and invert y for texture lookups
+    float4 offset = float4(step.x * 0.5, -step.y * 0.5, 0, 0);
 
     float4 uv = aIn.ScreenHTexCoords;
     float3 color = kZero3;
@@ -595,8 +638,13 @@ technique ShadowBlurPass1
 		ZEnable = false;
         ZWriteEnable = false;
 
+#if JZ_MATH_CORRECT_SHADOW_FILTERING
+		VertexShader = compile vs_2_a VertexQuad();
+		PixelShader = compile ps_2_a FragmentShadowBlurPass1();
+#else
 		VertexShader = compile vs_2_0 VertexQuad();
 		PixelShader = compile ps_2_0 FragmentShadowBlurPass1();
+#endif
     }
 }
 
@@ -614,8 +662,13 @@ technique ShadowBlurPass2
 		ZEnable = false;
         ZWriteEnable = false;
 
+#if JZ_MATH_CORRECT_SHADOW_FILTERING
+		VertexShader = compile vs_2_a VertexQuad();
+		PixelShader = compile ps_2_a FragmentShadowBlurPass2();
+#else
 		VertexShader = compile vs_2_0 VertexQuad();
 		PixelShader = compile ps_2_0 FragmentShadowBlurPass2();
+#endif
     }
 }
 

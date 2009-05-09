@@ -21,7 +21,11 @@
 // 
 
 #include <jz_engine_3D/AnimatedMeshNode.h>
+#include <jz_engine_3D/LightNode.h>
+#include <jz_engine_3D/PickMan.h>
 #include <jz_engine_3D/RenderMan.h>
+#include <jz_engine_3D/ShadowMan.h>
+#include <jz_engine_3D/SimpleEffect.h>
 #include <jz_engine_3D/StandardEffect.h>
 #include <jz_graphics/Graphics.h>
 #include <jz_graphics/Material.h>
@@ -51,6 +55,23 @@ namespace jz
 
             graphics::Mesh* pMesh = p->GetMesh().Get();
             pMesh->Draw();
+        }
+
+        static void SetActiveShadowHandle(graphics::RenderNode* apNode, voidc_p apInstance)
+        {
+            const LightNode* p = static_cast<const LightNode*>(apInstance);
+
+            RenderMan& rm = RenderMan::GetSingleton();
+            SimpleEffect* pEffect = rm.GetSimpleEffect();
+
+            int shadowHandle = p->GetShadowHandle();
+
+            pEffect->SetProjection(p->GetShadowProjection());
+            pEffect->SetView(p->GetShadowView());
+
+            ShadowMan::GetSingleton().SetActive(shadowHandle);
+
+            apNode->RenderChildren();
         }
 
         AnimatedMeshNode::AnimatedMeshNode()
@@ -86,6 +107,52 @@ namespace jz
                 pack.Sort = (pack.pMesh.IsValid()) ? Vector3::TransformPosition((mWorld * rm.GetView()), pack.pMesh->GetAABB().Center()).Z : 0.0f;
 
                 rm.Pose(pack);
+            }
+        }
+
+        void AnimatedMeshNode::PoseForShadow(LightNode* apLight)
+        {
+            if (mbVisible && mPack.pEffect.IsValid())
+            {
+                StandardEffect* se = static_cast<StandardEffect*>(mPack.pEffect.Get());
+
+                if (se->IsShadowable())
+                {
+                    RenderMan& rm = RenderMan::GetSingleton();
+                    
+                    graphics::RenderPack pack = mPack;
+                    pack.DrawFunc = DrawAnimatedMesh;
+                    pack.DrawFuncParam = this;
+                    pack.Flags = (graphics::RenderPack::kShadow);
+                    pack.EffectTechnique = se->GetShadowTechnique();
+                    pack.Sort = (pack.pMesh.IsValid()) ? Vector3::TransformPosition(mWorld * rm.GetView(), pack.pMesh->GetAABB().Center()).Z : 0.0f;
+                    pack.PreEffectFunc = SetActiveShadowHandle;
+                    pack.PreEffectFuncParam = apLight;
+
+                    rm.Pose(pack);
+                }
+            }
+        }
+
+        void AnimatedMeshNode::Pick(const Ray3D& aRay)
+        {
+            if (mbVisible && mPack.pEffect.IsValid())
+            {
+                StandardEffect* pEffect = static_cast<StandardEffect*>(mPack.pEffect.Get());
+
+                if (pEffect->IsPickable())
+                {
+                    PickMan& pm = PickMan::GetSingleton();
+                    RenderMan& rm = RenderMan::GetSingleton();
+        
+                    graphics::RenderPack pack = mPack;
+                    pack.DrawFunc = DrawAnimatedMesh;
+                    pack.DrawFuncParam = this;
+                    pack.EffectTechnique = pEffect->GetPickingTechnique();
+                    pack.Sort = (pack.pMesh.IsValid()) ? Vector3::TransformPosition(mWorld * rm.GetView(), pack.pMesh->GetAABB().Center()).Z : 0.0f;
+
+                    pm.Pose(pack, this);
+                }
             }
         }
 

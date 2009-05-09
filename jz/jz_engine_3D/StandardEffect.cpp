@@ -31,9 +31,12 @@ namespace jz
     namespace engine_3D
     {
 
+        static const char* kStandardPickingTechnique = "jz_Pick";
         static const char* kStandardRenderTechnique = "jz_Render";
+        static const char* kStandardReflectionTechnique = "jz_RenderReflection";
         static const char* kStandardRenderNonDeferredTechnique = "jz_RenderNonDeferred";
         static const char* kStandardShadowingTechnique = "jz_Shadow";
+        static const char* kConstantColorParameter = "jz_ConstantColor";
         static const char* kStandardSkinningParameter = "jz_Skinning";
         static const char* kStandardThreePointParameter = "jz_ThreePoint";
         static const char* kStandardWitParameter = "jz_Wit";
@@ -50,7 +53,9 @@ namespace jz
                 kAlpha1Bit = (1 << 2),
                 kShadowable = (1 << 3),
                 kThreePoint = (1 << 4),
-                kNonDeferred = (1 << 5)
+                kNonDeferred = (1 << 5),
+                kPickable = (1 << 6),
+                kReflection = (1 << 7)
             };
         }
 
@@ -71,6 +76,11 @@ namespace jz
             return ((mFlags & StandardEffectFlags::kAnimateable) != 0);
         }
 
+        bool StandardEffect::IsPickable() const
+        {
+            return ((mFlags & StandardEffectFlags::kPickable) != 0);
+        }
+
         bool StandardEffect::IsShadowable() const
         {
             return ((mFlags & StandardEffectFlags::kShadowable) != 0);
@@ -89,6 +99,16 @@ namespace jz
         bool StandardEffect::IsNonDeferred() const
         {
             return ((mFlags & StandardEffectFlags::kNonDeferred) != 0);
+        }
+
+        bool StandardEffect::IsReflectable() const
+        {
+            return ((mFlags & StandardEffectFlags::kReflection) != 0);
+        }
+
+        void StandardEffect::SetConstantColor(const ColorRGBA& c)
+        {
+            mConstantColorParameter.Set(c);
         }
 
         void StandardEffect::SetSkinning(const MemoryBuffer<Vector4>& m)
@@ -143,11 +163,25 @@ namespace jz
                     mFlags |= StandardEffectFlags::kAlpha1Bit;
                 }
 
+                mPickingTechnique = GetTechniqueByName(kStandardPickingTechnique);
+                if (mPickingTechnique.IsValid())
+                {
+                    mFlags |= StandardEffectFlags::kPickable;
+                }
+
+                mReflectionTechnique = GetTechniqueByName(kStandardReflectionTechnique);
+                if (mReflectionTechnique.IsValid())
+                {
+                    mFlags |= StandardEffectFlags::kReflection;
+                }
+
                 mShadowTechnique = GetTechniqueByName(kStandardShadowingTechnique);
                 if (mShadowTechnique.IsValid())
                 {
                     mFlags |= StandardEffectFlags::kShadowable;
                 }
+
+                GetParameterBySemantic(kConstantColorParameter, mConstantColorParameter);
 
                 GetParameterBySemantic(kStandardSkinningParameter, mSkinningParameter);
                 if (mSkinningParameter.IsValid())
@@ -180,8 +214,11 @@ namespace jz
         void StandardEffect::_Clear()
         {
             mFlags = 0u;
+            mPickingTechnique.Reset();
             mShadowTechnique.Reset();
+            mReflectionTechnique.Reset();
             mRenderTechnique.Reset();
+            mConstantColorParameter.Reset();
             mSkinningParameter.Reset();
             mThreePointParameter.Reset();
             mWitParameter.Reset();

@@ -33,6 +33,7 @@
 namespace jz
 {
 
+    struct Plane;
     struct Quaternion;
 
     struct Matrix4
@@ -354,6 +355,7 @@ namespace jz
         static Matrix4 CreatePerspectiveFieldOfViewDirectX(Radian aFov, float aAspectRatio, float aNear, float aFar);
         static Matrix4 CreatePerspectiveOffCenterOpenGL(float aLeft, float aRight, float aBottom, float aTop, float aNear, float aFar);
         static Matrix4 CreatePerspectiveFieldOfViewOpenGL(Radian aFov, float aAspectRatio, float aNear, float aFar);
+        static Matrix4 CreateReflection(const Plane& p);
         static Matrix4 CreateRotationX(Radian a);
         static Matrix4 CreateRotationY(Radian a);
         static Matrix4 CreateRotationZ(Radian a);

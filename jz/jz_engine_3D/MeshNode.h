@@ -25,6 +25,8 @@
 #define _JZ_ENGINE_3D_MESH_NODE_H_
 
 #include <jz_graphics/RenderPack.h>
+#include <jz_engine_3D/IPickable.h>
+#include <jz_engine_3D/IReflectable.h>
 #include <jz_engine_3D/IRenderable.h>
 #include <jz_engine_3D/IShadowable.h>
 #include <jz_engine_3D/SceneNode.h>
@@ -36,7 +38,7 @@ namespace jz
     {
 
         class StandardEffect; typedef AutoPtr<StandardEffect> StandardEffectPtr;
-        class MeshNode : public SceneNode, public IRenderable, public IShadowable
+        class MeshNode : public SceneNode, public IPickable, public IReflectable, public IRenderable, public IShadowable
         {
         public:
             MeshNode();
@@ -46,6 +48,8 @@ namespace jz
             bool bVisible() const { return mbVisible; }
             void SetVisible(bool b) { mbVisible = b; }
 
+            virtual void Pick(const Ray3D& aRay) override;
+            virtual void PoseForReflection(ReflectivePlaneNode* apReflectivePlane) override;
             virtual void PoseForRender() override;
             virtual void PoseForShadow(LightNode* apLight) override;
 

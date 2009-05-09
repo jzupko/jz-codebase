@@ -22,6 +22,9 @@
 
 #include <jz_engine_3D/LightNode.h>
 #include <jz_engine_3D/MeshNode.h>
+#include <jz_engine_3D/PickMan.h>
+#include <jz_engine_3D/ReflectionMan.h>
+#include <jz_engine_3D/ReflectivePlaneNode.h>
 #include <jz_engine_3D/RenderMan.h>
 #include <jz_engine_3D/ShadowMan.h>
 #include <jz_engine_3D/SimpleEffect.h>
@@ -61,7 +64,7 @@ namespace jz
             const LightNode* p = static_cast<const LightNode*>(apInstance);
 
             RenderMan& rm = RenderMan::GetSingleton();
-            SimpleEffect* pEffect = rm.GetSimpleEffect().Get();
+            SimpleEffect* pEffect = rm.GetSimpleEffect();
 
             int shadowHandle = p->GetShadowHandle();
 
@@ -71,6 +74,30 @@ namespace jz
             ShadowMan::GetSingleton().SetActive(shadowHandle);
 
             apNode->RenderChildren();
+        }
+
+        static void SetActiveReflectivePlaneHandle(graphics::RenderNode* apNode, voidc_p apInstance)
+        {
+            const ReflectivePlaneNode* p = static_cast<const ReflectivePlaneNode*>(apInstance);
+
+            int reflectionHandle = p->GetReflectionHandle();
+            ReflectionMan::GetSingleton().SetActive(reflectionHandle);
+            RenderMan& rm = RenderMan::GetSingleton();
+
+            const Plane& plane = (p->GetReflectionPlane());
+            Plane worldPlane = Plane::Transform(p->GetWorldTransform(), plane);
+            Vector4 w = Vector4(worldPlane.GetNormal(), worldPlane.GetD());
+            Plane wvpPlane = Plane::Transform(rm.GetView() * rm.GetProjection(), worldPlane);
+            // - to reflect the wvp
+            Vector4 wvp = -Vector4(wvpPlane.GetNormal(), wvpPlane.GetD());
+
+            RenderMan::GetSingleton().GetSimpleEffect()->SetReflectionPlane(w);
+
+            graphics::Graphics& graphics = graphics::Graphics::GetSingleton();
+            graphics.EnableClipPlane(0u);
+            graphics.SetClipPlane(0u, wvp);
+            apNode->RenderChildren();
+            graphics.DisableClipPlanes();
         }
 
         MeshNode::MeshNode()
@@ -103,6 +130,52 @@ namespace jz
                 pack.Sort = (pack.pMesh.IsValid()) ? Vector3::TransformPosition(mWorld * rm.GetView(), pack.pMesh->GetAABB().Center()).Z : 0.0f;
 
                 rm.Pose(pack);
+            }
+        }
+
+        void MeshNode::Pick(const Ray3D& aRay)
+        {
+            if (mbVisible && mPack.pEffect.IsValid())
+            {
+                StandardEffect* pEffect = static_cast<StandardEffect*>(mPack.pEffect.Get());
+
+                if (pEffect->IsPickable())
+                {
+                    PickMan& pm = PickMan::GetSingleton();
+                    RenderMan& rm = RenderMan::GetSingleton();
+        
+                    graphics::RenderPack pack = mPack;
+                    pack.DrawFunc = DrawMesh;
+                    pack.DrawFuncParam = this;
+                    pack.EffectTechnique = pEffect->GetPickingTechnique();
+                    pack.Sort = (pack.pMesh.IsValid()) ? Vector3::TransformPosition(mWorld * rm.GetView(), pack.pMesh->GetAABB().Center()).Z : 0.0f;
+
+                    pm.Pose(pack, this);
+                }
+            }
+        }
+
+        void MeshNode::PoseForReflection(ReflectivePlaneNode* apReflectivePlane)
+        {
+            if (mbVisible && mPack.pEffect.IsValid())
+            {
+                StandardEffect* se = static_cast<StandardEffect*>(mPack.pEffect.Get());
+
+                if (se->IsReflectable())
+                {
+                    RenderMan& rm = RenderMan::GetSingleton();
+                    
+                    graphics::RenderPack pack = mPack;
+                    pack.DrawFunc = DrawMesh;
+                    pack.DrawFuncParam = this;
+                    pack.Flags |= (graphics::RenderPack::kReflection);
+                    pack.EffectTechnique = se->GetReflectionTechnique();
+                    pack.Sort = (pack.pMesh.IsValid()) ? Vector3::TransformPosition(mWorld * rm.GetView(), pack.pMesh->GetAABB().Center()).Z : 0.0f;
+                    pack.PreEffectFunc = SetActiveReflectivePlaneHandle;
+                    pack.PreEffectFuncParam = apReflectivePlane;
+
+                    rm.Pose(pack);
+                }
             }
         }
 

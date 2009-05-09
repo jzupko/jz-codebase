@@ -245,6 +245,16 @@ namespace jz
 #       define JZ_NUMBER_ARRAY_DIM  4
 #       include <jz_core/_NumberArray.h>
 
+        explicit ColorRGBA(const ColorRGBAu& c)
+        {
+            static const float kFactor = (float)(1.0 / 255.0);
+
+            R = (c.R * kFactor);
+            G = (c.G * kFactor);
+            B = (c.B * kFactor);
+            A = (c.A * kFactor);
+        }
+
         explicit ColorRGBA(const ColorHSV& hsv)
         {
             ColorRGB c(hsv);

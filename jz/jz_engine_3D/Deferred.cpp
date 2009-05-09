@@ -26,6 +26,7 @@
 #include <jz_engine_3D/ShadowMan.h>
 #include <jz_system/Files.h>
 #include <jz_system/Time.h>
+#include <jz_graphics/DepthStencilSurface.h>
 #include <jz_graphics/Effect.h>
 #include <jz_graphics/Graphics.h>
 #include <jz_graphics/Material.h>
@@ -59,6 +60,7 @@ namespace jz
 
         static const graphics::Target::Format kMrtFormats[Deferred::kMrtCount] = 
         {
+            graphics::Target::kA16B16G16R16F,
             graphics::Target::kA16B16G16R16F,
             graphics::Target::kA16B16G16R16F,
             graphics::Target::kA16B16G16R16F
@@ -149,6 +151,7 @@ namespace jz
             JZ_HELPER(jz_MrtTexture0);
             JZ_HELPER(jz_MrtTexture1);
             JZ_HELPER(jz_MrtTexture2);
+            JZ_HELPER(jz_MrtTexture3);
 
             JZ_HELPER(jz_GaussianWeights);
             JZ_HELPER(jz_HdrTexture);
@@ -233,9 +236,10 @@ namespace jz
             jz_CameraFocalLength.Reset();
             jz_ScreenDimensions.Reset();
 
-            jz_MrtTexture0.Reset();
-            jz_MrtTexture1.Reset();
+            jz_MrtTexture3.Reset();
             jz_MrtTexture2.Reset();
+            jz_MrtTexture1.Reset();
+            jz_MrtTexture0.Reset();
 
             jz_GaussianWeights.Reset();
             jz_HdrTexture.Reset();
@@ -279,12 +283,14 @@ namespace jz
             mTargets[0]->SetToDevice(0u);
             mTargets[1]->SetToDevice(1u);
             mTargets[2]->SetToDevice(2u);
+            mTargets[3]->SetToDevice(3u);
 
             Graphics::GetSingleton().Clear(Graphics::kColor | Graphics::kDepth | Graphics::kStencil, c);
         }
 
         void Deferred::PreTransparency()
         {
+            graphics::Target::ResetTarget(3u);
             graphics::Target::ResetTarget(2u);
             graphics::Target::ResetTarget(1u);
             graphics::Target::ResetTarget(0u);
@@ -294,6 +300,7 @@ namespace jz
 
         void Deferred::End()
         {
+            graphics::Target::ResetTarget(3u);
             graphics::Target::ResetTarget(2u);
             graphics::Target::ResetTarget(1u);
             graphics::Target::ResetTarget(0u);
@@ -392,17 +399,17 @@ namespace jz
 
             mHdrTargets[0]->SetToDevice(0u);
             mEffect->SetTechnique(mAoPass1);
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh());
 
             mHdrTargets[1]->SetToDevice(0u);
             jz_HdrTexture.Set(mHdrTargets[0]);
             mEffect->SetTechnique(mAoPass2);
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh());
 
             mHdrTargets[0]->SetToDevice(0u);
             jz_HdrTexture.Set(mHdrTargets[1]);
             mEffect->SetTechnique(mAoPass3);
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh());
 
             Swap(mHdrTargets[0], mTargets[1]);
             mTargets[0]->SetToDevice(0u);
@@ -439,8 +446,8 @@ namespace jz
                 if (light->GetType() == LightNodeType::kDirectional)
                 {
                     mEffect->SetTechnique(mDirectional);
-                    _Set(rm.GetUnitQuadMesh().Get());
-                    _DoPasses(rm.GetUnitQuadMesh().Get());
+                    _Set(rm.GetUnitQuadMesh());
+                    _DoPasses(rm.GetUnitQuadMesh());
                 }
                 else if (light->GetType() == LightNodeType::kPoint)
                 {
@@ -448,8 +455,8 @@ namespace jz
                     if (light->GetWorldBounding().Contains(worldBounding))
                     {
                         mEffect->SetTechnique(mPointAsQuad);
-                        _Set(rm.GetUnitQuadMesh().Get());
-                        _DoPasses(rm.GetUnitQuadMesh().Get());
+                        _Set(rm.GetUnitQuadMesh());
+                        _DoPasses(rm.GetUnitQuadMesh());
                     }
                     else
                     {
@@ -461,8 +468,8 @@ namespace jz
                         jz_World.Set(m);
 
                         mEffect->SetTechnique(mPoint);
-                        _Set(rm.GetUnitSphereMesh().Get());
-                        _DoPasses(rm.GetUnitSphereMesh().Get());
+                        _Set(rm.GetUnitSphereMesh());
+                        _DoPasses(rm.GetUnitSphereMesh());
                     }
                 }
                 else if (light->GetType() == LightNodeType::kSpot)
@@ -492,8 +499,8 @@ namespace jz
                             mEffect->SetTechnique(mSpotAsQuad);
                         }
 
-                        _Set(rm.GetUnitQuadMesh().Get());
-                        _DoPasses(rm.GetUnitQuadMesh().Get());
+                        _Set(rm.GetUnitQuadMesh());
+                        _DoPasses(rm.GetUnitQuadMesh());
                     }
                     else
                     {
@@ -513,8 +520,8 @@ namespace jz
                             mEffect->SetTechnique(mSpot);
                         }
 
-                        _Set(rm.GetUnitFrustumMesh().Get());
-                        _DoPasses(rm.GetUnitFrustumMesh().Get());
+                        _Set(rm.GetUnitFrustumMesh());
+                        _DoPasses(rm.GetUnitFrustumMesh());
                     }
                 }
             }
@@ -531,8 +538,8 @@ namespace jz
             jz_MrtTexture0.Set(mTargets[0]);
 
             mEffect->SetTechnique(mLdrPass);
-            _Set(rm.GetUnitQuadMesh().Get());
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _Set(rm.GetUnitQuadMesh());
+            _DoPasses(rm.GetUnitQuadMesh());
         }
 
         void Deferred::_ShadowMapProcess()
@@ -543,17 +550,19 @@ namespace jz
             ShadowMan& sm = ShadowMan::GetSingleton();
 
             Target::ResetTarget(0u);
+            sm.GetShadowDepthStencil()->SetToDevice();
             jz_ShadowControlTerm.Set(mShadowControlTerm);
 
             mShadowTargets[1]->SetToDevice(0u);
             jz_ShadowTexture.Set(sm.GetShadowTarget());
             mEffect->SetTechnique(mShadowBlurPass1);
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh());
 
             mShadowTargets[0]->SetToDevice(0u);
             jz_ShadowTexture.Set(mShadowTargets[1]);
             mEffect->SetTechnique(mShadowBlurPass2);
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh());
+            sm.GetShadowDepthStencil()->RestorePrevToDevice();
         }
 
         void Deferred::_Bloom()
@@ -568,17 +577,17 @@ namespace jz
             jz_MrtTexture0.Set(mTargets[0]);
             mHdrTargets[0]->SetToDevice(0u);
             mEffect->SetTechnique(mBloomProcess);
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh());
 
             mHdrTargets[1]->SetToDevice(0u);
             jz_HdrTexture.Set(mHdrTargets[0]);
             mEffect->SetTechnique(mBloomBlurPass1);
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh());
 
             mHdrTargets[0]->SetToDevice(0u);
             jz_HdrTexture.Set(mHdrTargets[1]);
             mEffect->SetTechnique(mBloomBlurPass2);
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _DoPasses(rm.GetUnitQuadMesh());
 
             Swap(mHdrTargets[0], mTargets[0]);
         }
@@ -600,8 +609,8 @@ namespace jz
             mHdrTargets[0]->SetToDevice(0u);
 
             mEffect->SetTechnique(mMotionBlur);
-            _Set(rm.GetUnitQuadMesh().Get());
-            _DoPasses(rm.GetUnitQuadMesh().Get());
+            _Set(rm.GetUnitQuadMesh());
+            _DoPasses(rm.GetUnitQuadMesh());
             Swap(mHdrTargets[0], mTargets[0]);
         }
 
@@ -643,8 +652,9 @@ namespace jz
 
             jz_MrtTexture1.Set(mTargets[1]);
             jz_MrtTexture2.Set(mTargets[2]);
+            jz_MrtTexture3.Set(mTargets[3]);
 
-            _Set(rm.GetUnitQuadMesh().Get());
+            _Set(rm.GetUnitQuadMesh());
         }
 
         void Deferred::_PreTransparency()

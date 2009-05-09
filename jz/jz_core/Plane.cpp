@@ -107,10 +107,29 @@ namespace jz
         return ret;
     }
 
-    Plane Plane::Transform(const Matrix4& aMatrix4, const Plane& aPlane)
+    Vector3 Plane::ReflectDirection(const Vector3& v, const Plane& p)
     {
-        Vector4 v = Vector4::Transform(aMatrix4, Vector4(aPlane.mNormal, aPlane.mD));
-        Plane ret(Vector3::Normalize(Vector3(v.X, v.Y, v.Z)), v.W);
+        float d = DotNormal(v, p);
+        Vector3 ret = (v - (2.0f * d * p.mNormal));
+
+        return ret;
+    }
+
+    Vector3 Plane::ReflectPosition(const Vector3& v, const Plane& p)
+    {
+        float d = DotCoordinate(v, p);
+        Vector3 ret = (v - (2.0f * d * p.mNormal));
+
+        return ret;
+    }
+
+    // TODO: verify.
+    Plane Plane::Transform(const Matrix4& m, const Plane& aPlane)
+    {
+        Matrix4 itm = Matrix4::CreateNormalTransform(m);
+        Vector4 p = Vector4::Transform(itm, Vector4(aPlane.mNormal, aPlane.mD));
+        Plane ret = Plane(p.X, p.Y, p.Z, p.W);
+        ret.Normalize();
 
         return ret;
     }

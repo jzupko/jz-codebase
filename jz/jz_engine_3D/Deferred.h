@@ -55,7 +55,7 @@ namespace jz
             static const int kCircularTaps = (kTapsRt * kTapsRt);
 
             static const int kGaussianKernelRadius = 11;
-            static const int kMrtCount = 3;
+            static const int kMrtCount = 4;
             static const int kHdrCount = 2;
             static const int kShadowCount = 2;
 
@@ -133,6 +133,7 @@ namespace jz
             graphics::Parameter<graphics::Target> jz_MrtTexture0;
             graphics::Parameter<graphics::Target> jz_MrtTexture1;
             graphics::Parameter<graphics::Target> jz_MrtTexture2;
+            graphics::Parameter<graphics::Target> jz_MrtTexture3;
 
             graphics::Parameter<float> jz_GaussianWeights;
             graphics::Parameter<graphics::Target> jz_HdrTexture;

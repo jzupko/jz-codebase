@@ -61,8 +61,11 @@ namespace jz
         public const ImageOrigin kImageOrigin = ImageOrigin.TopLeft;
         public const Winding kWinding = Winding.Clockwise;
 
+        public const int kFindEigenspaceIterations = 32;
         public static Matrix kIdentity = Matrix.Identity;
         public static BoundingBox kInvertedMaxBox = new BoundingBox(kMaxVector3, kMinVector3);
+        public const float kJacobiToleranceFloat = 1e-8f;
+        public const double kJacobiToleranceDouble = 1e-10;
         public const double kLooseToleranceDouble = 1e-5f;
         public const float kLooseToleranceFloat = 1e-3f;
         public static BoundingBox kMaxBox = new BoundingBox(kMinVector3, kMaxVector3);
@@ -416,6 +419,312 @@ namespace jz
         }
         #endregion
 
+        #region Geometry
+        private static void FindEigenspaceHelper(ref Matrix3 R, ref float m1, ref float m2, ref float m3, ref float m4, ref float m5, int i1, int i2)
+        {
+            if (!AboutZero(m2))
+            {
+                float u = (0.5f * (m4 - m1)) / m2;
+                float u2 = u * u;
+                float u2p1 = u2 + 1.0f;
+                float t = !AboutEqual(u2p1, u2) ? (LessThan(u, 0.0f) ? -1.0f : 1.0f) * ((float)(Math.Sqrt(u2p1)) - Math.Abs(u)) : 0.5f / u;
+                float c = 1.0f / ((float)(Math.Sqrt((t * t) + 1.0f)));
+                float s = c * t;
+
+                m1 -= t * m2;
+                m4 += t * m2;
+                m2 = 0.0f;
+
+                float t1 = (c * m3) - (s * m5);
+                m5 = (s * m3) + (c * m5);
+                m3 = t1;
+
+                for (int i = 0; i < 3; i++)
+                {
+                    float t2 = (c * R[i, i1]) - (s * R[i, i2]);
+                    R[i, i2] = (s * R[i, i1]) + (c * R[i, i2]);
+                    R[i, i1] = t2;
+                }
+            }
+        }
+
+        // From: http://www.terathon.com/code/linear.php
+        public static void FindEigenspace(ref Matrix3 M, out Vector3 arValues, out Matrix3 arVectors)
+        {
+            float m11 = M.M11; float m12 = M.M12; float m13 = M.M13;
+            float m22 = M.M22; float m23 = M.M23;
+            float m33 = M.M33;
+
+            Matrix3 R = Matrix3.Identity;
+
+            for (int i = 0; i < kFindEigenspaceIterations; i++)
+            {
+                if (AboutZero(Math.Abs(m12), kJacobiToleranceFloat) &&
+                    AboutZero(Math.Abs(m13), kJacobiToleranceFloat) &&
+                    AboutZero(Math.Abs(m23), kJacobiToleranceFloat))
+                {
+                    break;
+                }
+
+                FindEigenspaceHelper(ref R, ref m11, ref m12, ref m13, ref m22, ref m23, 0, 1);
+                FindEigenspaceHelper(ref R, ref m11, ref m13, ref m12, ref m33, ref m23, 0, 2);
+                FindEigenspaceHelper(ref R, ref m22, ref m23, ref m12, ref m33, ref m13, 1, 2);
+            }
+
+            arValues.X = m11;
+            arValues.Y = m22;
+            arValues.Z = m33;
+
+            arVectors = R;
+        }
+
+        /// <summary>
+        /// Calculates the three primary axes of a container of points using
+        /// Principal components analysis (PCA). See 
+        /// http://en.wikipedia.org/wiki/Principal_components_analysis for a summary.
+        /// These axes represent the orthogonal three axes of most change of the points.
+        /// These will roughly correspond to the "natural" axes of a geometric figure.
+        /// </summary>
+        /// <param name="aPoints">A container of position vertices.</param>
+        /// <param name="arAxisR">Principal R axis. Axis of most change.</param>
+        /// <param name="arAxisS">Principal S axis. Axis of second most change.</param>
+        /// <param name="arAxisT">Principal T axis. Axis of third most change.</param>
+        /// <returns>The number of points in the container aPoints.</returns>
+        public static int CalculatePrincipalComponentAxes(IEnumerable<Vector3> aPoints, out Vector3 arAxisR, out Vector3 arAxisS, out Vector3 arAxisT)
+        {
+            int count = 0;
+            Vector3 mean = Vector3.Zero;
+
+            foreach (Vector3 u in aPoints)
+            {
+                mean += u;
+                count++;
+            }
+
+            float invCount = (count > 0) ? ((float)(1.0 / ((double)count))) : 0.0f;
+            mean *= invCount;
+
+            float m11 = 0.0f;
+            float m22 = 0.0f;
+            float m33 = 0.0f;
+            float m12 = 0.0f;
+            float m13 = 0.0f;
+            float m23 = 0.0f;
+
+            foreach (Vector3 u in aPoints)
+            {
+                Vector3 v = u - mean;
+                m11 += v.X * v.X;
+                m22 += v.Y * v.Y;
+                m33 += v.Z * v.Z;
+                m12 += v.X * v.Y;
+                m13 += v.X * v.Z;
+                m23 += v.Y * v.Z;
+            }
+
+            m11 *= invCount;
+            m22 *= invCount;
+            m33 *= invCount;
+            m12 *= invCount;
+            m13 *= invCount;
+            m23 *= invCount;
+
+            Matrix3 m = new Matrix3(m11, m12, m13, m12, m22, m23, m13, m23, m33);
+            Vector3 eigenValues;
+            Matrix3 eigenVectors;
+            Utilities.FindEigenspace(ref m, out eigenValues, out eigenVectors);
+
+            m11 = Math.Abs(eigenValues.X);
+            m22 = Math.Abs(eigenValues.Y);
+            m33 = Math.Abs(eigenValues.Z);
+
+            if (Utilities.GreaterThan(m11, m22) && Utilities.GreaterThan(m11, m33))
+            {
+                arAxisR = new Vector3(eigenVectors.M11, eigenVectors.M21, eigenVectors.M31);
+
+                if (Utilities.GreaterThan(m22, m33))
+                {
+                    arAxisS = new Vector3(eigenVectors.M12, eigenVectors.M22, eigenVectors.M32);
+                    arAxisT = new Vector3(eigenVectors.M13, eigenVectors.M23, eigenVectors.M33);
+                }
+                else
+                {
+                    arAxisS = new Vector3(eigenVectors.M13, eigenVectors.M23, eigenVectors.M33);
+                    arAxisT = new Vector3(eigenVectors.M12, eigenVectors.M22, eigenVectors.M32);
+                }
+            }
+            else if (Utilities.GreaterThan(m22, m33))
+            {
+                arAxisR = new Vector3(eigenVectors.M12, eigenVectors.M22, eigenVectors.M32);
+
+                if (Utilities.GreaterThan(m11, m33))
+                {
+                    arAxisS = new Vector3(eigenVectors.M11, eigenVectors.M21, eigenVectors.M31);
+                    arAxisT = new Vector3(eigenVectors.M13, eigenVectors.M23, eigenVectors.M33);
+                }
+                else
+                {
+                    arAxisS = new Vector3(eigenVectors.M13, eigenVectors.M23, eigenVectors.M33);
+                    arAxisT = new Vector3(eigenVectors.M11, eigenVectors.M21, eigenVectors.M31);
+                }
+            }
+            else
+            {
+                arAxisR = new Vector3(eigenVectors.M13, eigenVectors.M23, eigenVectors.M33);
+
+                if (Utilities.GreaterThan(m11, m22))
+                {
+                    arAxisS = new Vector3(eigenVectors.M11, eigenVectors.M21, eigenVectors.M31);
+                    arAxisT = new Vector3(eigenVectors.M12, eigenVectors.M22, eigenVectors.M32);
+                }
+                else
+                {
+                    arAxisS = new Vector3(eigenVectors.M12, eigenVectors.M22, eigenVectors.M32);
+                    arAxisT = new Vector3(eigenVectors.M11, eigenVectors.M21, eigenVectors.M31);
+                }
+            }
+
+            arAxisR.Normalize();
+            arAxisS.Normalize();
+            arAxisT.Normalize();
+
+            Matrix reflection = new Matrix(arAxisR.X, arAxisR.Y, arAxisR.Z, 0.0f,
+                                  arAxisS.X, arAxisS.Y, arAxisS.Z, 0.0f,
+                                  arAxisT.X, arAxisT.Y, arAxisT.Z, 0.0f,
+                                  0, 0, 0, 1);
+
+            if (Utilities.IsReflection(ref reflection)) { arAxisT = -arAxisT; }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Given a container a points and three "natural" axes of the points, this function
+        /// calculates the center of the points.
+        /// </summary>
+        /// <param name="aPoints">A container of points.</param>
+        /// <param name="aAxisR">The axis of most change.</param>
+        /// <param name="aAxisS">The second most axis of change.</param>
+        /// <param name="aAxisT">The third most axis of change.</param>
+        /// <param name="arCenter">The output center of the points.</param>
+        public static void CalculateCenter(IEnumerable<Vector3> aPoints, ref Vector3 aAxisR, ref Vector3 aAxisS, ref Vector3 aAxisT, out Vector3 arCenter)
+        {
+            Vector3 min = kMaxVector3;
+            Vector3 max = kMinVector3;
+
+            foreach (Vector3 v in aPoints)
+            {
+                Vector3 a;
+                a.X = Vector3.Dot(v, aAxisR);
+                a.Y = Vector3.Dot(v, aAxisS);
+                a.Z = Vector3.Dot(v, aAxisT);
+
+                min = Vector3.Min(min, a);
+                max = Vector3.Max(max, a);
+            }
+
+            Vector3 abc = 0.5f * (max + min);
+
+            arCenter = (abc.X * aAxisR) + (abc.Y * aAxisS) + (abc.Z * aAxisT);
+        }
+
+        /// <summary>
+        /// Given a three orthonormal axes and a collection of points, this function will
+        /// return the center and half extents of the axes R, S, T that form a tightest fitting 
+        /// OBB around the collection of points.
+        /// </summary>
+        /// <param name="aPoints">The collection of points.</param>
+        /// <param name="arCenter">Origin of the coordinate frame formed by R, S, T.</param>
+        /// <param name="aAxisR">Axis of most change.</param>
+        /// <param name="aAxisS">Axis of second most change.</param>
+        /// <param name="aAxisT">Axis of third most change.</param>
+        /// <param name="arHalfExtents">Output half extents of R, S, T stored as X, Y, Z.</param>
+        public static void CalculateCenterAndHalfExtents(IEnumerable<Vector3> aPoints, ref Vector3 aAxisR, ref Vector3 aAxisS, ref Vector3 aAxisT, out Vector3 arCenter, out Vector3 arHalfExtents)
+        {
+            Vector3 min = kMaxVector3;
+            Vector3 max = kMinVector3;
+
+            foreach (Vector3 v in aPoints)
+            {
+                Vector3 a;
+                a.X = Vector3.Dot(v, aAxisR);
+                a.Y = Vector3.Dot(v, aAxisS);
+                a.Z = Vector3.Dot(v, aAxisT);
+
+                min = Vector3.Min(min, a);
+                max = Vector3.Max(max, a);
+            }
+
+            Vector3 abc = 0.5f * (max + min);
+
+            arCenter = (abc.X * aAxisR) + (abc.Y * aAxisS) + (abc.Z * aAxisT);
+            arHalfExtents = 0.5f * (max - min);
+        }
+
+        /// <summary>
+        /// Gvien an origin and three orthonormal axes, this function will return a matrix
+        /// that will transform a point into the local coordinate frame formed by the
+        /// origin and axes. This function chooses the axes X, Y, Z for R, S, T such that 
+        /// the overall orientation change is minimal.
+        /// </summary>
+        /// <param name="aCenter">Origin of the new coordinate frame.</param>
+        /// <param name="aAxisR">Axis of most change.</param>
+        /// <param name="aAxisS">Axis of second most change.</param>
+        /// <param name="aAxisT">Axis of third most change.</param>
+        /// <param name="arOut">Output transform.</param>
+        public static void CalculateMatrix(ref Vector3 aCenter, ref Vector3 aAxisR, ref Vector3 aAxisS, ref Vector3 aAxisT, out Matrix arOut)
+        {
+            arOut = new Matrix(
+                aAxisR.X, aAxisR.Y, aAxisR.Z, 0.0f,
+                aAxisS.X, aAxisS.Y, aAxisS.Z, 0.0f,
+                aAxisT.X, aAxisT.Y, aAxisT.Z, 0.0f,
+                aCenter.X, aCenter.Y, aCenter.Z, 1.0f);
+        }
+
+        public static BoundingBox CreateBoxFromPoints(IEnumerable<Vector3> e)
+        {
+            Vector3 min = Utilities.kMaxVector3;
+            Vector3 max = Utilities.kMinVector3;
+
+            foreach (Vector3 v in e)
+            {
+                min = Vector3.Min(min, v);
+                max = Vector3.Max(max, v);
+            }
+
+            BoundingBox ret = (new BoundingBox(min, max));
+
+            return ret;
+        }
+
+        public static BoundingSphere CreateSphereFromPoints(IEnumerable<Vector3> e)
+        {
+            Vector3 r, s, t;
+            Vector3 halfExtents;
+
+            BoundingSphere bs;
+            CalculatePrincipalComponentAxes(e, out r, out s, out t);
+            CalculateCenterAndHalfExtents(e, ref r, ref s, ref t, out bs.Center, out halfExtents);
+            bs.Radius = halfExtents.Length();
+
+            foreach (Vector3 v in e)
+            {
+                Vector3 a = (v - bs.Center);
+                float n = a.LengthSquared();
+
+                if (Utilities.GreaterThan(n, (bs.Radius * bs.Radius), Utilities.kLooseToleranceFloat))
+                {
+                    Vector3 b = (bs.Center - (a * (1.0f / ((float)Math.Sqrt(n)))) * bs.Radius);
+
+                    bs.Center = 0.5f * (b + v);
+                    bs.Radius = Vector3.Distance(b, bs.Center);
+                }
+            }
+
+            return bs;
+        }
+        #endregion
+
         public static T Clamp<T>(T a, T aMin, T aMax) where T : IComparable<T>
         {
             if (a.CompareTo(aMax) > 0) { return aMax; }
@@ -673,6 +982,20 @@ namespace jz
         public static bool IsNaN(Vector4 u)
         {
             return (float.IsNaN(u.X) || float.IsNaN(u.Y) || float.IsNaN(u.Z) || float.IsNaN(u.W));
+        }
+
+        public static bool IsReflection(ref Matrix m)
+        {
+            bool bReturn = LessThan(UpperLeft3x3Determinant(ref m), 0.0f);
+            return bReturn;
+        }
+
+        public static float UpperLeft3x3Determinant(ref Matrix m)
+        {
+            float ret = ((m.M11 * m.M22 * m.M33) + (m.M12 * m.M23 * m.M31) + (m.M13 * m.M21 * m.M32)) -
+                        ((m.M31 * m.M22 * m.M13) + (m.M32 * m.M23 * m.M11) + (m.M33 * m.M21 * m.M12));
+
+            return ret;
         }
 
         public static float Luminance(Vector3 v)

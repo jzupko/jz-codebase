@@ -68,6 +68,64 @@ namespace jz
         SystemMemorySurface::~SystemMemorySurface()
         {}
 
+        inline DWORD Convert(u32 aLockFlags)
+        {
+            DWORD ret = 0u;
+            if ((aLockFlags & SystemMemorySurface::kReadonly) != 0) { ret |= D3DLOCK_READONLY; }
+
+            return ret;
+        }
+
+        void SystemMemorySurface::Lock(const RectangleU& aRect, u32 aLockFlags, void_p& arpLock, unatural& arPitch)
+        {
+            DWORD flags = Convert(aLockFlags);
+            RECT rect;
+            rect.left = aRect.Left;
+            rect.top = aRect.Top;
+            rect.right = aRect.Right;
+            rect.bottom = aRect.Bottom;
+
+            D3DLOCKED_RECT lockedRect;
+            JZ_DEBUG_DX_FAIL(mpSurface.Cast<IDirect3DSurface9>()->LockRect(&lockedRect, &rect, flags));
+
+            arpLock = lockedRect.pBits;
+            arPitch = lockedRect.Pitch;
+        }
+
+        void SystemMemorySurface::Unlock()
+        {
+            JZ_DEBUG_DX_FAIL(mpSurface.Cast<IDirect3DSurface9>()->UnlockRect());
+        }
+
+        void SystemMemorySurface::PopulateFromBackbuffer()
+        {
+            IDirect3DSurface9* p = null;
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->GetBackBuffer(0u, 0u, D3DBACKBUFFER_TYPE_MONO, &p));
+
+            if (p)
+            {
+                D3DSURFACE_DESC desc;
+                memset(&desc, 0, sizeof(D3DSURFACE_DESC));
+
+                if (SUCCEEDED(p->GetDesc(&desc)))
+                {
+                    D3DFORMAT format = Convert(mFormat);
+
+                    if (desc.Format == format)
+                    {
+                        IDirect3DSurface9* pLocal = mpSurface.Cast<IDirect3DSurface9>();
+
+                        if (pLocal)
+                        {
+                            JZ_DEBUG_DX_FAIL(gpD3dDevice9->GetRenderTargetData(p, pLocal));
+                        }
+                    }
+                }
+
+                SafeRelease(p);
+            }
+        }
+
         void SystemMemorySurface::_Create()
         {
         }

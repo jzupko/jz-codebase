@@ -65,6 +65,7 @@ namespace jz
                 }
                 else
                 {
+                    mInternalState = kErrorFileNotFound;
                     LogMessage(__FUNCTION__ ": \"" + mFilename + "\" is not loadable.", Logger::kWarning);
                 }
             }

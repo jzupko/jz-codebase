@@ -62,6 +62,8 @@ namespace jz
             Vector4 GetScaleShift(int aHandle) const;
             Vector2 GetShadowDelta() const;
             Matrix4 GetShadowPostTransform() const;
+
+            graphics::DepthStencilSurface* GetShadowDepthStencil() const;
             graphics::Target* GetShadowTarget() const;
 
             int Grab();

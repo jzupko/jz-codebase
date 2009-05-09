@@ -24,6 +24,7 @@
 #ifndef _JZ_GRAPHICS_SYSTEM_MEMORY_SURFACE_H_
 #define _JZ_GRAPHICS_SYSTEM_MEMORY_SURFACE_H_
 
+#include <jz_core/Rectangle.h>
 #include <jz_graphics/IObject.h>
 
 namespace jz
@@ -57,10 +58,18 @@ namespace jz
                 kA16B16G16R16
             };
 
+            enum LockFlags
+            {
+                kNone = 0,
+                kReadonly = (1 << 0)
+            };
+
             static const int SortOrder = 0;
 
-            // TODO: Change this to a member function.
-            Handle GetSurfaceHandle() const { return mpSurface; }
+            void Lock(const RectangleU& aRect, u32 aLockFlags, void_p& arpLock, unatural& arPitch);
+            void Unlock();
+
+            void PopulateFromBackbuffer();
 
         protected:
             JZ_EXPORT virtual ~SystemMemorySurface();

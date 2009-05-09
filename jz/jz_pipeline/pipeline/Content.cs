@@ -133,7 +133,7 @@ namespace jz.pipeline
         public sealed class Part
         {
             #region Enumerators
-            public sealed class SingleEnumerator : IEnumerator<float>, IEnumerable<float>
+            public sealed class SingleEnumerator : IEnumerator<float>
             {
                 private readonly byte[] kBytes = null;
                 private readonly int kElementSize = -1;
@@ -166,9 +166,6 @@ namespace jz.pipeline
 
                 public void Dispose() { }
 
-                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this; }
-                public IEnumerator<float> GetEnumerator() { return this; }
-
                 public bool MoveNext()
                 {
                     if (mElementPos < kElementSize) { mElementPos += sizeof(float); }
@@ -187,7 +184,33 @@ namespace jz.pipeline
                     mElementPos = 0;
                 }
             }
-            public sealed class Vector2Enumerator : IEnumerator<Vector2>, IEnumerable<Vector2>
+            public sealed class SingleEnumerable : IEnumerable<float>
+            {
+                private readonly byte[] kBytes = null;
+                private readonly int kElementSize = -1;
+                private readonly int kInitialPosition = -1;
+                private readonly int kStride = -1;
+
+                public SingleEnumerable(byte[] aBytes, int aInitialPosition, int aStrideInBytes, int aElementSizeInBytes)
+                {
+                    kBytes = aBytes;
+                    kStride = aStrideInBytes;
+                    kElementSize = aElementSizeInBytes;
+                    kInitialPosition = aInitialPosition;
+                }
+
+                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+                {
+                    return new SingleEnumerator(kBytes, kInitialPosition, kStride, kElementSize);
+                }
+
+                public IEnumerator<float> GetEnumerator()
+                {
+                    return new SingleEnumerator(kBytes, kInitialPosition, kStride, kElementSize);
+                }
+            }
+
+            public sealed class Vector2Enumerator : IEnumerator<Vector2>
             {
                 private const int i0 = (0 * sizeof(float));
                 private const int i1 = (1 * sizeof(float));
@@ -221,9 +244,6 @@ namespace jz.pipeline
 
                 public void Dispose() { }
 
-                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this; }
-                public IEnumerator<Vector2> GetEnumerator() { return this; }
-
                 public bool MoveNext()
                 {
                     mCurrentPos += kStride;
@@ -236,7 +256,31 @@ namespace jz.pipeline
                     mCurrentPos = (kInitialPosition - kStride);
                 }
             }
-            public sealed class Vector3Enumerator : IEnumerator<Vector3>, IEnumerable<Vector3>
+            public sealed class Vector2Enumerable : IEnumerable<Vector2>
+            {
+                private readonly byte[] kBytes = null;
+                private readonly int kInitialPosition = -1;
+                private readonly int kStride = -1;
+
+                public Vector2Enumerable(byte[] aBytes, int aInitialPosition, int aStrideInBytes)
+                {
+                    kBytes = aBytes;
+                    kStride = aStrideInBytes;
+                    kInitialPosition = aInitialPosition;
+                }
+
+                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+                {
+                    return (new Vector2Enumerator(kBytes, kInitialPosition, kStride));
+                }
+
+                public IEnumerator<Vector2> GetEnumerator()
+                {
+                    return (new Vector2Enumerator(kBytes, kInitialPosition, kStride));
+                }
+            }
+
+            public sealed class Vector3Enumerator : IEnumerator<Vector3>
             {
                 private const int i0 = (0 * sizeof(float));
                 private const int i1 = (1 * sizeof(float));
@@ -272,9 +316,6 @@ namespace jz.pipeline
 
                 public void Dispose() { }
 
-                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this; }
-                public IEnumerator<Vector3> GetEnumerator() { return this; }
-
                 public bool MoveNext()
                 {
                     mCurrentPos += kStride;
@@ -287,7 +328,31 @@ namespace jz.pipeline
                     mCurrentPos = (kInitialPosition - kStride);
                 }
             }
-            public sealed class Vector4Enumerator : IEnumerator<Vector4>, IEnumerable<Vector4>
+            public sealed class Vector3Enumerable : IEnumerable<Vector3>
+            {
+                private readonly byte[] kBytes = null;
+                private readonly int kInitialPosition = -1;
+                private readonly int kStride = -1;
+
+                public Vector3Enumerable(byte[] aBytes, int aInitialPosition, int aStrideInBytes)
+                {
+                    kBytes = aBytes;
+                    kStride = aStrideInBytes;
+                    kInitialPosition = aInitialPosition;
+                }
+
+                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+                {
+                    return (new Vector3Enumerator(kBytes, kInitialPosition, kStride));
+                }
+
+                public IEnumerator<Vector3> GetEnumerator()
+                {
+                    return (new Vector3Enumerator(kBytes, kInitialPosition, kStride));
+                }
+            }
+
+            public sealed class Vector4Enumerator : IEnumerator<Vector4>
             {
                 private const int i0 = (0 * sizeof(float));
                 private const int i1 = (1 * sizeof(float));
@@ -325,9 +390,6 @@ namespace jz.pipeline
 
                 public void Dispose() { }
 
-                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this; }
-                public IEnumerator<Vector4> GetEnumerator() { return this; }
-
                 public bool MoveNext()
                 {
                     mCurrentPos += kStride;
@@ -338,6 +400,29 @@ namespace jz.pipeline
                 public void Reset()
                 {
                     mCurrentPos = (kInitialPosition - kStride);
+                }
+            }
+            public sealed class Vector4Enumerable : IEnumerable<Vector4>
+            {
+                private readonly byte[] kBytes = null;
+                private readonly int kInitialPosition = -1;
+                private readonly int kStride = -1;
+
+                public Vector4Enumerable(byte[] aBytes, int aInitialPosition, int aStrideInBytes)
+                {
+                    kBytes = aBytes;
+                    kStride = aStrideInBytes;
+                    kInitialPosition = aInitialPosition;
+                }
+
+                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+                {
+                    return (new Vector4Enumerator(kBytes, kInitialPosition, kStride));
+                }
+
+                public IEnumerator<Vector4> GetEnumerator()
+                {
+                    return (new Vector4Enumerator(kBytes, kInitialPosition, kStride));
                 }
             }
             #endregion
@@ -376,7 +461,8 @@ namespace jz.pipeline
 
                     if (Vertices != null && Vertices.Length > 0)
                     {
-                        ret = BoundingBox.CreateFromPoints(EnumerateVector3(VertexElementUsage.Position, 0));
+                        // ret = BoundingBox.CreateFromPoints(EnumerateVector3(VertexElementUsage.Position, 0));
+                        ret = Utilities.CreateBoxFromPoints(EnumerateVector3(VertexElementUsage.Position, 0));
                     }
 
                     return ret;
@@ -391,37 +477,38 @@ namespace jz.pipeline
 
                     if (Vertices != null && Vertices.Length > 0)
                     {
-                        ret = BoundingSphere.CreateFromPoints(EnumerateVector3(VertexElementUsage.Position, 0));
+                        // ret = BoundingSphere.CreateFromPoints(EnumerateVector3(VertexElementUsage.Position, 0));
+                        ret = Utilities.CreateSphereFromPoints(EnumerateVector3(VertexElementUsage.Position, 0));
                     }
 
                     return ret;
                 }
             }
 
-            public SingleEnumerator EnumerateSingle(VertexElementUsage aUsage, byte aUsageIndex)
+            public SingleEnumerable EnumerateSingle(VertexElementUsage aUsage, byte aUsageIndex)
             {
-                SingleEnumerator ret = new SingleEnumerator(Vertices, GetOffsetInBytes(aUsage, aUsageIndex), VertexStrideInBytes, GetElementSizeInBytes(aUsage, aUsageIndex));
+                SingleEnumerable ret = new SingleEnumerable(Vertices, GetOffsetInBytes(aUsage, aUsageIndex), VertexStrideInBytes, GetElementSizeInBytes(aUsage, aUsageIndex));
 
                 return ret;
             }
 
-            public Vector2Enumerator EnumerateVector2(VertexElementUsage aUsage, byte aUsageIndex)
+            public Vector2Enumerable EnumerateVector2(VertexElementUsage aUsage, byte aUsageIndex)
             {
-                Vector2Enumerator ret = new Vector2Enumerator(Vertices, GetOffsetInBytes(aUsage, aUsageIndex), VertexStrideInBytes);
+                Vector2Enumerable ret = new Vector2Enumerable(Vertices, GetOffsetInBytes(aUsage, aUsageIndex), VertexStrideInBytes);
 
                 return ret;
             }
 
-            public Vector3Enumerator EnumerateVector3(VertexElementUsage aUsage, byte aUsageIndex)
+            public Vector3Enumerable EnumerateVector3(VertexElementUsage aUsage, byte aUsageIndex)
             {
-                Vector3Enumerator ret = new Vector3Enumerator(Vertices, GetOffsetInBytes(aUsage, aUsageIndex), VertexStrideInBytes);
+                Vector3Enumerable ret = new Vector3Enumerable(Vertices, GetOffsetInBytes(aUsage, aUsageIndex), VertexStrideInBytes);
 
                 return ret;
             }
 
-            public Vector4Enumerator EnumerateVector4(VertexElementUsage aUsage, byte aUsageIndex)
+            public Vector4Enumerable EnumerateVector4(VertexElementUsage aUsage, byte aUsageIndex)
             {
-                Vector4Enumerator ret = new Vector4Enumerator(Vertices, GetOffsetInBytes(aUsage, aUsageIndex), VertexStrideInBytes);
+                Vector4Enumerable ret = new Vector4Enumerable(Vertices, GetOffsetInBytes(aUsage, aUsageIndex), VertexStrideInBytes);
 
                 return ret;
             }

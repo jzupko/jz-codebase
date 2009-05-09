@@ -95,6 +95,7 @@ static const float4x4 kIdentity = float4x4(1, 0, 0, 0,
 shared float Gamma : jz_Gamma = 1.0;
 shared float2 CameraFocalLength : jz_CameraFocalLength = float2(1, 1);
 shared float4x4 Projection : jz_Projection = kStdProj;
+shared float4 ReflectionPlane : jz_ReflectionPlane = float4(0, 1, 0, 0);
 shared float2 ScreenDimensions : jz_ScreenDimensions = float2(1, 1);
 shared float Time : jz_Time = 0.0f;
 shared float4x4 View : jz_View = kIdentity;
@@ -171,9 +172,9 @@ float ComponentStdDev(float3x3 v, float mean)
 float3 GammaColor(uniform float3 aColor)
 {
 	float3 ret;
-	ret.r = (aColor.r >= kLooseTolerance) ? pow(aColor.r, Gamma) : 0.0;
-	ret.g = (aColor.g >= kLooseTolerance) ? pow(aColor.g, Gamma) : 0.0;
-	ret.b = (aColor.b >= kLooseTolerance) ? pow(aColor.b, Gamma) : 0.0;
+	ret.r = (aColor.r >= kZeroTolerance) ? pow(aColor.r, Gamma) : 0.0;
+	ret.g = (aColor.g >= kZeroTolerance) ? pow(aColor.g, Gamma) : 0.0;
+	ret.b = (aColor.b >= kZeroTolerance) ? pow(aColor.b, Gamma) : 0.0;
 	
 	return ret;
 }
@@ -183,7 +184,11 @@ float4 LinearToNonLinear(float4 aColor)
 #   pragma warning (push)
 #   pragma warning (disable : 3571)
     
-    float4 ret = float4(pow(aColor.rgb, (1.0 / Gamma)), aColor.a);
+    float4 ret;
+    ret.r = (aColor.r >= kZeroTolerance) ? pow(aColor.r, (1.0 /Gamma)) : 0.0;
+    ret.g = (aColor.g >= kZeroTolerance) ? pow(aColor.g, (1.0 /Gamma)) : 0.0;
+    ret.b = (aColor.b >= kZeroTolerance) ? pow(aColor.b, (1.0 /Gamma)) : 0.0;
+    ret.a = aColor.a;
 
 #   pragma warning (pop)
 
@@ -200,6 +205,13 @@ float4 GammaColor(uniform float4 aColor)
 float4 GammaTex2D(sampler aSampler, float2 aTexCoords)
 {
 	float4 col = tex2D(aSampler, aTexCoords);
+	
+	return float4(pow(col.rgb, Gamma), col.a);
+}
+
+float4 GammaTex2DProj(sampler aSampler, float4 aTexCoords)
+{
+	float4 col = tex2Dproj(aSampler, aTexCoords);
 	
 	return float4(pow(col.rgb, Gamma), col.a);
 }
@@ -309,6 +321,25 @@ float2 Reflect(float2 u, float2 v)
 float3 Reflect(float3 u, float3 v)
 {
 	return (u - (2.0 * dot(u, v) * v));
+}
+
+float4x4 GetReflection(float4 aPlane)
+{
+    float d = aPlane.w;
+    float3 n = aPlane.xyz;
+
+    float4x4 ret;
+    ret._11 = 1.0 - (2.0 * n.x * n.x); ret._12 =     - (2.0 * n.y * n.x); ret._13 =     - (2.0 * n.z * n.x); ret._14 = 0.0;
+    ret._21 =     - (2.0 * n.x * n.y); ret._22 = 1.0 - (2.0 * n.y * n.y); ret._23 =     - (2.0 * n.z * n.y); ret._24 = 0.0;
+    ret._31 =     - (2.0 * n.x * n.z); ret._32 =     - (2.0 * n.y * n.z); ret._33 = 1.0 - (2.0 * n.z * n.z); ret._34 = 0.0;
+    ret._41 =     - (2.0 * n.x * d);   ret._42 =     - (2.0 * n.y * d);   ret._43 =     - (2.0 * n.z * d);   ret._44 = 1.0;
+
+    return ret;
+}
+
+float4 GetReflectionPlane()
+{
+    return (ReflectionPlane);
 }
 
 float3x3 GetInverseTranspose(float3x3 m)
