@@ -174,7 +174,8 @@
                     tr1::bind(Files::SetWorkingDirectory, modulePath),
                     tr1::bind(Files::SetWorkingDirectory, origDir));
              
-                Files::GetSingleton().AddArchive(new FileArchive("..\\media\\compiled"));
+                Files& files = Files::GetSingleton();
+                files.AddArchive(new ZipArchive("media.dat"));
 
                 Loader loader;
                 Graphics graphics;

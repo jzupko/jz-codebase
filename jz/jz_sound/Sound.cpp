@@ -68,13 +68,13 @@ namespace jz
             {
                 if (mMode == kLoadCompletely)
                 {
-                    FSOUND_Sample_SetMode(mpHandle.Cast<FSOUND_SAMPLE*>(), (abLoop) ? FSOUND_LOOP_NORMAL : FSOUND_LOOP_OFF);
-                    mChannel = FSOUND_PlaySound(FSOUND_FREE, mpHandle.Cast<FSOUND_SAMPLE*>());            
+                    FSOUND_Sample_SetMode(StaticCast<FSOUND_SAMPLE*>(mpHandle), (abLoop) ? FSOUND_LOOP_NORMAL : FSOUND_LOOP_OFF);
+                    mChannel = FSOUND_PlaySound(FSOUND_FREE, StaticCast<FSOUND_SAMPLE*>(mpHandle));            
                 }
                 else if (mMode == kStreaming)
                 {
-                    FSOUND_Stream_SetMode(mpHandle.Cast<FSOUND_STREAM*>(), (abLoop) ? FSOUND_LOOP_NORMAL : FSOUND_LOOP_OFF);
-                    mChannel = FSOUND_Stream_Play(FSOUND_FREE, mpHandle.Cast<FSOUND_STREAM*>());
+                    FSOUND_Stream_SetMode(StaticCast<FSOUND_STREAM*>(mpHandle), (abLoop) ? FSOUND_LOOP_NORMAL : FSOUND_LOOP_OFF);
+                    mChannel = FSOUND_Stream_Play(FSOUND_FREE, StaticCast<FSOUND_STREAM*>(mpHandle));
                 }
 
                 if (mChannel != kInvalidChannel)
@@ -98,7 +98,7 @@ namespace jz
                     }
                     else if (mMode == kStreaming)
                     {
-                        FSOUND_Stream_Stop(mpHandle.Cast<FSOUND_STREAM*>());
+                        FSOUND_Stream_Stop(StaticCast<FSOUND_STREAM*>(mpHandle));
                     }
                     mChannel = kInvalidChannel;
                 }
@@ -113,11 +113,11 @@ namespace jz
 
                 if (mMode == kLoadCompletely)
                 {
-                    FSOUND_Sample_Free(mpHandle.Cast<FSOUND_SAMPLE*>());
+                    FSOUND_Sample_Free(StaticCast<FSOUND_SAMPLE*>(mpHandle));
                 }
                 else if (mMode == kStreaming)
                 {
-                    FSOUND_Stream_Close(mpHandle.Cast<FSOUND_STREAM*>());
+                    FSOUND_Stream_Close(StaticCast<FSOUND_STREAM*>(mpHandle));
                 }
 
                 mMode = kNone;

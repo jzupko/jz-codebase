@@ -36,7 +36,7 @@ namespace jz
         const uint EndPoint::kSentinelMin = Constants<uint>::kMin;
         const uint EndPoint::kSentinelMax = Constants<uint>::kMax;
 
-        inline uint GetSortableUintFromFloat(float s)
+        __inline uint GetSortableUintFromFloat(float s)
         {
             uint i = *((uint*)&s);
 

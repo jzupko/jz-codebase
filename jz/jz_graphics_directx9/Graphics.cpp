@@ -450,7 +450,7 @@ namespace jz
             D3DPERF_EndEvent();
         }
 
-        inline DWORD Convert(float v)
+        __inline DWORD Convert(float v)
         {
             return *((DWORD*)&v);
         }
@@ -877,6 +877,14 @@ namespace jz
             mSettings.WindowHeight       = GetSystemMetrics(SM_CYFULLSCREEN);            
 
             _RecalculateViewportSize();
+        }
+
+        uint Graphics::GetMaxTextureDimension() const
+        {
+            D3DCAPS9 caps;
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->GetDeviceCaps(&caps));
+
+            return (Min(caps.MaxTextureHeight, caps.MaxTextureWidth));
         }
 
     }

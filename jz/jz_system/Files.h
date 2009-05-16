@@ -28,6 +28,7 @@
 #include <jz_core/Utility.h>
 #include <jz_system/Mutex.h>
 #include <list>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -337,15 +338,16 @@ namespace jz
                     : Offset(0)
                 {}
                 
-                string Filename;
+                string FullFilename;
+                string ShortFilename;
                 ZipLocalFileHeader Header;
                 natural Offset;
                 string Path;
             };
 
-            typedef vector<ZipFileEntry> CompressedFiles;
+            typedef map<string, ZipFileEntry> CompressedFiles;
 
-            CompressedFiles    mFiles;
+            CompressedFiles mFiles;
             AutoPtr<IReadFile> mpZipFile;
 
             IReadFile* _Open(const string& aFilename) const;
@@ -393,7 +395,7 @@ namespace jz
                 return (c == '/') || (c == '\\');
             }
 
-            JZ_EXPORT static void CleanFilename(string& arFilename);
+            JZ_EXPORT static string CleanFilename(const string& aFilename);
             JZ_EXPORT static string Combine(const string& aPathLeft, const string& aPathRight);
             JZ_EXPORT static bool Exists(const char* apFilename);
             JZ_EXPORT static string ExtractBase(const string& aFilename);

@@ -74,7 +74,7 @@ namespace jz
         {
             OPENGL_ASSERT();
 
-            uint handle = mTexture.CastUInt();
+            uint handle = StaticCast<uint>(mTexture);
             if (GlIdIsValid(gOpenGlFbo) && GlIdIsValid(handle))
             {
                 glBindFramebuffer(GL_FRAMEBUFFER, gOpenGlFbo);
@@ -110,7 +110,7 @@ namespace jz
         {
             OPENGL_ASSERT();
             
-            uint handle = mTexture.CastUInt();
+            uint handle = StaticCast<uint>(mTexture);
             glDeleteTextures(1, &handle);
             mTexture.Reset();
         }

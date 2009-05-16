@@ -66,7 +66,7 @@ namespace jz
         }
     };
 
-    inline CoordinateFrame3D operator*(const CoordinateFrame3D& a, const CoordinateFrame3D& b)
+    __inline CoordinateFrame3D operator*(const CoordinateFrame3D& a, const CoordinateFrame3D& b)
     {
         CoordinateFrame3D ret;
         ret.Orientation = (a.Orientation * b.Orientation);

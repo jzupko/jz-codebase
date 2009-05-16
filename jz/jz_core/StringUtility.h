@@ -44,7 +44,7 @@ namespace jz
 
         static string ToString(int n, bool bHex = false);
         static string ToString(ulong n, bool bHex = false) { return ToString((size_t)n, bHex); }
-        static string ToString(void_p p) { return ToString((size_t)p, true); }
+        static string ToString(voidc_p p) { return ToString((size_t)p, true); }
         static string ToString(size_t n, bool bHex = false);
         static string ToString(u64 n, bool bHex = false);
         static string ToString(float v);

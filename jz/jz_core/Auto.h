@@ -127,25 +127,25 @@ namespace jz
     };
 
     template <typename T, typename U>
-    inline bool operator==(const AutoPtr<T>& a, const AutoPtr<U>& b)
+    __inline bool operator==(const AutoPtr<T>& a, const AutoPtr<U>& b)
     {
         return (a.Get() == b.Get());
     }
 
     template <typename T, typename U>
-    inline bool operator==(const AutoPtr<T>& a, U* b)
+    __inline bool operator==(const AutoPtr<T>& a, U* b)
     {
         return (a.Get() == b);
     }
 
     template <typename T, typename U>
-    inline bool operator==(U* a, const AutoPtr<T>& b)
+    __inline bool operator==(U* a, const AutoPtr<T>& b)
     {
         return (a == b.Get());
     }
 
     template <typename T, typename U>
-    inline bool operator!=(const AutoPtr<T>& a, const AutoPtr<U>& b)
+    __inline bool operator!=(const AutoPtr<T>& a, const AutoPtr<U>& b)
     {
         return (a.Get() != b.Get());
     }

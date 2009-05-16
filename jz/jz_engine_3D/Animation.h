@@ -33,11 +33,17 @@ namespace jz
     namespace engine_3D
     {
 
+        // TODO: fix this - separate the time from the matrix so the padding isn't necessary.
         struct KeyFrame
         {
+            JZ_STATIC_ASSERT(sizeof(Matrix4) == 64);
+            JZ_STATIC_ASSERT(sizeof(Vector4) == 16);
+
             Matrix4 Key;
-            float Time;
+            Vector4 TimeAndPadding;
         };
+
+        JZ_STATIC_ASSERT(sizeof(KeyFrame) == 80);
 
         struct Animation
         {

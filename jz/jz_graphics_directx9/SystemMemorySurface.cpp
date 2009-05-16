@@ -68,7 +68,7 @@ namespace jz
         SystemMemorySurface::~SystemMemorySurface()
         {}
 
-        inline DWORD Convert(u32 aLockFlags)
+        __inline DWORD Convert(u32 aLockFlags)
         {
             DWORD ret = 0u;
             if ((aLockFlags & SystemMemorySurface::kReadonly) != 0) { ret |= D3DLOCK_READONLY; }
@@ -86,7 +86,7 @@ namespace jz
             rect.bottom = aRect.Bottom;
 
             D3DLOCKED_RECT lockedRect;
-            JZ_DEBUG_DX_FAIL(mpSurface.Cast<IDirect3DSurface9>()->LockRect(&lockedRect, &rect, flags));
+            JZ_DEBUG_DX_FAIL(StaticCast<IDirect3DSurface9*>(mpSurface)->LockRect(&lockedRect, &rect, flags));
 
             arpLock = lockedRect.pBits;
             arPitch = lockedRect.Pitch;
@@ -94,7 +94,7 @@ namespace jz
 
         void SystemMemorySurface::Unlock()
         {
-            JZ_DEBUG_DX_FAIL(mpSurface.Cast<IDirect3DSurface9>()->UnlockRect());
+            JZ_DEBUG_DX_FAIL(StaticCast<IDirect3DSurface9*>(mpSurface)->UnlockRect());
         }
 
         void SystemMemorySurface::PopulateFromBackbuffer()
@@ -113,7 +113,7 @@ namespace jz
 
                     if (desc.Format == format)
                     {
-                        IDirect3DSurface9* pLocal = mpSurface.Cast<IDirect3DSurface9>();
+                        IDirect3DSurface9* pLocal = StaticCast<IDirect3DSurface9*>(mpSurface);
 
                         if (pLocal)
                         {

@@ -55,7 +55,7 @@ namespace jz
             void SetVisible(bool b) { mbVisible = b; }
 
             virtual void PoseForRender() override;
-            virtual BoundingBox GetAABB() const override { return mAABB; }
+            virtual const BoundingBox& GetAABB() const override { return mAABB; }
 
             StandardEffectPtr GetEffect() const;
             graphics::MaterialPtr GetMaterial() const { return mPack.pMaterial; }

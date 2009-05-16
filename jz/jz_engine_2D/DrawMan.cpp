@@ -39,7 +39,7 @@
 
 namespace jz
 {
-    static const char* kDefaultEffect = "..\\media\\engine_2D_draw.cfx";
+    static const char* kDefaultEffect = "engine_2D_draw.cfx";
     static const char* kUnitQuad = "built-in_instancing-quad.mesh";
 
     engine_2D::DrawMan* engine_2D::DrawMan::mspSingleton = null;
@@ -200,7 +200,7 @@ namespace jz
         static const float kOffset = (float)(254.0 / (255.0 * 255.0));
         static const float kOffset2 = (kOffset + kOffset);
 
-        inline bool Sort(const graphics::RenderPack& r, float& arSort)
+        static bool Sort(const graphics::RenderPack& r, float& arSort)
         {
             if ((r.Flags & graphics::RenderPack::kBase) != 0)
             {

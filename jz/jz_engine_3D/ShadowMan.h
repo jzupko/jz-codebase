@@ -52,6 +52,8 @@ namespace jz
         class ShadowMan sealed : public Singleton<ShadowMan>
         {
         public:
+            JZ_ALIGNED_NEW
+
             ShadowMan();
             ~ShadowMan();
 

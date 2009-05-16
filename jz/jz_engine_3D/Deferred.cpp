@@ -41,11 +41,11 @@ namespace jz
     namespace engine_3D
     {
 
-        static const float kDefaultGaussianKernelStdDev = 5.0f;
+        static const float kDefaultGaussianKernelStdDev = 1.5f;
         static const float kMinimumGaussianStdDev = Constants<float>::kZeroTolerance;
-        static const char* kEffectFile = "..\\media\\engine_3D_deferred.cfx";
+        static const char* kEffectFile = "engine_3D_deferred.cfx";
 
-        static const float kDefaultShadowControlTerm = 0.1f;
+        static const float kDefaultShadowControlTerm = 0.4f;
 
         static const float kDefaultMotionBlurAmount = 0.25f;
         static const float kDefaultBloomThreshold = 0.9f;
@@ -452,7 +452,7 @@ namespace jz
                 else if (light->GetType() == LightNodeType::kPoint)
                 {
                     const BoundingSphere& worldBounding = rm.GetWorldFrustumBoundingSphere();
-                    if (light->GetWorldBounding().Contains(worldBounding))
+                    if (light->GetBoundingSphere().Contains(worldBounding))
                     {
                         mEffect->SetTechnique(mPointAsQuad);
                         _Set(rm.GetUnitQuadMesh());

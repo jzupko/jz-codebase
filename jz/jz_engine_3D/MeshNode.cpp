@@ -43,7 +43,7 @@ namespace jz
         {
             const MeshNode* p = static_cast<const MeshNode*>(apInstance);
             
-            StandardEffect* pEffect = p->GetEffect().Get();
+            StandardEffect* pEffect = p->GetEffect();
 
             if (p->bThreePoint())
             {
@@ -55,7 +55,7 @@ namespace jz
 
             graphics::Graphics::GetSingleton().GetActivePass()->Commit();
 
-            graphics::Mesh* pMesh = p->GetMesh().Get();
+            graphics::Mesh* pMesh = p->GetMesh();
             pMesh->Draw();
         }
 
@@ -110,11 +110,6 @@ namespace jz
 
         MeshNode::~MeshNode()
         {
-        }
-
-        StandardEffectPtr MeshNode::GetEffect() const
-        {
-            return static_cast<StandardEffect*>(mPack.pEffect.Get());
         }
 
         void MeshNode::PoseForRender()

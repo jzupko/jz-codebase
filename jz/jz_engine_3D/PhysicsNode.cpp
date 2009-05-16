@@ -43,7 +43,9 @@ namespace jz
             mpWorldTree(new physics::TriangleTreeShape()),
             mpWorldBody(mpWorld->Create(mpWorldTree.Get(),
                 physics::Body3D::kStatic, physics::Body3D::kDynamic)),
-            mbDebugPhysics(false)
+            mbTreeDirty(false),
+            mbDebugPhysics(false),
+            mAABB(BoundingBox::kZero)
         {}
 
         PhysicsNode::PhysicsNode(const string& aId)
@@ -52,7 +54,9 @@ namespace jz
             mpWorldTree(new physics::TriangleTreeShape()),
             mpWorldBody(mpWorld->Create(mpWorldTree.Get(),
                 physics::Body3D::kStatic, physics::Body3D::kDynamic)),
-            mbDebugPhysics(false)
+            mbTreeDirty(false),
+            mbDebugPhysics(false),
+            mAABB(BoundingBox::kZero)
         {}
 
         PhysicsNode::~PhysicsNode()
@@ -62,9 +66,15 @@ namespace jz
             SafeDelete(mpWorld);
         }
 
-        BoundingBox PhysicsNode::GetAABB() const
+        const BoundingBox& PhysicsNode::GetAABB() const
         {
-            return (GetWorldBody()->GetLocalBounding());
+            if (mbTreeDirty)
+            {
+                const_cast<BoundingBox&>(mAABB) = mpWorldTree->GetBounding();
+                const_cast<bool&>(mbTreeDirty) = false;
+            }
+
+            return mAABB;
         }
 
         static void DrawPhysicsNode(graphics::RenderNode* apNode, voidc_p apInstance)

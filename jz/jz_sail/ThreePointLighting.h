@@ -42,6 +42,8 @@ namespace jz
         class ThreePointLighting
         {
         public:
+            JZ_ALIGNED_NEW
+
             static const float kCameraStep;
             static const float kNearPlaneScale;
 
@@ -96,6 +98,9 @@ namespace jz
             ThreePointLighting(const ThreePointLighting&);
             ThreePointLighting& operator=(const ThreePointLighting&);
 
+            Matrix4 mCamera;
+            Matrix4 mInvCamera;
+
             ColorRGB mKeyDiffuse;
             ColorRGB mKeySpecular;
             ColorRGB mBackDiffuse;
@@ -105,8 +110,6 @@ namespace jz
             ImageIlluminationMetrics mIdeal;
             ThreePointSettings mMotivation;
 
-            Matrix4 mCamera;
-            Matrix4 mInvCamera;
             Radian mCameraYaw;
             Radian mCameraPitch;
             Radian mDesiredCameraYaw;

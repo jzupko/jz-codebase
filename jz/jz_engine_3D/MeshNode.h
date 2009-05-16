@@ -53,11 +53,11 @@ namespace jz
             virtual void PoseForRender() override;
             virtual void PoseForShadow(LightNode* apLight) override;
 
-            virtual BoundingBox GetAABB() const override { return mAABB; }
+            virtual const BoundingBox& GetAABB() const override { return mAABB; }
 
-            StandardEffectPtr GetEffect() const;
-            graphics::MaterialPtr GetMaterial() const { return mPack.pMaterial; }
-            graphics::MeshPtr GetMesh() const { return mPack.pMesh; }
+            StandardEffect* GetEffect() const { return (StandardEffect*)(mPack.pEffect.Get()); }
+            graphics::Material* GetMaterial() const { return (mPack.pMaterial.Get()); }
+            graphics::Mesh* GetMesh() const { return (mPack.pMesh.Get()); }
 
             void SetEffect(StandardEffect* p);
             void SetMaterial(graphics::Material* p);

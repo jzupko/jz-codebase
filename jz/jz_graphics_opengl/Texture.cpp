@@ -59,7 +59,7 @@ namespace jz
         {
             OPENGL_ASSERT();
 
-            uint handle = mHandle.CastUInt();
+            uint handle = StaticCast<uint>(mHandle);
             glDeleteTextures(1, &handle);
             mHandle.Reset();
 

@@ -68,8 +68,8 @@ namespace jz
             virtual void _PostUpdate(bool abChanged)  override;
             virtual SceneNode* _SpawnClone(const string& aCloneId) override;
 
-            AnimationControlPtr mpAnimationControl;
             Matrix4 mBind;
+            AnimationControlPtr mpAnimationControl;
             MemoryBuffer<Matrix4> mInvBinds;
             vector<JointNodePtr> mJoints;
             vector<string> mJointIds;

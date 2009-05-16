@@ -108,7 +108,7 @@ namespace jz
             return ret;
         }
 
-        inline float SortForOpaque(float v) { return -v; }
+        __inline float SortForOpaque(float v) { return -v; }
 
         static void SetPickColor(graphics::RenderNode* apNode, voidc_p apInstance)
         {

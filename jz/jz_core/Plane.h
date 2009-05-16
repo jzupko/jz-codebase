@@ -100,12 +100,12 @@ namespace jz
         // as (p2 - p1) cross (p0 - p1), handle winding accordingly.
         void Set(const Vector3& p0, const Vector3& p1, const Vector3& p2);
 
-        static float DotCoordinate(const Vector3& v, const Plane& p)
+        __inline static float DotCoordinate(const Vector3& v, const Plane& p)
         {
             return (p.mD + Vector3::Dot(p.mNormal, v));
         }
 
-        static float DotNormal(const Vector3& v, const Plane& p)
+        __inline static float DotNormal(const Vector3& v, const Plane& p)
         {
             return (Vector3::Dot(v, p.mNormal));
         }

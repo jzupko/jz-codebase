@@ -37,7 +37,7 @@ namespace jz
     namespace graphics
     {
 
-        inline bool GlIdIsValid(GLuint id) { return (id != 0u); }
+        __inline bool GlIdIsValid(GLuint id) { return (id != 0u); }
         
         struct _AssertOpenGL
         {

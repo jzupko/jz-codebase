@@ -42,4 +42,46 @@ namespace jz
     const Radian Radian::kTwoPi = Radian(Constants<float>::kTwoPi);
     const Radian Radian::kZero = Radian(0);
 
+    Degree Clamp(Degree a, Degree aMin, Degree aMax)
+    {
+        while (a > (aMax + Degree::k180)) { a -= Degree::k360; }
+        while (a < (aMin - Degree::k180)) { a += Degree::k360; }
+
+        if (a > aMax) { return aMax; }
+        else if (a < aMin) { return aMin; }
+        else { return a; }
+    }
+
+    Radian Clamp(Radian a, Radian aMin, Radian aMax)
+    {
+        while (a > (aMax + Radian::kPi)) { a -= Radian::kTwoPi; }
+        while (a < (aMin - Radian::kPi)) { a += Radian::kTwoPi; }
+
+        if (a > aMax) { return aMax; }
+        else if (a < aMin) { return aMin; }
+        else { return a; }
+    }
+
+    Degree Lerp(Degree a, Degree b, float aWeightOfB)
+    {
+        float av = a.GetValue();
+        float bv = b.GetValue();
+
+        while (av > (bv + 180.0f)) { av -= 360.0f; }
+        while (bv > (av + 180.0f)) { bv -= 360.0f; }
+
+        return Degree(jz::Lerp(av, bv, aWeightOfB));
+    }
+
+    Radian Lerp(Radian a, Radian b, float aWeightOfB)
+    {
+        float av = a.GetValue();
+        float bv = b.GetValue();
+
+        while (av > (bv + Radian::kPi.GetValue())) { av -= Radian::kTwoPi.GetValue(); }
+        while (bv > (av + Radian::kPi.GetValue())) { bv -= Radian::kTwoPi.GetValue(); }
+
+        return Radian(jz::Lerp(av, bv, aWeightOfB));
+    }
+
 }

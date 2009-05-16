@@ -30,12 +30,6 @@
 namespace jz
 {
 
-    // Low-level memory management. Note that unlike C malloc, realloc, these will 
-    // throw exceptions on failed allocation.
-    void Free(void_p p);
-    void_p Malloc(size_t aSize);
-    void_p Realloc(void_p p, size_t aSize);
-
     template <typename T>
     class MemoryBuffer
     {
@@ -55,7 +49,7 @@ namespace jz
         {}
 
         MemoryBuffer(size_type aSize)
-            : mpData((pointer)Malloc(aSize * sizeof(T))), mSize(aSize)
+            : mpData((pointer)Malloc(aSize * sizeof(T), JZ_ALIGN_OF(T))), mSize(aSize)
         {}
 
         MemoryBuffer(const MemoryBuffer& aBuffer)
@@ -63,7 +57,7 @@ namespace jz
         {
             if (aBuffer.mpData)
             {
-                mpData = (pointer)Malloc(aBuffer.mSize * sizeof(T));
+                mpData = (pointer)Malloc(aBuffer.mSize * sizeof(T), JZ_ALIGN_OF(T));
                 memcpy(mpData, aBuffer.mpData, aBuffer.mSize * sizeof(T));
                 mSize  = aBuffer.mSize;                    
             }
@@ -74,7 +68,7 @@ namespace jz
             if (!aBuffer.mpData) { clear(); }
             else
             {
-                mpData = (mpData) ? (pointer)Realloc(mpData, aBuffer.mSize * sizeof(T)) : (pointer)Malloc(aBuffer.mSize * sizeof(T));
+                mpData = (mpData) ? (pointer)Realloc(mpData, aBuffer.mSize * sizeof(T), JZ_ALIGN_OF(T)) : (pointer)Malloc(aBuffer.mSize * sizeof(T), JZ_ALIGN_OF(T));
                 memcpy(mpData, aBuffer.mpData, aBuffer.mSize * sizeof(T));
                 mSize  = aBuffer.mSize;                    
             }
@@ -136,7 +130,7 @@ namespace jz
             if (aSize == 0) { clear(); }
             else if (aSize != mSize)
             {
-                mpData = (mpData) ? (pointer)Realloc(mpData, aSize * sizeof(T)) : (pointer)Malloc(aSize * sizeof(T));
+                mpData = (mpData) ? (pointer)Realloc(mpData, aSize * sizeof(T), JZ_ALIGN_OF(T)) : (pointer)Malloc(aSize * sizeof(T), JZ_ALIGN_OF(T));
                 mSize  = aSize;
             }
         }

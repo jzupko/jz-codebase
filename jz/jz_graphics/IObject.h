@@ -36,6 +36,8 @@ namespace jz
         class IObject abstract
         {
         public:
+            JZ_ALIGNED_NEW
+
             enum State
             {
                 kUnloaded = 0,
@@ -99,6 +101,8 @@ namespace jz
         class IVolatileObject abstract
         {
         public:
+            JZ_ALIGNED_NEW
+
             enum State
             {
                 kDestroyed = 0,

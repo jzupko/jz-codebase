@@ -42,13 +42,7 @@ namespace jz
 
         void VertexDeclaration::SetToDevice() const
         {
-            if (IsReset())
-            {
-                if (mHandle)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetVertexDeclaration(mHandle.Cast<IDirect3DVertexDeclaration9>()));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetVertexDeclaration(StaticCast<IDirect3DVertexDeclaration9*>(mHandle)));
         }
 
         IObject::State VertexDeclaration::_Load()

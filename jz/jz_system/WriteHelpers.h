@@ -67,6 +67,8 @@ namespace jz
             }
         }
 
+        void WriteTextLine(IWriteFilePtr& p, const string& s);
+
     }
 }
 

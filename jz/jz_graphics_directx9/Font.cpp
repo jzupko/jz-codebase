@@ -49,7 +49,7 @@ namespace jz
                 rect.right = (x + width);
                 rect.bottom = (y + height);
 
-                JZ_DEBUG_DX_FAIL(mpFont.Cast<ID3DXFont>()->DrawText(
+                JZ_DEBUG_DX_FAIL(StaticCast<ID3DXFont*>(mpFont)->DrawText(
                     null, apString, -1, &rect, aDrawFlags, 
                     D3DCOLOR_COLORVALUE(aColor.R, aColor.G, aColor.B, aColor.A)));
             }
@@ -83,12 +83,12 @@ namespace jz
 
         void Font::_Lost()
         {
-            JZ_DEBUG_DX_FAIL(mpFont.Cast<ID3DXFont>()->OnLostDevice());
+            JZ_DEBUG_DX_FAIL(StaticCast<ID3DXFont*>(mpFont)->OnLostDevice());
         }
         
         void Font::_Reset(natural aWidth, natural aHeight)
         {
-            JZ_DEBUG_DX_FAIL(mpFont.Cast<ID3DXFont>()->OnResetDevice());
+            JZ_DEBUG_DX_FAIL(StaticCast<ID3DXFont*>(mpFont)->OnResetDevice());
         }
 
     }

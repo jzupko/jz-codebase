@@ -52,6 +52,20 @@ namespace jz
     const ColorHSVA ColorHSVA::kBlack  = ColorHSVA(0, 0, 0, 1);
     const ColorHSVA ColorHSVA::kWhite  = ColorHSVA(1, 1, 1, 1);
 
+    double GetYfromRgbHelper(double v)
+    {
+        static const double k = 1.0 + gskYfromRgbAlpha;
+        
+        if (v > 0.04045)
+        {
+            return pow((v + gskYfromRgbAlpha) / k, gskYfromRgbTau);    
+        }
+        else
+        {
+            return (v  / gskYfromRgbPhi);
+        }
+    }
+
     void ColorRGB::SetFromHSV(const ColorHSV& c)
     {
         if (jz::AboutZero(c.S))

@@ -215,11 +215,11 @@ namespace jz
             mBoundingSphere = BoundingSphere::kZero;
             mAABB = BoundingBox::kZero;
 
-            uint vertexBuffer = (mVertexBuffer.CastUInt());
+            uint vertexBuffer = StaticCast<uint>(mVertexBuffer);
             glDeleteBuffersARB(1, &vertexBuffer);
             mVertexBuffer.Reset();
 
-            uint indexBuffer = (mIndexBuffer.CastUInt());
+            uint indexBuffer = StaticCast<uint>(mIndexBuffer);
             if (GlIdIsValid(indexBuffer))
             {
                 glDeleteBuffersARB(1, &indexBuffer);

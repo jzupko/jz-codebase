@@ -37,36 +37,24 @@ namespace jz
     static const double gskYfromRgbPhi   = 12.92;
     static const double gskYfromRgbTau   = 2.4;
     
-    inline double GetYfromRgbHelper(double v)
-    {
-        static const double k = 1.0 + gskYfromRgbAlpha;
-        
-        if (v > 0.04045)
-        {
-            return pow((v + gskYfromRgbAlpha) / k, gskYfromRgbTau);    
-        }
-        else
-        {
-            return (v  / gskYfromRgbPhi);
-        }
-    }
+    double GetYfromRgbHelper(double v);
     
-    inline float GetYfromRgbHelper(float v)
+    __inline float GetYfromRgbHelper(float v)
     {
         return float(GetYfromRgbHelper(double(v)));
     }
 
-    inline double GetYofCIE1931sRGB(double r, double g, double b)
+    __inline double GetYofCIE1931sRGB(double r, double g, double b)
     {
         return ((0.2126 * GetYfromRgbHelper(r)) + (0.7152 * GetYfromRgbHelper(g)) + (0.0722 * GetYfromRgbHelper(b)));
     }
 
-    inline float GetYofCIE1931sRGB(float r, float g, float b)
+    __inline float GetYofCIE1931sRGB(float r, float g, float b)
     {
         return ((0.2126f * GetYfromRgbHelper(r)) + (0.7152f * GetYfromRgbHelper(g)) + (0.0722f * GetYfromRgbHelper(b)));
     }
 
-    inline u8 GetYofCIE1931sRGB(u8 r, u8 g, u8 b)
+    __inline u8 GetYofCIE1931sRGB(u8 r, u8 g, u8 b)
     {
         static const float skToFactor   = float(1.0 / 255.0);
         static const float skFromFactor = float(255.0);
@@ -74,12 +62,12 @@ namespace jz
         return u8(GetYofCIE1931sRGB(float(r) * skToFactor, float(g) * skToFactor, float(b) * skToFactor) * skFromFactor);
     }
     
-    inline float GetYofCIE1931sRGB(const Vector3& v)
+    __inline float GetYofCIE1931sRGB(const Vector3& v)
     {
         return GetYofCIE1931sRGB(v.X, v.Y, v.Z);
     }
 
-    inline float GetYofCIE1931sRGB(const Vector4& v)
+    __inline float GetYofCIE1931sRGB(const Vector4& v)
     {
         return GetYofCIE1931sRGB(v.X, v.Y, v.Z);
     }
@@ -115,17 +103,17 @@ namespace jz
         static const ColorRGB kHdrWhite;
     };
 
-    inline float GetValue(const ColorRGB& c)
+    __inline float GetValue(const ColorRGB& c)
     {
         return Max(c.R, c.G, c.B);
     }
 
-    inline ColorRGB operator*(float s, const ColorRGB& c)
+    __inline ColorRGB operator*(float s, const ColorRGB& c)
     {
         return ColorRGB(s * c.R, s * c.G, s * c.B);
     }
 
-    inline float GetYofCIE1931sRGB(const ColorRGB& c)
+    __inline float GetYofCIE1931sRGB(const ColorRGB& c)
     {
         return GetYofCIE1931sRGB(c.R, c.G, c.B);
     }
@@ -165,21 +153,21 @@ namespace jz
         static const ColorRGBu kWhite;
     };
 
-    inline bool operator==(const ColorRGBu& a, const ColorRGBu& b)
+    __inline bool operator==(const ColorRGBu& a, const ColorRGBu& b)
     {
         return (a.R == b.R) &&
             (a.G == b.G) &&
             (a.B == b.B);
     }
 
-    inline bool operator!=(const ColorRGBu& a, const ColorRGBu& b)
+    __inline bool operator!=(const ColorRGBu& a, const ColorRGBu& b)
     {
         return (a.R != b.R) ||
             (a.G != b.G) ||
             (a.B != b.B);
     }
 
-    inline u8 GetYofCIE1931sRGB(const ColorRGBu& c)
+    __inline u8 GetYofCIE1931sRGB(const ColorRGBu& c)
     {
         return GetYofCIE1931sRGB(c.R, c.G, c.B);
     }
@@ -200,7 +188,7 @@ namespace jz
         static const ColorRGBAu kWhite;
     };
 
-    inline bool operator<(const ColorRGBAu& a, const ColorRGBAu& b)
+    __inline bool operator<(const ColorRGBAu& a, const ColorRGBAu& b)
     {
         return (a.R < b.R) ||
             (a.G < b.G) ||
@@ -208,7 +196,7 @@ namespace jz
             (a.A < b.A);
     }
 
-    inline bool operator==(const ColorRGBAu& a, const ColorRGBAu& b)
+    __inline bool operator==(const ColorRGBAu& a, const ColorRGBAu& b)
     {
         return (a.R == b.R) &&
             (a.G == b.G) &&
@@ -216,7 +204,7 @@ namespace jz
             (a.A == b.A);
     }
 
-    inline bool operator!=(const ColorRGBAu& a, const ColorRGBAu& b)
+    __inline bool operator!=(const ColorRGBAu& a, const ColorRGBAu& b)
     {
         return (a.R != b.R) ||
             (a.G != b.G) ||
@@ -224,7 +212,7 @@ namespace jz
             (a.A != b.A);
     }
 
-    inline u8 GetYofCIE1931sRGB(const ColorRGBAu& c)
+    __inline u8 GetYofCIE1931sRGB(const ColorRGBAu& c)
     {
         return GetYofCIE1931sRGB(c.R, c.G, c.B);
     }
@@ -269,12 +257,12 @@ namespace jz
         static const ColorRGBA kWhite;
     };
 
-    inline ColorRGBA operator*(float s, const ColorRGBA& c)
+    __inline ColorRGBA operator*(float s, const ColorRGBA& c)
     {
         return ColorRGBA(s * c.R, s * c.G, s * c.B, s * c.A);
     }
 
-    inline float GetYofCIE1931sRGB(const ColorRGBA& c)
+    __inline float GetYofCIE1931sRGB(const ColorRGBA& c)
     {
         return GetYofCIE1931sRGB(c.R, c.G, c.B);
     }
@@ -306,7 +294,7 @@ namespace jz
         static const ColorHSL kWhite;
     };
 
-    inline ColorHSL operator*(float s, const ColorHSL& c)
+    __inline ColorHSL operator*(float s, const ColorHSL& c)
     {
         return ColorHSL(s * c.H, s * c.S, s * c.L);
     }
@@ -330,7 +318,7 @@ namespace jz
         static const ColorHSLA kWhite;
     };
 
-    inline ColorHSLA operator*(float s, const ColorHSLA& c)
+    __inline ColorHSLA operator*(float s, const ColorHSLA& c)
     {
         return ColorHSLA(s * c.H, s * c.S, s * c.L, s * c.A);
     }
@@ -366,7 +354,7 @@ namespace jz
         static const ColorHSV kWhite;
     };
 
-    inline ColorHSV operator*(float s, const ColorHSV& c)
+    __inline ColorHSV operator*(float s, const ColorHSV& c)
     {
         return ColorHSV(s * c.H, s * c.S, s * c.V);
     }
@@ -390,7 +378,7 @@ namespace jz
         static const ColorHSVA kWhite;
     };
 
-    inline ColorHSVA operator*(float s, const ColorHSVA& c)
+    __inline ColorHSVA operator*(float s, const ColorHSVA& c)
     {
         return ColorHSVA(s * c.H, s * c.S, s * c.V, s * c.A);
     }
@@ -413,7 +401,7 @@ namespace jz
         void SetFromRGB(const ColorRGB& c);
     };
 
-    inline ColorXYZ operator*(float s, const ColorXYZ& c)
+    __inline ColorXYZ operator*(float s, const ColorXYZ& c)
     {
         return ColorXYZ(s * c.X, s * c.Y, s * c.Z);
     }
@@ -437,7 +425,7 @@ namespace jz
         void SetFromRGB(const ColorRGB& c);
     };
 
-    inline ColorLUV operator*(float s, const ColorLUV& c)
+    __inline ColorLUV operator*(float s, const ColorLUV& c)
     {
         return ColorLUV(s * c.L, s * c.U, s * c.V);
     }

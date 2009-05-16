@@ -58,9 +58,11 @@ namespace jz
         Vector3 center = aBox.Center();
         const size_t kSize = Planes.size();
 
+        const Vector3 rst = 0.5f * (aBox.Max - aBox.Min);
+
         for (size_t i = 0; i < kSize; i++)
         {
-            const float radius = aBox.EffectiveRadius(Planes[i]);
+            const float radius = Vector3::Dot(rst, Planes[i].GetAbsNormal());
             const float negRadius = -radius;
             const float d = Plane::DotCoordinate(center, Planes[i]);
 

@@ -31,7 +31,7 @@ namespace jz
     namespace physics
     {
 
-        inline ConvexShape2D::Container GetPoints(const BoundingRectangle& abr)
+        __inline ConvexShape2D::Container GetPoints(const BoundingRectangle& abr)
         {
             ConvexShape2D::Container ret(4);
             ret[0] = Vector2(abr.Min.X, abr.Min.Y);
@@ -58,7 +58,7 @@ namespace jz
         };
         typedef AutoPtr<physics::Box2DShape> Box2DShapePtr;
 
-        inline ConvexShape3D::Container GetPoints(const BoundingBox& bb)
+        __inline ConvexShape3D::Container GetPoints(const BoundingBox& bb)
         {
             ConvexShape3D::Container ret(8);
             ret[0] = Vector3(bb.Min.X, bb.Min.Y, bb.Min.Z);

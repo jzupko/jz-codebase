@@ -36,8 +36,8 @@ namespace jz
         {
             if (e)
             {
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
                 JZ_DEBUG_DX_FAIL(effect->SetBool(param, v));
             }
@@ -47,8 +47,8 @@ namespace jz
         {
             if (e)
             {
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
                 JZ_DEBUG_DX_FAIL(effect->SetFloat(param, v));
             }
@@ -58,8 +58,8 @@ namespace jz
         {
             if (e)
             {
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
                 JZ_DEBUG_DX_FAIL(effect->SetValue(param, v, aSizeInBytes));
             }
@@ -69,10 +69,21 @@ namespace jz
         {
             if (e)
             {
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
                 JZ_DEBUG_DX_FAIL(effect->SetFloatArray(param, v, aNumberOfSingles));
+            }
+        }
+
+        void __SetParameterValue(Handle e, Handle p, const Matrix4& v)
+        {
+            if (e)
+            {
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
+
+                JZ_DEBUG_DX_FAIL(effect->SetMatrixTranspose(param, (D3DXMATRIX const *)v.pData));
             }
         }
 
@@ -80,10 +91,10 @@ namespace jz
         {
             if (e)
             {
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
-                JZ_DEBUG_DX_FAIL(effect->SetMatrixArray(param, (D3DXMATRIX const *)v, aNumberOfMatrix4));
+                JZ_DEBUG_DX_FAIL(effect->SetMatrixTransposeArray(param, (D3DXMATRIX const *)v, aNumberOfMatrix4));
             }
         }
 
@@ -91,8 +102,8 @@ namespace jz
         {
             if (e)
             {
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
                 JZ_DEBUG_DX_FAIL(effect->SetVectorArray(param, (D3DXVECTOR4 const *)v, aNumberOfVector4));
             }
@@ -105,12 +116,12 @@ namespace jz
                 IDirect3DTexture9* texture = null;
                 if (v)
                 {
-                    if (v->IsReset()) { texture = (v->mTexture.Cast<IDirect3DTexture9>()); }
-                    else { texture = (Graphics::GetSingleton().GetDefaultTexture()->mHandle.Cast<IDirect3DTexture9>()); }
+                    if (v->IsReset()) { texture = StaticCast<IDirect3DTexture9*>(v->mTexture); }
+                    else { texture = StaticCast<IDirect3DTexture9*>(Graphics::GetSingleton().GetDefaultTexture()->mHandle); }
                 }
 
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
                 JZ_DEBUG_DX_FAIL(effect->SetTexture(param, texture));
             }
@@ -123,12 +134,12 @@ namespace jz
                 IDirect3DTexture9* texture = null;
                 if (v)
                 {
-                    if (v->IsReset()) { texture = (v->mHandle.Cast<IDirect3DTexture9>()); }
-                    else { texture = (Graphics::GetSingleton().GetDefaultTexture()->mHandle.Cast<IDirect3DTexture9>()); }
+                    if (v->IsReset()) { texture = StaticCast<IDirect3DTexture9*>(v->mHandle); }
+                    else { texture = StaticCast<IDirect3DTexture9*>(Graphics::GetSingleton().GetDefaultTexture()->mHandle); }
                 }
 
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
                 JZ_DEBUG_DX_FAIL(effect->SetTexture(param, texture));
             }
@@ -141,12 +152,12 @@ namespace jz
                 IDirect3DTexture9* texture = null;
                 if (v)
                 {
-                    if (v->IsReset()) { texture = (v->mHandle.Cast<IDirect3DTexture9>()); }
-                    else { texture = (Graphics::GetSingleton().GetDefaultTexture()->mHandle.Cast<IDirect3DTexture9>()); }
+                    if (v->IsReset()) { texture = StaticCast<IDirect3DTexture9*>(v->mHandle); }
+                    else { texture = StaticCast<IDirect3DTexture9*>(Graphics::GetSingleton().GetDefaultTexture()->mHandle); }
                 }
 
-                D3DXHANDLE param = p.Cast<D3DXHANDLE>();
-                ID3DXEffect* effect = e.Cast<ID3DXEffect>();
+                D3DXHANDLE param = StaticCast<D3DXHANDLE>(p);
+                ID3DXEffect* effect = StaticCast<ID3DXEffect*>(e);
 
                 JZ_DEBUG_DX_FAIL(effect->SetTexture(param, texture));
             }

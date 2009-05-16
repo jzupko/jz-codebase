@@ -29,7 +29,7 @@ namespace jz
     namespace system
     {
 
-        inline void SafeClose(FILE*& apFile)
+        void SafeClose(FILE*& apFile)
         {
             FILE* p = apFile;
             apFile = null;
@@ -72,12 +72,12 @@ namespace jz
                 FILE* mpFile;
         };
         
-        inline bool operator==(const ScopedClose& p, const ScopedClose& u)
+        __inline bool operator==(const ScopedClose& p, const ScopedClose& u)
         {
             return (p.Get() == u.Get());
         }
         
-        inline bool operator!=(const ScopedClose& p, const ScopedClose& u)
+        __inline bool operator!=(const ScopedClose& p, const ScopedClose& u)
         {
             return (p.Get() != u.Get());
         }

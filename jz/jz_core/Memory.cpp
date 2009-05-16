@@ -29,21 +29,21 @@ namespace jz
 
     void Free(void_p p)
     {
-        free(p);
+        _aligned_free(p);
     }
 
-    void_p Malloc(size_t aSize)
+    void_p Malloc(size_t aSize, size_t aAlignment)
     {
-        void_p pRet = malloc(aSize);
+        void_p pRet = _aligned_malloc(aSize, aAlignment);
 
         if (!pRet) { throw std::bad_alloc(); }
 
         return pRet;
     }
 
-    void_p Realloc(void_p p, size_t aSize)
+    void_p Realloc(void_p p, size_t aSize, size_t aAlignment)
     {
-        void_p pRet = realloc(p, aSize);
+        void_p pRet = _aligned_realloc(p, aSize, aAlignment);
 
         if (!pRet) { throw std::bad_alloc(); }
 

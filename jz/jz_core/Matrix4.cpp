@@ -28,6 +28,48 @@
 namespace jz
 {
 
+#   if (JZ_PLATFORM_SSE && JZ_PLATFORM_WINDOWS)
+    void _SSE_MatrixMultiply(Matrix4 const* pA, Matrix4 const* pB, Matrix4* pOut)
+    {
+        __asm
+        {
+            mov ecx, pA
+            mov edx, pB
+            mov eax, pOut
+
+            movaps xmm0, [ecx + 0]  // column 0, matrix A
+            movaps xmm1, [ecx + 16] // column 1, matrix A
+            movaps xmm2, [ecx + 32] // column 2, matrix A
+            movaps xmm3, [ecx + 48] // column 3, matrix A
+
+#           define JZ_ASM_HELPER(offset) \
+                __asm movaps xmm4, [edx + offset] \
+                __asm movaps xmm5, [edx + offset] \
+                __asm movaps xmm6, [edx + offset] \
+                __asm movaps xmm7, [edx + offset] \
+                __asm shufps xmm4, xmm4, 00000000b \
+                __asm shufps xmm5, xmm5, 01010101b \
+                __asm shufps xmm6, xmm6, 10101010b \
+                __asm shufps xmm7, xmm7, 11111111b \
+                __asm mulps xmm4, xmm0 \
+                __asm mulps xmm5, xmm1 \
+                __asm mulps xmm6, xmm2 \
+                __asm mulps xmm7, xmm3 \
+                __asm addps xmm4, xmm5 \
+                __asm addps xmm6, xmm7 \
+                __asm addps xmm4, xmm6 \
+                __asm movaps [eax + offset], xmm4 
+
+            JZ_ASM_HELPER(0)
+            JZ_ASM_HELPER(16)
+            JZ_ASM_HELPER(32)
+            JZ_ASM_HELPER(48)
+
+#           undef JZ_ASM_HELPER
+        };
+    }
+#   endif
+
     Matrix4 Matrix4::Invert(const Matrix4& m)
     {
         const float m00 = m(0, 0);

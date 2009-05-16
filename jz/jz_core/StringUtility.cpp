@@ -37,7 +37,7 @@ namespace jz
     {
         const string::size_type kSize = ar.length();
         
-        ar.erase(aRightPos, kSize - 1 - aRightPos);
+        ar.erase(aRightPos, kSize - aRightPos);
         ar.erase(0, aLeftPos);
     }
     

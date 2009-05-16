@@ -48,7 +48,7 @@ namespace jz
 
                 msSize *= kGrowthMultiplier;
                 mspOldData = mspData;
-                mspData = (T*)Malloc(msSize * sizeof(T));
+                mspData = (T*)Malloc(msSize * sizeof(T), JZ_ALIGN_OF(T));
 
                 for (size_t i = 0u; i < msSize; i++)
                 {
@@ -88,7 +88,7 @@ namespace jz
             {
                 ResetPool<T>::msSize = kInitialPoolSize;
                 ResetPool<T>::msCount = 0u;
-                ResetPool<T>::mspData = (T*)Malloc(ResetPool<T>::msSize * sizeof(T));
+                ResetPool<T>::mspData = (T*)Malloc(ResetPool<T>::msSize * sizeof(T), JZ_ALIGN_OF(T));
                 ResetPool<T>::mspOldData = null;
 
                 for (size_t i = 0; i < ResetPool<T>::msSize; i++)

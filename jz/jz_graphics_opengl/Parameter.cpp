@@ -38,7 +38,7 @@ namespace jz
 
             if (p)
             {
-                CGparameter param = p.Cast<CGparameter>();
+                CGparameter param = StaticCast<CGparameter>(p);
                 cgSetParameter1i(param, v);
             }
         }
@@ -49,7 +49,7 @@ namespace jz
 
             if (p)
             {
-                CGparameter param = p.Cast<CGparameter>();
+                CGparameter param = StaticCast<CGparameter>(p);
                 cgSetParameter1f(param, v);
             }
         }
@@ -61,8 +61,8 @@ namespace jz
             // Temp: can't set arbitrary arrays with cg.
             if (p && (aSizeInBytes % sizeof(float)) == 0)
             {
-                CGparameter param = p.Cast<CGparameter>();
-                cgSetParameterValuefr(param, (aSizeInBytes / sizeof(float)), (float const*)v);
+                CGparameter param = StaticCast<CGparameter>(p);
+                cgSetParameterValuefc(param, (aSizeInBytes / sizeof(float)), (float const*)v);
             }
         }
 
@@ -72,8 +72,19 @@ namespace jz
             
             if (p)
             {
-                CGparameter param = p.Cast<CGparameter>();
-                cgSetParameterValuefr(param, aNumberOfSingles, v);
+                CGparameter param = StaticCast<CGparameter>(p);
+                cgSetParameterValuefc(param, aNumberOfSingles, v);
+            }
+        }
+
+        void __SetParameterValue(Handle e, Handle p, const Matrix4& v)
+        {
+            CG_ASSERT();
+            
+            if (p)
+            {
+                CGparameter param = StaticCast<CGparameter>(p);
+                cgSetParameterValuefc(param, (Matrix4::N), v.pData);
             }
         }
 
@@ -83,8 +94,8 @@ namespace jz
             
             if (p)
             {
-                CGparameter param = p.Cast<CGparameter>();
-                cgSetParameterValuefr(param, (aNumberOfMatrix4 * Matrix4::N), (float const*)v);
+                CGparameter param = StaticCast<CGparameter>(p);
+                cgSetParameterValuefc(param, (aNumberOfMatrix4 * Matrix4::N), (float const*)v);
             }
         }
 
@@ -94,8 +105,8 @@ namespace jz
             
             if (p)
             {
-                CGparameter param = p.Cast<CGparameter>();
-                cgSetParameterValuefr(param, (aNumberOfVector4 * Vector4::N), (float const*)v);
+                CGparameter param = StaticCast<CGparameter>(p);
+                cgSetParameterValuefc(param, (aNumberOfVector4 * Vector4::N), (float const*)v);
             }
         }
 
@@ -108,11 +119,11 @@ namespace jz
                 uint texture = 0u;
                 if (v)
                 {
-                    if (v->IsReset()) { texture = (v->mTexture.CastUInt()); }
-                    else { texture = (Graphics::GetSingleton().GetDefaultTexture()->mHandle.CastUInt()); }
+                    if (v->IsReset()) { texture = StaticCast<uint>(v->mTexture); }
+                    else { texture = StaticCast<uint>(Graphics::GetSingleton().GetDefaultTexture()->mHandle); }
                 }
 
-                CGparameter param = p.Cast<CGparameter>();
+                CGparameter param = StaticCast<CGparameter>(p);
                 cgGLSetTextureParameter(param, texture);
             }
         }
@@ -126,11 +137,11 @@ namespace jz
                 uint texture = 0u;
                 if (v)
                 {
-                    if (v->IsReset()) { texture = (v->mHandle.CastUInt()); }
-                    else { texture = (Graphics::GetSingleton().GetDefaultTexture()->mHandle.CastUInt()); }
+                    if (v->IsReset()) { texture = StaticCast<uint>(v->mHandle); }
+                    else { texture = StaticCast<uint>(Graphics::GetSingleton().GetDefaultTexture()->mHandle); }
                 }
 
-                CGparameter param = p.Cast<CGparameter>();
+                CGparameter param = StaticCast<CGparameter>(p);
                 cgGLSetTextureParameter(param, texture);
             }
         }
@@ -144,11 +155,11 @@ namespace jz
                 uint texture = 0u;
                 if (v)
                 {
-                    if (v->IsReset()) { texture = (v->mHandle.CastUInt()); }
-                    else { texture = (Graphics::GetSingleton().GetDefaultTexture()->mHandle.CastUInt()); }
+                    if (v->IsReset()) { texture = StaticCast<uint>(v->mHandle); }
+                    else { texture = StaticCast<uint>(Graphics::GetSingleton().GetDefaultTexture()->mHandle); }
                 }
 
-                CGparameter param = p.Cast<CGparameter>();
+                CGparameter param = StaticCast<CGparameter>(p);
                 cgGLSetTextureParameter(param, texture);
             }
         }

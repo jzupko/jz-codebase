@@ -38,7 +38,7 @@ namespace jz
     double UniformRandomd();
 
     template <typename T>
-    inline bool AboutEqual(T a, T b, T aEpsilon = Constants<T>::kZeroTolerance)
+    __inline bool AboutEqual(T a, T b, T aEpsilon = Constants<T>::kZeroTolerance)
     {
         JZ_STATIC_ASSERT(std::numeric_limits<T>::is_specialized);
 
@@ -46,13 +46,13 @@ namespace jz
     }
 
     template <typename T>
-    inline bool AboutZero(T a, T aEpsilon = Constants<T>::kZeroTolerance)
+    __inline bool AboutZero(T a, T aEpsilon = Constants<T>::kZeroTolerance)
     {
         return (Abs(a) < aEpsilon);
     }
 
     template <typename T>
-    inline T Abs(T a)
+    __inline T Abs(T a)
     {
         JZ_STATIC_ASSERT(std::numeric_limits<T>::is_specialized);
         JZ_STATIC_ASSERT(std::numeric_limits<T>::is_signed);
@@ -61,30 +61,30 @@ namespace jz
     }
 
     template <typename T>
-    inline T Ceil(T v)
+    __inline T Ceil(T v)
     {
         return (T)std::ceil(v);
     }
 
     template <typename T>
-    inline T Exp(T v)
+    __inline T Exp(T v)
     {
         return (T)std::exp(v);
     }
 
     template <typename T>
-    inline T Floor(T v)
+    __inline T Floor(T v)
     {
         return (T)std::floor(v);
     }
 
     template <typename T>
-    bool GreaterThan(T a, T b, T aEpsilon = Constants<T>::kZeroTolerance)
+    __inline bool GreaterThan(T a, T b, T aEpsilon = Constants<T>::kZeroTolerance)
     {
         return (a >= (b + aEpsilon));
     }
 
-    inline float Lerp(float v1, float v2, float aWeightOfV2)
+    __inline float Lerp(float v1, float v2, float aWeightOfV2)
     {
         // (v1 * (1.0 - aWeightOfV2) + v2 * aWeightOfV2)
         // (v1 - v1 * aWeightOfV2 + v2 * aWeightOfV2
@@ -92,31 +92,31 @@ namespace jz
         return v1 + ((v2 - v1) * aWeightOfV2);
     }
 
-    inline double Lerp(double v1, double v2, double aWeightOfV2)
+    __inline double Lerp(double v1, double v2, double aWeightOfV2)
     {
         return v1 + ((v2 - v1) * aWeightOfV2);
     }
 
     template <typename T>
-    bool LessThan(T a, T b, T aEpsilon = Constants<T>::kZeroTolerance)
+    __inline bool LessThan(T a, T b, T aEpsilon = Constants<T>::kZeroTolerance)
     {
         return (a <= (b - aEpsilon));
     }
 
     template <typename T>
-    inline T Log(T v)
+    __inline T Log(T v)
     {
         return (T)std::log(v);
     }
 
     template <typename T>
-    inline T Pow(T v, T p)
+    __inline T Pow(T v, T p)
     {
         return (T)std::pow(v, p);
     }
 
     template <typename T>
-    inline T Sign(T v)
+    __inline T Sign(T v)
     {
         JZ_STATIC_ASSERT(std::numeric_limits<T>::is_specialized);
         JZ_STATIC_ASSERT(std::numeric_limits<T>::is_signed);
@@ -125,38 +125,29 @@ namespace jz
     }
 
     template <>
-    inline float Sign(float v)
+    __inline float Sign(float v)
     {
         return AboutZero(v) ? 0.0f : ((v < 0.0f) ? -1.0f : 1.0f);
     }
 
     template <>
-    inline double Sign(double v)
+    __inline double Sign(double v)
     {
         return AboutZero(v) ? 0.0 : ((v < 0.0) ? -1.0 : 1.0);
     }
    
     template <typename T>
-    inline T Sqrt(T v)
+    __inline T Sqrt(T v)
     {
         return (T)std::sqrt(v);
     }
 
-    inline float Gaussian1D(float dx, float aStdDev)
-    {
-        double dx2 = (double)(dx * dx);
-        double stdDev2 = (double)(aStdDev * aStdDev);
-
-        double kFactor = (1.0 / Sqrt(2.0 * Constants<double>::kPi * stdDev2));
-        double ret = kFactor * Exp(-dx2 / (2.0 * stdDev2));
-
-        return (float)ret;
-    }
+    float Gaussian1D(float dx, float aStdDev);
     #pragma endregion
 
     #pragma region Stat functions
     template <typename T>
-    inline typename T::value_type Max(const T& a)
+    typename T::value_type Max(const T& a)
     {
         typedef typename T::value_type     V;
         typedef typename T::const_iterator ConstItr;
@@ -172,7 +163,7 @@ namespace jz
     }
 
     template <typename T>
-    inline typename T::value_type Min(const T& a)
+    typename T::value_type Min(const T& a)
     {
         typedef typename T::value_type     V;
         typedef typename T::const_iterator ConstItr;
@@ -188,7 +179,7 @@ namespace jz
     }
 
     template <typename T>
-    inline typename T::value_type Mean(const T& a)
+    typename T::value_type Mean(const T& a)
     {
         typedef typename T::value_type     V;
         typedef typename T::const_iterator ConstItr;
@@ -211,7 +202,7 @@ namespace jz
     }
 
     template <typename T>
-    inline typename T::value_type Kurtosis(const T& a, const typename T::value_type& aMean, const typename T::value_type& aStdDev)
+    typename T::value_type Kurtosis(const T& a, const typename T::value_type& aMean, const typename T::value_type& aStdDev)
     {
         typedef typename T::value_type     V;
         typedef typename T::const_iterator ConstItr;
@@ -237,36 +228,11 @@ namespace jz
         return (n / (V(a.size() - 1) * stdDev2 * stdDev2)) - 3.0f;
     }
 
-    inline float Round(float a)
-    {
-        float n;
-        float f = modf(a, &n);
-        
-        if (GreaterThan(Abs(f), 0.5f) || AboutEqual(Abs(f), 0.5f))
-        {
-            if (n < 0.0f) { n -= 1.0f; }
-            else { n += 1.0f; }
-        }
-        
-        return n;
-    }
-    
-    inline double Round(double a)
-    {
-        double n;
-        double f = modf(a, &n);
-        
-        if (GreaterThan(Abs(f), 0.5))
-        {
-            if (n < 0.0) { n -= 1.0; }
-            else { n += 1.0; }
-        }
-        
-        return n;    
-    }
+    float Round(float a);    
+    double Round(double a);
 
     template <typename T>
-    inline typename T::value_type Skew(const T& a, const typename T::value_type& aMean, const typename T::value_type& aStdDev)
+    typename T::value_type Skew(const T& a, const typename T::value_type& aMean, const typename T::value_type& aStdDev)
     {
         typedef typename T::value_type     V;
         typedef typename T::const_iterator ConstItr;
@@ -289,19 +255,19 @@ namespace jz
     }
 
     template <typename T>
-    inline T StatNormalize(const T& aValue, const T& aMean, const T& aStdDev)
+    __inline T StatNormalize(const T& aValue, const T& aMean, const T& aStdDev)
     {
         return (aValue - aMean) / aStdDev;
     }
 
     template <typename T>
-    inline typename T::value_type StdDev(const T& a, const typename T::value_type& aMean)
+    __inline typename T::value_type StdDev(const T& a, const typename T::value_type& aMean)
     {
         return T::value_type(Sqrt(Variance(a, aMean)));
     }
 
     template <typename T>
-    inline typename T::value_type Variance(const T& a, const typename T::value_type& aMean)
+    typename T::value_type Variance(const T& a, const typename T::value_type& aMean)
     {
         typedef typename T::value_type     V;
         typedef typename T::const_iterator ConstItr;

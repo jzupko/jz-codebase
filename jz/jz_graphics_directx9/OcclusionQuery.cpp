@@ -40,7 +40,7 @@ namespace jz
         {
             if (IsReset() && mpQuery)
             {
-                IDirect3DQuery9* p = mpQuery.Cast<IDirect3DQuery9>();
+                IDirect3DQuery9* p = StaticCast<IDirect3DQuery9*>(mpQuery);
                 JZ_DEBUG_DX_FAIL(p->Issue(D3DISSUE_BEGIN));
                 return true;
             }
@@ -52,7 +52,7 @@ namespace jz
         {
             JZ_ASSERT(IsReset() && mpQuery);
 
-            IDirect3DQuery9* p = mpQuery.Cast<IDirect3DQuery9>();
+            IDirect3DQuery9* p = StaticCast<IDirect3DQuery9*>(mpQuery);
             JZ_DEBUG_DX_FAIL(p->Issue(D3DISSUE_END));
         }
 
@@ -60,7 +60,7 @@ namespace jz
         {
             if (IsReset() && mpQuery)
             {
-                IDirect3DQuery9* p = mpQuery.Cast<IDirect3DQuery9>();
+                IDirect3DQuery9* p = StaticCast<IDirect3DQuery9*>(mpQuery);
                 
                 bool bReturn = (p->GetData((void_p)(&mLastPixelCount), sizeof(unatural), 0) == S_OK);
                 return (bReturn);

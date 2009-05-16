@@ -40,12 +40,12 @@ namespace jz
 
         union
         {
-            // row major storage
+            // colmn major storage
             struct
             {
-                float M11, M12, M13;
-                float M21, M22, M23;
-                float M31, M32, M33;
+                float M11, M21, M31;
+                float M12, M22, M32;
+                float M13, M23, M33;
             };
 
             float pData[N];
@@ -340,14 +340,14 @@ namespace jz
         static Matrix3 CreateTranslation(const Vector2& t);
 
         private:
-            // row major storage
+            // column major storage
             int I(int aRow, int aColumn) const
             {
-                return (aRow * S) + aColumn;
+                return (aColumn * S) + aRow;
             }
     };
 
-    inline Matrix3 operator*(float s, const Matrix3& m)
+    __inline Matrix3 operator*(float s, const Matrix3& m)
     {
         return (m * s);
     }

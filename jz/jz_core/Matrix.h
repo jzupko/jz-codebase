@@ -192,10 +192,10 @@ namespace jz
         }
     
     private:
-        // row-major storage
+        // column major storage
         int I(int aRow, int aColumn) const
         {
-            return (aRow * mCols) + aColumn;
+            return (aColumn * mRows) + aRow;
         }
         
         natural mRows;

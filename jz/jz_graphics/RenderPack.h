@@ -62,7 +62,9 @@ namespace jz
                 kOpaque = (1 << 1),
                 kTransparent = (1 << 2),
                 kShadow = (1 << 3),
-                kReflection = (1 << 4)
+                kReflection = (1 << 4),
+                kGUI = (1 << 5),
+                kNoStrictSort = (1 << 6)
             };
 
             unatural Flags;

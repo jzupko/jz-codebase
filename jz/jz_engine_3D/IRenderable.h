@@ -34,7 +34,7 @@ namespace jz
         class IRenderable abstract
         {
         public:
-            virtual BoundingBox GetAABB() const = 0;
+            virtual const BoundingBox& GetAABB() const = 0;
             virtual void PoseForRender() = 0;
         };
 

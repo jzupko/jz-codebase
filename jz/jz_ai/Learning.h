@@ -294,21 +294,7 @@ namespace jz
             arIntercept = (sumY - (arSlope * sumX)) / float(n);
         }
         
-        inline bool MultipleLinearRegression(const Matrix& Y, const Matrix& X, Matrix& B)
-        {
-            Matrix Xt  = X.GetTranspose();
-            Matrix XtX = Xt * X;
-            Matrix XTinv;
-            
-            if (!XtX.ToInverse(XTinv))
-            {
-                return false;
-            }
-            
-            B = (XTinv * Xt * Y);
-            
-            return true;
-        }
+        bool MultipleLinearRegression(const Matrix& Y, const Matrix& X, Matrix& B);
         
         template <typename T, typename U, typename V>
         bool Regression(const T& aResponses, const U& aPredictions, V& arCoefficients)
@@ -400,79 +386,19 @@ namespace jz
 
         void Anneal(const SaState& aIn, SaState& arOut, EvalFunction aEvalFunc, const SaSettings& aSettings = SaSettings());
         
-        inline void Neighbor(const SaState& aIn, SaState& arOut, float aFactor)
-        {
-            for (size_t i = 0; i < aIn.size(); i++)
-            {
-                const float k = ((UniformRandomf() * 2.0f) - 1.0f) * aFactor;
-                const float t = aIn[i] + k;
-                
-                if (LessThan(t, 0.0f) || GreaterThan(t, 1.0f))
-                {
-                    arOut[i] = aIn[i] - k;
-                }
-                else
-                {
-                    arOut[i] = t;
-                }
-            }
-        }
-        
-        inline float Probability(float aErrorCurrent, float aErrorNext, float aTemperature)
-        {
-            if (aErrorNext < aErrorCurrent)
-            {
-                return 1.0f;
-            }
-            else
-            {
-                return exp((aErrorCurrent - aErrorNext) / aTemperature);
-            }
-        }
+        void Neighbor(const SaState& aIn, SaState& arOut, float aFactor);
+        float Probability(float aErrorCurrent, float aErrorNext, float aTemperature);
      
-        inline float Temperature(natural aIteration, natural aMaxIterations)
+        __inline float Temperature(natural aIteration, natural aMaxIterations)
         {
             return exp((float)aMaxIterations - float(aIteration) * 1.25f);
         }
 
-        inline float Gradient(const float* apTerms, natural aTermCount, float aTarget, float* apCoefficients)
-        {
-            float o = 0.0f;
-            
-            for (natural i = 0; i < aTermCount; i++)
-            {
-                o += apTerms[i] * apCoefficients[i];
-            }
-            
-            const float kDelta = (aTarget - o);
+        float Gradient(const float* apTerms, natural aTermCount, float aTarget, float* apCoefficients);
 
-            return kDelta;
-        }
+        float StochasticGradientDescent(const float* apTerms, natural aTermCount, float aTarget, float* apCoefficients, float aLearningRate = 0.01f);
 
-        inline float StochasticGradientDescent(const float* apTerms, natural aTermCount, float aTarget, float* apCoefficients, float aLearningRate = 0.01f)
-        {
-            const float kDelta = Gradient(apTerms, aTermCount, aTarget, apCoefficients);
-            const float kStep  = aLearningRate * kDelta;
-            
-            for (natural i = 0; i < aTermCount; i++)
-            {
-                apCoefficients[i] += kStep * apTerms[i];
-            }
-            
-            return (0.5f * (kDelta * kDelta));
-        }
-
-        inline float GradientDescent(float aDelta, float* apCoefficients, natural aCoeffCount, float aLearningRate = 0.01f)
-        {
-            const float kStep = aLearningRate * aDelta;
-
-            for (natural i = 0; i < aCoeffCount; i++)
-            {
-                apCoefficients[i] += kStep;
-            }
-
-            return (0.5f * (aDelta * aDelta));
-        }
+        float GradientDescent(float aDelta, float* apCoefficients, natural aCoeffCount, float aLearningRate = 0.01f);
 
     }
 }

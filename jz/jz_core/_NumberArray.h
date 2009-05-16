@@ -525,7 +525,7 @@ static float DistanceSquared(const JZ_NUMBER_ARRAY_NAME& a, const JZ_NUMBER_ARRA
     return ((a - b).LengthSquared());
 }
 
-static float Dot(const JZ_NUMBER_ARRAY_NAME& a, const JZ_NUMBER_ARRAY_NAME& b)
+__inline static float Dot(const JZ_NUMBER_ARRAY_NAME& a, const JZ_NUMBER_ARRAY_NAME& b)
 {
     float ret = (a.pData[0] * b.pData[0]) + (a.pData[1] * b.pData[1])
 #       if (JZ_NUMBER_ARRAY_DIM > 2)

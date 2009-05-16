@@ -27,7 +27,7 @@ namespace jz
     namespace graphics
     {
 
-        inline DWORD Convert(float v)
+        __inline DWORD Convert(float v)
         {
             return *((DWORD*)&v);
         }

@@ -41,7 +41,7 @@ namespace jz
         {
            const AnimatedMeshNode* p = static_cast<const AnimatedMeshNode*>(apInstance);
             
-            StandardEffect* pEffect = p->GetEffect().Get();
+            StandardEffect* pEffect = p->GetEffect();
             if (p->bThreePoint())
             {
                 pEffect->SetThreePoint(p->GetThreePoint());
@@ -53,7 +53,7 @@ namespace jz
             
             graphics::Graphics::GetSingleton().GetActivePass()->Commit();
 
-            graphics::Mesh* pMesh = p->GetMesh().Get();
+            graphics::Mesh* pMesh = p->GetMesh();
             pMesh->Draw();
         }
 

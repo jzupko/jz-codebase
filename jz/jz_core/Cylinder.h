@@ -41,12 +41,12 @@ namespace jz
         }
     };
 
-    inline bool operator==(const Cylinder& a, const Cylinder& b)
+    __inline bool operator==(const Cylinder& a, const Cylinder& b)
     {
         return (a.Axis == b.Axis && a.Radius == b.Radius);
     }
 
-    inline bool operator!=(const Cylinder& a, const Cylinder& b)
+    __inline bool operator!=(const Cylinder& a, const Cylinder& b)
     {
         return (a.Axis != b.Axis || a.Radius != b.Radius);
     }

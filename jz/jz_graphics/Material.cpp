@@ -26,6 +26,7 @@
 #include <jz_graphics/Graphics.h>
 #include <jz_graphics/Material.h>
 #include <jz_graphics/Texture.h>
+#include <jz_graphics/VolatileTexture.h>
 #include <jz_system/Files.h>
 #include <jz_system/ReadHelpers.h>
 #include <jz_system/WriteHelpers.h>
@@ -238,6 +239,54 @@ namespace jz
             TexturePtr mValue;
         };
 
+        template <>
+        class MaterialParameter<VolatileTexture> sealed : public IMaterialParameter
+        {
+        public:
+            MaterialParameter(const string& aSemantic, const VolatileTexturePtr& aValue)
+                : mSemantic(aSemantic), mValue(aValue)
+            {}
+
+            ~MaterialParameter()
+            {}
+
+            string GetSemantic() const override { return mSemantic; }
+            const VolatileTexturePtr& GetValue() const { return mValue; }
+
+            void Apply() override
+            {
+                mParam.Set(mValue);
+            }
+
+            void AttachTo(Effect* p) override
+            {
+                if (p)
+                {
+                    p->GetParameterBySemantic(mSemantic, mParam);
+                }
+            }
+
+            bool Validate(Effect* p) override
+            {
+                if (p)
+                {
+                    p->GetParameterBySemantic(mSemantic, mParam);
+                    return (mParam.IsValid());
+                }
+
+                return false;
+            }             
+
+        private:
+            MaterialParameter();
+            MaterialParameter(const MaterialParameter&);
+            MaterialParameter& operator=(const MaterialParameter&);
+
+            Parameter<VolatileTexture> mParam;
+            const string mSemantic;
+            VolatileTexturePtr mValue;
+        };
+
         Material::Material(const string& aFilename)
             : IObject(aFilename), mbDirty(true)
         {}
@@ -256,7 +305,7 @@ namespace jz
 
         void Material::Apply() const
         {
-            if (IsReset() && mpAttachedTo.IsValid())
+            if (mpAttachedTo.IsValid())
             {
                 for (vector<IMaterialParameter*>::const_iterator I = mParameters.begin(); I != mParameters.end(); I++)
                 {
@@ -265,7 +314,7 @@ namespace jz
             }
         }
 
-        inline IObject::State SetLoaded()
+        IObject::State SetLoaded()
         {
             if (Graphics::GetSingleton().IsLost()) { return (IObject::kLost); }
             else { return (IObject::kReset); }
@@ -316,6 +365,13 @@ namespace jz
         void Material::AddParameter(const string& s, Texture* v)
         {
             mParameters.push_back(new MaterialParameter<Texture>(s, v));
+            mInternalState = SetLoaded();
+            _Attach();
+        }
+
+        void Material::AddParameter(const string& s, VolatileTexture* v)
+        {
+            mParameters.push_back(new MaterialParameter<VolatileTexture>(s, v));
             mInternalState = SetLoaded();
             _Attach();
         }

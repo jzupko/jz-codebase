@@ -31,14 +31,14 @@ namespace jz
 
         extern DxEffectStateManager* gpEffectStateManager;
 
-        inline uint Pack(uint n, uint count)
+        __inline uint Pack(uint n, uint count)
         {
             uint ret = (((count << 16) & 0xFFFF0000) | (0x0000FFFF & n));
 
             return ret;
         }
 
-        inline void Unpack(uint v, uint& n, uint& count)
+        __inline void Unpack(uint v, uint& n, uint& count)
         {
             n = (v & 0x0000FFFF);
             count = ((v >> 16) & 0x0000FFFF);
@@ -48,21 +48,21 @@ namespace jz
         {
             if (mEffect)
             {
-                ID3DXEffect* p = mEffect.Cast<ID3DXEffect>();
+                ID3DXEffect* p = StaticCast<ID3DXEffect*>(mEffect);
                 JZ_DEBUG_DX_FAIL(p->CommitChanges());
             }
         }
 
         bool Pass::Begin() const
         {
-            uint params = mHandle.CastUInt();
+            uint params = StaticCast<uint>(mHandle);
             uint n;
             uint count;
             Unpack(params, n, count);
 
             if (n < count)
             {
-                ID3DXEffect* p = mEffect.Cast<ID3DXEffect>();
+                ID3DXEffect* p = StaticCast<ID3DXEffect*>(mEffect);
                 if (SUCCEEDED(p->BeginPass(n)))
                 {
                     return true;
@@ -74,14 +74,14 @@ namespace jz
 
         void Pass::End() const
         {
-            ID3DXEffect* p = mEffect.Cast<ID3DXEffect>();
+            ID3DXEffect* p = StaticCast<ID3DXEffect*>(mEffect);
             JZ_DEBUG_DX_FAIL(p->EndPass());
             gpEffectStateManager->EndPass();
         }
 
         Pass Pass::Next() const
         {
-            uint params = mHandle.CastUInt();
+            uint params = StaticCast<uint>(mHandle);
             uint n;
             uint count;
             Unpack(params, n, count);

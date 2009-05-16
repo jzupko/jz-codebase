@@ -46,6 +46,7 @@ namespace jz
         void __SetParameterValue(Handle e, Handle p, float v);
         void __SetParameterValue(Handle e, Handle p, voidc_p v, size_t aSizeInBytes);
         void __SetParameterValue(Handle e, Handle p, float const* v, size_t aNumberOfFloats);
+        void __SetParameterValue(Handle e, Handle p, const Matrix4& v);
         void __SetParameterValue(Handle e, Handle p, Matrix4 const* v, size_t aNumberOfMatrix4);
         void __SetParameterValue(Handle e, Handle p, Vector4 const* v, size_t aNumberOfVector4);
         void __SetParameterValue(Handle e, Handle p, Target* v);
@@ -54,6 +55,7 @@ namespace jz
 
 #       define JZ_EFFECT_PARAM_HELPER \
             public: \
+                JZ_ALIGNED_NEW \
                 Parameter() {} \
                 ~Parameter() {} \
                 bool IsValid() const { return (mEffect && mHandle); } \
@@ -121,7 +123,10 @@ namespace jz
         {
             JZ_EFFECT_PARAM_HELPER
 
-            void Set(const ColorRGB& v) const { __SetParameterValue(mEffect, mHandle, v.pData, sizeof(v)); }
+            void Set(const ColorRGB& v) const
+            {
+                __SetParameterValue(mEffect, mHandle, v.pData, 3);
+            }
         };
 
         template <>
@@ -129,20 +134,9 @@ namespace jz
         {
             JZ_EFFECT_PARAM_HELPER
 
-            void Set(const Matrix4& v) const { __SetParameterValue(mEffect, mHandle, v.pData, sizeof(v)); }
-
-            template <int I>
-            void Set(Matrix4 v[I]) const
-            {
-                Set<I>(v, 0u, I);
-            }
-            template <int I>
-            void Set(Matrix4 v[I], size_t aOffset, size_t aSize) const
-            {
-                JZ_ASSERT(aOffset < I);
-                JZ_ASSERT((aOffset + aSize) <= I);
-
-                __SetParameterValue(mEffect, mHandle, (v + aOffset), aSize);
+            void Set(const Matrix4& v) const
+            {    
+                __SetParameterValue(mEffect, mHandle, v);
             }
 
             void Set(const MemoryBuffer<Matrix4>& v) const
@@ -193,7 +187,10 @@ namespace jz
         {
             JZ_EFFECT_PARAM_HELPER
 
-            void Set(const Vector2& v) const { __SetParameterValue(mEffect, mHandle, v.pData, sizeof(v)); }
+            void Set(const Vector2& v) const
+            {
+                __SetParameterValue(mEffect, mHandle, v.pData, 2);
+            }
         };
 
         template <>
@@ -201,7 +198,10 @@ namespace jz
         {
             JZ_EFFECT_PARAM_HELPER
 
-            void Set(const Vector3& v) const { __SetParameterValue(mEffect, mHandle, v.pData, sizeof(v)); }
+            void Set(const Vector3& v) const
+            {
+                __SetParameterValue(mEffect, mHandle, v.pData, 3);
+            }
         };
 
         template <>
@@ -209,7 +209,10 @@ namespace jz
         {
             JZ_EFFECT_PARAM_HELPER
 
-            void Set(const Vector4& v) const { __SetParameterValue(mEffect, mHandle, v.pData, sizeof(v)); }
+            void Set(const Vector4& v) const
+            {
+                __SetParameterValue(mEffect, mHandle, v.pData, 4);
+            }
 
             template <int I>
             void Set(Vector4 v[I]) const

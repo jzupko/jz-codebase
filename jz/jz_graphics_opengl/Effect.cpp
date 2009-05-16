@@ -103,7 +103,7 @@ namespace jz
         {
             CG_ASSERT();
 
-            CGeffect effect = mHandle.Cast<CGeffect>();
+            CGeffect effect = StaticCast<CGeffect>(mHandle);
             cgDestroyEffect(effect);
             mHandle.Reset();
 
@@ -123,12 +123,12 @@ namespace jz
         void Effect::_GetParameterBySemantic(const string& s, Handle& arEffect, Handle& arHandle) const
         {
             arEffect = mHandle;
-            arHandle = (cgGetEffectParameterBySemantic(mHandle.Cast<CGeffect>(), s.c_str()));
+            arHandle = (cgGetEffectParameterBySemantic(StaticCast<CGeffect>(mHandle), s.c_str()));
         }
 
         Handle Effect::_GetTechniqueByName(const string& aName) const
         {
-            return (cgGetNamedTechnique(mHandle.Cast<CGeffect>(), aName.c_str()));
+            return (cgGetNamedTechnique(StaticCast<CGeffect>(mHandle), aName.c_str()));
         }
 
     }

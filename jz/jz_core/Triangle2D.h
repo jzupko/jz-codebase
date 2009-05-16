@@ -94,14 +94,14 @@ namespace jz
         }
     };
 
-    inline bool operator==(const Triangle2D& a, const Triangle2D& b)
+    __inline bool operator==(const Triangle2D& a, const Triangle2D& b)
     {
         return (a.P0 == b.P0) &&
             (a.P1 == b.P1) &&
             (a.P2 == b.P2);
     }
 
-    inline bool operator!=(const Triangle2D& a, const Triangle2D& b)
+    __inline bool operator!=(const Triangle2D& a, const Triangle2D& b)
     {
         return (a.P0 != b.P0) ||
             (a.P1 != b.P1) ||

@@ -56,7 +56,7 @@ namespace jz
 
                 if (bOk && mbDirty)
                 {
-                    mStartTime = (currentTime - aAnimation.KeyFrames[mCurrentIndex].Time);
+                    mStartTime = (currentTime - aAnimation.KeyFrames[mCurrentIndex].TimeAndPadding.X);
                     mbDirty = false;
                 }
 
@@ -64,19 +64,19 @@ namespace jz
 
                 if (bOk)
                 {
-                    while (relTime > aAnimation.KeyFrames[mCurrentIndex + 1].Time)
+                    while (relTime > aAnimation.KeyFrames[mCurrentIndex + 1].TimeAndPadding.X)
                     {
                         mCurrentIndex++;
 
                         if (mCurrentIndex >= mEndIndex)
                         {
                             mCurrentIndex = mStartIndex;
-                            mStartTime += (aAnimation.KeyFrames[mEndIndex].Time - aAnimation.KeyFrames[mStartIndex].Time);
+                            mStartTime += (aAnimation.KeyFrames[mEndIndex].TimeAndPadding.X - aAnimation.KeyFrames[mStartIndex].TimeAndPadding.X);
                             relTime = (currentTime - mStartTime);
                         }
                     }
 
-                    float lerp = jz::Clamp((relTime - aAnimation.KeyFrames[mCurrentIndex].Time) / (aAnimation.KeyFrames[mCurrentIndex + 1].Time - aAnimation.KeyFrames[mCurrentIndex].Time), 0.0f, 1.0f);
+                    float lerp = jz::Clamp((relTime - aAnimation.KeyFrames[mCurrentIndex].TimeAndPadding.X) / (aAnimation.KeyFrames[mCurrentIndex + 1].TimeAndPadding.X - aAnimation.KeyFrames[mCurrentIndex].TimeAndPadding.X), 0.0f, 1.0f);
                     m = Matrix4::Lerp(aAnimation.KeyFrames[mCurrentIndex].Key, aAnimation.KeyFrames[mCurrentIndex + 1].Key, lerp);
 
                     return true;

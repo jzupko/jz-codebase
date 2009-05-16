@@ -65,7 +65,7 @@ namespace jz
                 JZ_DEBUG_DX_FAIL(gpD3dDevice9->GetDepthStencilSurface(&p));
                 mPrevHandle = p;
 
-                JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetDepthStencilSurface(mHandle.Cast<IDirect3DSurface9>()));
+                JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetDepthStencilSurface(StaticCast<IDirect3DSurface9*>(mHandle)));
             }
         }
 
@@ -73,7 +73,7 @@ namespace jz
         {
             if (mPrevHandle)
             {
-                JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetDepthStencilSurface(mPrevHandle.Cast<IDirect3DSurface9>()));
+                JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetDepthStencilSurface(StaticCast<IDirect3DSurface9*>(mPrevHandle)));
                 SafeRelease<IDirect3DSurface9>(mPrevHandle);
             }
         }

@@ -78,7 +78,7 @@ namespace jz
         }
     };
 
-    inline void LogMessage(const string& s, Logger::MessageType t = Logger::kNormal)
+    __inline void LogMessage(const string& s, Logger::MessageType t = Logger::kNormal)
     {
         Logger::LogMessage(s, t);
     }

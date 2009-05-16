@@ -60,7 +60,7 @@ namespace jz
                 mRange = CalculateLightRange(mAttenuation, mColor);
             }
 
-            virtual BoundingBox GetAABB() const override { return mAABB; }
+            virtual const BoundingBox& GetAABB() const override { return mAABB; }
             virtual void PoseForRender() override;
 
             const Vector3& GetAttenuation() const { return mAttenuation; }

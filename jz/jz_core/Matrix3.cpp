@@ -50,7 +50,7 @@ namespace jz
 
     static const int gskEigenspaceFindIterations = 32;
 
-    static inline void EigenspaceHelper(Matrix3& R, float& m1, float& m2, float& m3, float& m4, float& m5, int i1, int i2)
+    static void EigenspaceHelper(Matrix3& R, float& m1, float& m2, float& m3, float& m4, float& m5, int i1, int i2)
     {
         if (!AboutZero(m2))
         {

@@ -63,10 +63,23 @@ namespace jz
 
     struct RectangleU
     {
+        static RectangleU Create(natural l, natural t, natural r, natural b)
+        {
+            RectangleU ret;
+            ret.Left = l;
+            ret.Top = t;
+            ret.Right = r;
+            ret.Bottom = b;
+
+            return ret;
+        }
+
         natural Left;
         natural Top;
         natural Right;
         natural Bottom;
+
+        static const RectangleU kZero;
     };
 
 }

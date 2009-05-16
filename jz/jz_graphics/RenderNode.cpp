@@ -116,7 +116,7 @@ namespace jz
 
         void RenderNode::_ReinsertSorted(RenderNode* pNode)
         {
-            if (!mpHead || mpHead->mSortOrder > pNode->mSortOrder)
+            if (!mpHead || mpHead->mSortOrder >= pNode->mSortOrder)
             {
                 pNode->mpNext = mpHead;
                 mpHead = pNode;
@@ -126,9 +126,15 @@ namespace jz
                 RenderNode* prev = mpHead;
                 RenderNode* e = mpHead->mpNext;
 
+                if (pNode->mpNext && pNode->mSortOrder < pNode->mSortOrder)
+                {
+                    prev = pNode->mpNext;
+                    e = prev->mpNext;
+                }
+
                 for (; e != null; e = e->mpNext)
                 {
-                    if (e->mSortOrder > pNode->mSortOrder) { break; }
+                    if (e->mSortOrder >= pNode->mSortOrder) { break; }
                     prev = e;
                 }
 

@@ -61,24 +61,12 @@ namespace jz
 
         void Mesh::SetIndices() const
         {
-            if (IsReset())
-            {
-                if (mIndexBuffer)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetIndices(mIndexBuffer.Cast<IDirect3DIndexBuffer9*>()));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetIndices(StaticCast<IDirect3DIndexBuffer9*>(mIndexBuffer)));
         }
 
         void Mesh::SetVertices() const
         {
-            if (IsReset())
-            {
-                if (mVertexBuffer)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetStreamSource(0, mVertexBuffer.Cast<IDirect3DVertexBuffer9*>(), 0, mVertexStride));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetStreamSource(0, StaticCast<IDirect3DVertexBuffer9*>(mVertexBuffer), 0, mVertexStride));
         }
 
         static Matrix4 _Get(natural index, const MemoryBuffer<Vector4>& aSkinning)
@@ -120,7 +108,7 @@ namespace jz
             {
                 if (mpVertexDeclaration.IsValid() && mVertexBuffer)
                 {
-                    IDirect3DVertexDeclaration9* p = (mpVertexDeclaration->mHandle.Cast<IDirect3DVertexDeclaration9>());
+                    IDirect3DVertexDeclaration9* p = StaticCast<IDirect3DVertexDeclaration9*>(mpVertexDeclaration->mHandle);
                     
                     D3DVERTEXELEMENT9 elements[MAX_FVF_DECL_SIZE];
                     UINT elementCount = 0u;
@@ -150,7 +138,7 @@ namespace jz
                         {
                             void_p pLock;
                             MemoryBuffer<Vector3> positions(mVertexCount);
-                            if (SUCCEEDED(mVertexBuffer.Cast<IDirect3DVertexBuffer9>()->Lock(0u, (mVertexCount * mVertexStride), &pLock, 0u)))
+                            if (SUCCEEDED(StaticCast<IDirect3DVertexBuffer9*>(mVertexBuffer)->Lock(0u, (mVertexCount * mVertexStride), &pLock, 0u)))
                             {
                                 u8c_p pBuf = (u8c_p)pLock;
 
@@ -168,7 +156,7 @@ namespace jz
                                     positions[i] = _Calculate(pos, ind, wght, aSkinning); 
                                 }
 
-                                JZ_DEBUG_DX_FAIL(mVertexBuffer.Cast<IDirect3DVertexBuffer9>()->Unlock());
+                                JZ_DEBUG_DX_FAIL(StaticCast<IDirect3DVertexBuffer9*>(mVertexBuffer)->Unlock());
 
                                 arAABB = BoundingBox::CreateFromPoints(positions.begin(), positions.end());
                                 arSphere = BoundingSphere::CreateFromPoints(positions.begin(), positions.end());
@@ -186,24 +174,12 @@ namespace jz
 
         void Mesh::Draw() const
         {
-            if (IsReset())
-            {
-                if (mIndexBuffer && mVertexBuffer)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->DrawIndexedPrimitive(Convert(mPrimitiveType), 0, 0, mVertexCount, 0, mPrimitiveCount));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->DrawIndexedPrimitive(Convert(mPrimitiveType), 0, 0, mVertexCount, 0, mPrimitiveCount));
         }
 
         void Mesh::Draw(natural aPrimitiveCount) const
         {
-            if (IsReset())
-            {
-                if (mIndexBuffer && mVertexBuffer)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->DrawIndexedPrimitive(Convert(mPrimitiveType), 0, 0, mVertexCount, 0, aPrimitiveCount));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->DrawIndexedPrimitive(Convert(mPrimitiveType), 0, 0, mVertexCount, 0, aPrimitiveCount));
         }
 
         IObject::State Mesh::_Load()

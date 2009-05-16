@@ -363,7 +363,7 @@ namespace jz.pipeline.collada
             int count = aKeyFrames.Count;
             for (int i = 0; i < count; i++)
             {
-                if (Utilities.AboutEqual(aKeyFrames[i].Time, aNewFrame.Time, Utilities.kLooseToleranceFloat))
+                if (Utilities.AboutEqual(aKeyFrames[i].TimeAndPadding.X, aNewFrame.TimeAndPadding.X, Utilities.kLooseToleranceFloat))
                 {
                     return i;
                 }
@@ -426,7 +426,7 @@ namespace jz.pipeline.collada
                     {
                         for (uint i = 0; i < keyFramesCount; i++)
                         {
-                            keyFrames[i] = new AnimationKeyFrame(keyFrames[i].Time,
+                            keyFrames[i] = new AnimationKeyFrame(keyFrames[i].TimeAndPadding.X,
                                 e.XnaMatrix * keyFrames[i].Key);
                         }
                     }
@@ -434,7 +434,7 @@ namespace jz.pipeline.collada
                     {
                         for (uint i = 0; i < keyFramesCount; i++)
                         {
-                            keyFrames[i] = new AnimationKeyFrame(newFrames[i].Time,
+                            keyFrames[i] = new AnimationKeyFrame(newFrames[i].TimeAndPadding.X,
                                 newFrames[i].Key * keyFrames[i].Key);
                         }
                     }
@@ -442,11 +442,11 @@ namespace jz.pipeline.collada
 
                 Array.Sort(keyFrames, delegate(AnimationKeyFrame a, AnimationKeyFrame b)
                 {
-                    if (Utilities.LessThan(a.Time, b.Time))
+                    if (Utilities.LessThan(a.TimeAndPadding.X, b.TimeAndPadding.X))
                     {
                         return -1;
                     }
-                    else if (Utilities.GreaterThan(a.Time, b.Time))
+                    else if (Utilities.GreaterThan(a.TimeAndPadding.X, b.TimeAndPadding.X))
                     {
                         return 1;
                     }
@@ -461,7 +461,7 @@ namespace jz.pipeline.collada
                 keyFramesCount = 1;
                 keyFrames = new AnimationKeyFrame[keyFramesCount];
                 keyFrames[0].Key = aLocalTransform;
-                keyFrames[0].Time = 0.0f;
+                keyFrames[0].TimeAndPadding.X = 0.0f;
             }
 
             for (int i = 0; i < keyFramesCount; i++)

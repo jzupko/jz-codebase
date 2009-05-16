@@ -34,6 +34,45 @@
 namespace jz
 {
 
+    float Gaussian1D(float dx, float aStdDev)
+    {
+        double dx2 = (double)(dx * dx);
+        double stdDev2 = (double)(aStdDev * aStdDev);
+
+        double kFactor = (1.0 / Sqrt(2.0 * Constants<double>::kPi * stdDev2));
+        double ret = kFactor * Exp(-dx2 / (2.0 * stdDev2));
+
+        return (float)ret;
+    }
+
+    float Round(float a)
+    {
+        float n;
+        float f = modf(a, &n);
+        
+        if (GreaterThan(Abs(f), 0.5f) || AboutEqual(Abs(f), 0.5f))
+        {
+            if (n < 0.0f) { n -= 1.0f; }
+            else { n += 1.0f; }
+        }
+        
+        return n;
+    }
+    
+    double Round(double a)
+    {
+        double n;
+        double f = modf(a, &n);
+        
+        if (GreaterThan(Abs(f), 0.5))
+        {
+            if (n < 0.0) { n -= 1.0; }
+            else { n += 1.0; }
+        }
+        
+        return n;    
+    }
+
     // (c) Copyright 1994, Everett F. Carter Jr.
     // Permission is granted by the author to use
     // this software for any application provided this

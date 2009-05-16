@@ -74,7 +74,7 @@ namespace jz
 
         void Target::SetToDevice(unatural aTargetIndex)
         {
-            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetRenderTarget(aTargetIndex, mSurface.Cast<IDirect3DSurface9*>()));
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetRenderTarget(aTargetIndex, StaticCast<IDirect3DSurface9*>(mSurface)));
         }
 
         void Target::ResetTarget(unatural aTargetIndex)

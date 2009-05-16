@@ -94,12 +94,13 @@ namespace jz.cb
             Write(aOut, bs.Radius);
         }
 
+        // column major
         public static void Write(BinaryWriter aOut, Matrix v)
         {
-            Write(aOut, v.M11); Write(aOut, v.M12); Write(aOut, v.M13); Write(aOut, v.M14);
-            Write(aOut, v.M21); Write(aOut, v.M22); Write(aOut, v.M23); Write(aOut, v.M24);
-            Write(aOut, v.M31); Write(aOut, v.M32); Write(aOut, v.M33); Write(aOut, v.M34);
-            Write(aOut, v.M41); Write(aOut, v.M42); Write(aOut, v.M43); Write(aOut, v.M44);
+            Write(aOut, v.M11); Write(aOut, v.M21); Write(aOut, v.M31); Write(aOut, v.M41);
+            Write(aOut, v.M12); Write(aOut, v.M22); Write(aOut, v.M32); Write(aOut, v.M42);
+            Write(aOut, v.M13); Write(aOut, v.M23); Write(aOut, v.M33); Write(aOut, v.M43);
+            Write(aOut, v.M14); Write(aOut, v.M24); Write(aOut, v.M34); Write(aOut, v.M44);
         }
 
         public static void Write(BinaryWriter aOut, DocInfo aInfo, ExternalReference<TextureContent> v)
@@ -150,7 +151,7 @@ namespace jz.cb
         public static void Write(BinaryWriter aOut, AnimationKeyFrame v)
         {
             Write(aOut, v.Key);
-            Write(aOut, v.Time);
+            Write(aOut, v.TimeAndPadding);
         }
 
         public static void Write(BinaryWriter aOut, UInt16[] v)

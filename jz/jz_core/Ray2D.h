@@ -49,12 +49,12 @@ namespace jz
         }
     };
 
-    inline bool operator==(const Ray2D& a, const Ray2D& b)
+    __inline bool operator==(const Ray2D& a, const Ray2D& b)
     {
         return (a.Direction == b.Direction && a.Position == b.Position);
     }
 
-    inline bool operator!=(const Ray2D& a, const Ray2D& b)
+    __inline bool operator!=(const Ray2D& a, const Ray2D& b)
     {
         return (a.Direction != b.Direction || a.Position != b.Position);
     }

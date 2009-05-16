@@ -29,4 +29,6 @@ namespace jz
     const Rectangle Rectangle::kNegOneToOne = Rectangle(-1, -1, 1, 1);
     const Rectangle Rectangle::kNegOneToOneFlippedY = Rectangle(-1, 1, 1, -1);
 
+    const RectangleU RectangleU::kZero = RectangleU::Create(0, 0, 0, 0);
+
 }

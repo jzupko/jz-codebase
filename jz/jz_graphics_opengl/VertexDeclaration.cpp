@@ -200,7 +200,7 @@ namespace jz
             size_t kCheck = sizeof(attributes);
             memset(attributes, 0, sizeof(attributes));
 
-            VertexDeclarationData* pData = mHandle.Cast<VertexDeclarationData>();
+            VertexDeclarationData* pData = StaticCast<VertexDeclarationData*>(mHandle);
             size_t size = pData->Elements.size();
 
             for (size_t i = 0u; i < size; i++)
@@ -262,7 +262,7 @@ namespace jz
 
         IObject::State VertexDeclaration::_Unload()
         {
-            VertexDeclarationData* pData = mHandle.Cast<VertexDeclarationData>();
+            VertexDeclarationData* pData = StaticCast<VertexDeclarationData*>(mHandle);
             SafeDelete(pData);
             mHandle.Reset();
 

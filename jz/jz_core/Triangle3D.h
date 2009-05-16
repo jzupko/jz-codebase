@@ -111,14 +111,14 @@ namespace jz
         bool Intersects(const Vector3& av) const;
     };
 
-    inline bool operator==(const Triangle3D& a, const Triangle3D& b)
+    __inline bool operator==(const Triangle3D& a, const Triangle3D& b)
     {
         return (a.P0 == b.P0) &&
             (a.P1 == b.P1) &&
             (a.P2 == b.P2);
     }
 
-    inline bool operator!=(const Triangle3D& a, const Triangle3D& b)
+    __inline bool operator!=(const Triangle3D& a, const Triangle3D& b)
     {
         return (a.P0 != b.P0) ||
             (a.P1 != b.P1) ||

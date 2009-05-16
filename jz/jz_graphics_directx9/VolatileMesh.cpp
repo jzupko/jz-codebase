@@ -59,46 +59,22 @@ namespace jz
 
         void VolatileMesh::SetIndices() const
         {
-            if (IsReset())
-            {
-                if (mpIndices)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetIndices(mpIndices.Cast<IDirect3DIndexBuffer9*>()));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetIndices(StaticCast<IDirect3DIndexBuffer9*>(mpIndices)));
         }
 
         void VolatileMesh::SetVertices() const
         {
-            if (IsReset())
-            {
-                if (mpVertices)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetStreamSource(0, mpVertices.Cast<IDirect3DVertexBuffer9*>(), 0, mVertexStride));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->SetStreamSource(0, StaticCast<IDirect3DVertexBuffer9*>(mpVertices), 0, mVertexStride));
         }
 
         void VolatileMesh::Draw() const
         {
-            if (IsReset())
-            {
-                if (mpIndices && mpVertices)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->DrawIndexedPrimitive(Convert(mPrimitiveType), 0, 0, mVertexCount, 0, mPrimitiveCount));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->DrawIndexedPrimitive(Convert(mPrimitiveType), 0, 0, mVertexCount, 0, mPrimitiveCount));
         }
 
         void VolatileMesh::Draw(natural aPrimitiveCount) const
         {
-            if (IsReset())
-            {
-                if (mpIndices && mpVertices)
-                {
-                    JZ_DEBUG_DX_FAIL(gpD3dDevice9->DrawIndexedPrimitive(Convert(mPrimitiveType), 0, 0, mVertexCount, 0, aPrimitiveCount));
-                }
-            }
+            JZ_DEBUG_DX_FAIL(gpD3dDevice9->DrawIndexedPrimitive(Convert(mPrimitiveType), 0, 0, mVertexCount, 0, aPrimitiveCount));
         }
 
         void VolatileMesh::SetSizes(size_t aIndexBufferSizeInBytes, size_t aVertexBufferSizeInBytes)

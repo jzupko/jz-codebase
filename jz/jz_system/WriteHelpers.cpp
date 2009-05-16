@@ -130,5 +130,15 @@ namespace jz
             JZ_E_ON_FAIL(p->Write(v.pData, kSize) == kSize, "failed writing vector 4.");
         }
 
+        void WriteTextLine(IWriteFilePtr& p, const string& v)
+        {
+            const u32 kSize = (v.size() + 1u);
+            MemoryBuffer<char> buf(kSize);
+            buf.CopyFrom(v.c_str(), v.size());
+            buf[v.size()] = '\n';
+
+            JZ_E_ON_FAIL(p->Write(buf.Get(), kSize) == kSize, "failed writing string contents.");
+        }
+
     }
 }

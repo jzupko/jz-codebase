@@ -30,29 +30,51 @@
 #include <jz_core/Vector4.h>
 #include <type_traits>
 
+#if (JZ_PLATFORM_SSE && JZ_PLATFORM_WINDOWS)
+#   include <emmintrin.h>
+#endif
+
 namespace jz
 {
 
     struct Plane;
     struct Quaternion;
 
+#if (JZ_PLATFORM_SSE && JZ_PLATFORM_WINDOWS)
+    void _SSE_MatrixMultiply(Matrix4 const* pA, Matrix4 const* pB, Matrix4* pOut);
+#endif
+
+#if (JZ_PLATFORM_SSE)
+    __declspec(align(16)) struct Matrix4
+#else
     struct Matrix4
+#endif
     {
         static const int S = 4;
         static const int N = S * S;
 
         union
         {
-            // row-major storage
+            // column major storage
             struct
             {
-                float M11, M12, M13, M14;
-                float M21, M22, M23, M24;
-                float M31, M32, M33, M34;
-                float M41, M42, M43, M44;
+                float M11, M21, M31, M41;
+                float M12, M22, M32, M42;
+                float M13, M23, M33, M43;
+                float M14, M24, M34, M44;
             };
 
             float pData[N];
+
+#if (JZ_PLATFORM_SSE && JZ_PLATFORM_WINDOWS)
+            struct
+            {
+                __m128 C0;
+                __m128 C1;
+                __m128 C2;
+                __m128 C3;
+            };
+#endif
         };
 
         Matrix4()
@@ -95,9 +117,6 @@ namespace jz
 
             return *this;
         }
-
-        float operator[](size_t i) const { return pData[i]; }
-        float& operator[](size_t i) { return pData[i]; }
 
         float operator()(int aRow, int aColumn) const
         {
@@ -178,6 +197,11 @@ namespace jz
 
         Matrix4 operator*(const Matrix4& b) const
         {
+#       if (JZ_PLATFORM_SSE && JZ_PLATFORM_WINDOWS)
+            Matrix4 r;
+            _SSE_MatrixMultiply(this, &b, &r);
+            return r;
+#       else
             // column 1
             const float m11 = (M11 * b.M11) + (M12 * b.M21) + (M13 * b.M31) + (M14 * b.M41);
             const float m21 = (M21 * b.M11) + (M22 * b.M21) + (M23 * b.M31) + (M24 * b.M41);
@@ -206,6 +230,7 @@ namespace jz
                            m21, m22, m23, m24,
                            m31, m32, m33, m34,
                            m41, m42, m43, m44);
+#       endif
         }
 
         Matrix4 operator-() const
@@ -254,14 +279,6 @@ namespace jz
                     M21 + M22 + M23 + M24 +
                     M31 + M32 + M33 + M34 +
                     M41 + M42 + M43 + M44);
-        }
-
-        void SwapRows(natural r1, natural r2)
-        {
-            pData[I(r1, 0)] = pData[I(r2, 0)];
-            pData[I(r1, 1)] = pData[I(r2, 1)];
-            pData[I(r1, 2)] = pData[I(r2, 2)];
-            pData[I(r1, 3)] = pData[I(r2, 3)];                                    
         }
 
         Matrix3 GetOrientation() const;
@@ -373,14 +390,14 @@ namespace jz
         static float ExtractAspectRatio(const Matrix4& aProjectionTransform);
 
         private:
-            // row-major storage
+            // column major storage
             int I(int aRow, int aColumn) const
             {
-                return (aRow * S) + aColumn;
+                return (aColumn * S) + aRow;
             }
     };
 
-    inline Matrix4 operator*(float s, const Matrix4& m)
+    __inline Matrix4 operator*(float s, const Matrix4& m)
     {
         return Matrix4(m.M11 * s, m.M12 * s, m.M13 * s, m.M14 * s,
                        m.M21 * s, m.M22 * s, m.M23 * s, m.M24 * s,
@@ -391,24 +408,21 @@ namespace jz
     void ToQuaternion(const Matrix4& b, Quaternion& q);
     void ToTransform(const Quaternion& q, Matrix4& b);
     
-    inline void ToVector3(const Matrix4& b, Vector3& v)
+    __inline void ToVector3(const Matrix4& b, Vector3& v)
     {
         v.X = b.M41;
         v.Y = b.M42;
         v.Z = b.M43;
     }
 
-    inline void ToTransform(const Vector3& v, Matrix4& b)
+    __inline void ToTransform(const Vector3& v, Matrix4& b)
     {
         b.M41 = v.X;
         b.M42 = v.Y;
         b.M43 = v.Z;
     }
     
-	/// <summary>
-	/// Creates a matrix that will transform a point into the coordinate frame formed by the three axes and the center.
-	/// </summary>
-	static void CalculateMatrix(const Vector3& aCenter, const Vector3& r, const Vector3& s, const Vector3& t, Matrix4& arOut)
+	__inline void CalculateMatrix(const Vector3& aCenter, const Vector3& r, const Vector3& s, const Vector3& t, Matrix4& arOut)
 	{
 		arOut = Matrix4(
             r.X, r.Y, r.Z, 0,

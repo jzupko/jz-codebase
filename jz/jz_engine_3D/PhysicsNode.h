@@ -47,13 +47,16 @@ namespace jz
             PhysicsNode(const string& aId);
             virtual ~PhysicsNode();
 
-            virtual BoundingBox GetAABB() const override;
-
+            virtual const BoundingBox& GetAABB() const override;
             virtual void PoseForRender() override;
 
             physics::World3D* GetWorld() const { return mpWorld; }
             physics::Body3D* GetWorldBody() const { return mpWorldBody.Get(); }
-            physics::TriangleTreeShape* GetWorldTree() const { return (mpWorldTree.Get()); }
+            physics::TriangleTreeShape* GetWorldTree() const
+            {
+                const_cast<bool&>(mbTreeDirty) = true;
+                return (mpWorldTree.Get());
+            }
 
             void SetDebugPhysics(bool b) { mbDebugPhysics = b; }
 
@@ -66,7 +69,9 @@ namespace jz
             physics::TriangleTreeShapePtr mpWorldTree;
             physics::Body3DPtr mpWorldBody;
             
+            bool mbTreeDirty;
             bool mbDebugPhysics;
+            BoundingBox mAABB;
 
             friend void jz::__IncrementRefCount<engine_3D::PhysicsNode>(engine_3D::PhysicsNode*);
             friend void jz::__DecrementRefCount<engine_3D::PhysicsNode>(engine_3D::PhysicsNode*);

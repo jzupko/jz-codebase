@@ -76,7 +76,7 @@ namespace jz
         static const Vector2 kZero;
     };
 
-    inline Vector2 operator*(float s, const Vector2& v)
+    __inline Vector2 operator*(float s, const Vector2& v)
     {
         return (v * s);
     }

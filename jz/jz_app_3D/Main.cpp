@@ -29,7 +29,9 @@
 #define START_FULLSCREEN 0
 #define ADD_CAMERA_LIGHT 0
 #define DISABLE_ENVIRONMENT_LIGHTS 0
-#define ADD_MIRROR 1
+#define ADD_MIRROR 0
+#define ADD_GUI 0
+#define FPS_COUNTER 1
 
 // Note: deferred must currently always be enabled. Forward rendering has not been completely implemented.
 #define DEFERRED 1
@@ -56,12 +58,17 @@
 #include <jz_graphics/Material.h>
 #include <jz_graphics/Mesh.h>
 #include <jz_graphics/Texture.h>
+#include <jz_gui/Font.h>
+#include <jz_gui/GuiImage.h>
+#include <jz_gui/GuiImageEffect.h>
+#include <jz_gui/GuiMan.h>
 #include <jz_physics/narrowphase/Body.h>
 #include <jz_physics/narrowphase/collision/SphereShape.h>
 #include <jz_sail/ThreePointLighting.h>
 #include <jz_system/Files.h>
 #include <jz_system/Input.h>
 #include <jz_system/Loader.h>
+#include <jz_system/Profiler.h>
 #include <jz_system/System.h>
 #include <jz_system/Time.h>
 #include <jz_core/StringUtility.h>
@@ -99,7 +106,7 @@
 
     static void GatherLights(::jz::BoundingSphere& aSphere, ::jz::engine_3D::LightNode* p, ::std::vector<::jz::sail::ThreePointLighting::MotivatingLight>& arOut)
     {
-        if (p->GetWorldBounding().Intersects(aSphere))
+        if (p->GetBoundingSphere().Intersects(aSphere))
         {
             ::jz::sail::ThreePointLighting::MotivatingLight light;
             light.Attenuation = p->GetAttenuation();
@@ -121,11 +128,11 @@
         {
             // Eww.
             std::vector<::jz::sail::ThreePointLighting::MotivatingLight> mot;
-            pRootNode->Apply<jz::engine_3D::LightNode>(std::tr1::bind(GatherLights, p->GetWorldBounding(), std::tr1::placeholders::_1, std::tr1::ref(mot)));
+            pRootNode->Apply<jz::engine_3D::LightNode>(std::tr1::bind(GatherLights, p->GetBoundingSphere(), std::tr1::placeholders::_1, std::tr1::ref(mot)));
 
             ::jz::sail::ThreePointLighting tpl;
             ::jz::sail::ThreePointLighting::LightSettings settings;
-            tpl.Tick(jz::Matrix4::kIdentity, p->GetWorldBounding(), mot, settings);
+            tpl.Tick(jz::Matrix4::kIdentity, p->GetBoundingSphere(), mot, settings);
 
             jz::engine_3D::ThreePoint tp;
             tp.BackDiffuse = settings.BackDiffuse;
@@ -154,7 +161,7 @@
 
     static void Light(float* apMaxRange, ::jz::engine_3D::LightNode* apLight, ::jz::engine_3D::IShadowable* p)
     {
-        if (apLight->GetWorldBounding().Intersects(p->GetAABB()))
+        if (apLight->GetBoundingSphere().Intersects(p->GetAABB()))
         {
             jz::BoundingBox aabb = p->GetAABB();
             float d = jz::Vector3::Distance(apLight->GetWorldTranslation(), p->GetAABB().Center());
@@ -174,7 +181,7 @@
     {
         if (p->GetShadowHandle() >= 0)
         {
-            if (aViewFrustum.Test(p->GetWorldBounding()) != jz::Geometric::kDisjoint)
+            if (aViewFrustum.Test(p->GetBoundingSphere()) != jz::Geometric::kDisjoint)
             {
                 float maxRange = jz::Constants<float>::kMin;
 
@@ -200,7 +207,7 @@
     {
         if (p->GetReflectionHandle() >= 0)
         {
-            if (aViewFrustum.Test(p->GetWorldBounding()) != jz::Geometric::kDisjoint)
+            if (aViewFrustum.Test(p->GetBoundingSphere()) != jz::Geometric::kDisjoint)
             {
                 const ::jz::Plane& plane = p->GetReflectionPlane();
                 size_t size = aViewFrustum.Planes.size();
@@ -378,6 +385,7 @@
                 using namespace jz;
                 using namespace jz::engine_3D;
                 using namespace jz::graphics;
+                using namespace jz::gui;
                 using namespace jz::physics;
                 using namespace jz::sail;
                 using namespace jz::system;
@@ -396,7 +404,7 @@
                         tr1::bind(Files::SetWorkingDirectory, origDir));
 
                     Files& files = Files::GetSingleton();
-					files.AddArchive(new FileArchive("..\\media\\compiled"));
+                    files.AddArchive(new ZipArchive("media.dat"));
 
                     Loader loader;
 #if START_FULLSCREEN
@@ -406,6 +414,9 @@
 #endif
                     {
                         RenderMan man;
+#if ADD_GUI
+                        GuiMan gm;
+#endif
                         PickMan pm;
 
                         Input::ButtonEvent::Entry pickConnection;
@@ -434,7 +445,6 @@
                         SceneNodePtr pArrowKey(LoadScene("1930\\arrow.scn"));
                         SceneNodePtr pArrowFill(pArrowKey->Clone<SceneNode>(null));
 
-                        //files.AddArchive(new ZipArchive("compiled.zip"));
                         SceneNodePtr pRoot(LoadScene("1930\\1930_room.scn"));
                         jz::gspRoot = pRoot.Get();
                         pWoman->SetParent(pRoot.Get());
@@ -471,7 +481,7 @@
                             ReflectivePlaneNodePtr pMirror(new ReflectivePlaneNode());
                             pMirror->SetReflectionPlane(Plane(Vector3::kBackward, 0.0f));
                             pMirror->SetParent(pRoot.Get());
-                            pMirror->SetEffect(graphics.Create<StandardEffect>("..\\media\\mirror.cfx"));
+                            pMirror->SetEffect(graphics.Create<StandardEffect>("mirror.cfx"));
                             pMirror->SetMesh(RenderMan::GetSingleton().GetUnitQuadMesh());
                         }
 #                       endif
@@ -500,7 +510,7 @@
                         }
 
                         ThreePointLighting lighting;
-                        lighting.GetLightLearner().Load("..\\media\\woman.dat");
+                        lighting.GetLightLearner().Load("woman.dat");
                         ImageIlluminationMetrics ideal;
                         ideal.Entropy = 0.09282619f;
                         ideal.MaxIntensity = 0.937254965f;
@@ -508,11 +518,60 @@
                         ideal.Yaw =0.8952829f;
                         lighting.SetIdeal(ideal);
 
-                        // Temp: FPS
+#if FPS_COUNTER
                         float timeDelta = 0.0f;
                         float fps = 0.0f;
                         unatural frameCount = 0u;
-                        // End Temp:
+#endif
+
+#if ADD_GUI
+                        float fWidth = (float)graphics.GetViewportWidth();
+                        float fHeight = (float)graphics.GetViewportHeight();
+
+                        const wstring kTestSentence = L"Hello World!\nThis is a test!";
+                        vector<GuiImagePtr> mLetters;
+
+                        gui::FontPtr pFont(graphics.Create<gui::Font>(48, 64u, gui::Font::kAntiAliased, "Arial.ttf"));
+
+                        GuiImageEffectPtr pGuiEffect(graphics.Create<GuiImageEffect>("GuiImage.cfx"));
+
+                        MaterialPtr pGuiMaterial(graphics.Create<Material>("gui_test_material.mat"));
+                        pGuiMaterial->AddParameter("jz_ImageTexture", pFont->GetTexture());
+                        pGuiMaterial->AddParameter("jz_Filtered", false);
+
+                        natural xOffset = 0;
+                        natural yOffset = 0;
+                        size_t fontHeight = pFont->GetFontHeight();
+                        for (size_t i = 0u; i < kTestSentence.size(); i++)
+                        {
+                            if (kTestSentence[i] == '\n')
+                            {
+                                xOffset = 0;
+                                yOffset += (natural)(fontHeight);
+                            }
+                            else
+                            {
+                                gui::Font::Entry entry;
+                                if (pFont->GetEntry(kTestSentence[i], entry))
+                                {
+                                    GuiImagePtr pGuiImage(new GuiImage());
+                                    pGuiImage->SetEffect(pGuiEffect.Get());
+                                    pGuiImage->SetMaterial(pGuiMaterial.Get());
+                                    pGuiImage->SetTextureScaleShift(entry.TextureScaleShift);
+
+                                    pGuiImage->SetScale((float)(entry.Width) / fWidth, (float)(entry.Height) / fHeight);
+                                    pGuiImage->SetTranslation(((float)(xOffset + entry.XDrawOffset)) / fWidth, ((float)(yOffset + entry.YDrawOffset)) / fHeight);
+                                    pGuiImage->SetTransparent(true);
+
+                                    xOffset += entry.XStepSize;
+                                    mLetters.push_back(pGuiImage);
+                                }
+                            }
+                        }
+#endif
+
+
+                        Profiler profiler;
 
                         MSG msg; 
                         memset(&msg, 0, sizeof(MSG));
@@ -526,11 +585,15 @@
                             else
                             {
                                 #pragma region Update
+                                profiler.Begin("Update");
+
                                 Time::GetSingleton().Tick();
                                 float t = Time::GetSingleton().GetElapsedSeconds();
+
+                                
                                 loader.Tick();
 
-                                // FPS
+#if FPS_COUNTER
                                 timeDelta += t;
                                 frameCount++;
                                 if (timeDelta > 1.0f)
@@ -539,7 +602,7 @@
                                     timeDelta = 0.0f;
                                     frameCount = 0u;
                                 }
-                                // End
+#endif
 
                                 womanPosition += (kWomanMovement * womanDirection * t);
                                 if (womanPosition < kWomanMin) { womanPosition = kWomanMin; womanDirection = -womanDirection; }
@@ -553,9 +616,9 @@
                                 {
                                     ThreePointLighting::LightSettings settings;
                                     vector<ThreePointLighting::MotivatingLight> mot;
-                                    pRoot->Apply<LightNode>(bind(GatherLights, pWoman->GetWorldBounding(), tr1::placeholders::_1, tr1::ref(mot)));
+                                    pRoot->Apply<LightNode>(bind(GatherLights, pWoman->GetBoundingSphere(), tr1::placeholders::_1, tr1::ref(mot)));
                                     if (lighting.Tick(man.GetInverseView(),
-                                        pWoman->GetWorldBounding(),
+                                        pWoman->GetBoundingSphere(),
                                         mot,
                                         settings))
                                     {
@@ -575,26 +638,26 @@
                                     }
                                 }
 
-                                if (t > Constants<float>::kZeroTolerance)
+                                if (t > Constants<float>::kZeroTolerance && pCameraBody.IsValid())
                                 {
-                                    if (pCameraBody.IsValid())
+                                    Vector3 prev = (pCamera->GetWorldTranslation());
+                                    pCamera->Update();
+                                    Vector3 lv = (pCamera->GetWorldTranslation() - prev) / t;
+
+                                    if (lv.LengthSquared() > Constants<float>::kZeroTolerance)
                                     {
-                                        Vector3 prev = (pCamera->GetWorldTranslation());
-                                        pCamera->Update();
-                                        Vector3 lv = (pCamera->GetWorldTranslation() - prev) / t;
-
-                                        if (lv.LengthSquared() > Constants<float>::kZeroTolerance)
-                                        {
-                                            pCameraBody->SetVelocity(lv);
-                                        }
-                                        else
-                                        {
-                                            pCameraBody->SetVelocity(Vector3::kZero);
-                                        }
+                                        pCameraBody->SetVelocity(lv);
                                     }
+                                    else
+                                    {
+                                        pCameraBody->SetVelocity(Vector3::kZero);
+                                    }
+                                }
 
-                                    pRoot->Update();
-                                    
+                                pRoot->Update();
+                                 
+                                if (pCameraBody.IsValid())
+                                {
                                     if (!Vector3::AboutEqual(pCamera->GetWorldTranslation(), pCameraBody->GetTranslation(), Constants<float>::kLooseTolerance))
                                     {
                                         // Ewwwwww.
@@ -605,21 +668,37 @@
                                         pCamera->SetMoveRate(moveRate);
                                     }
                                 }
+                                profiler.End("Update");
                                 #pragma endregion
 
                                 #pragma region Pose
+                                profiler.Begin("Pose");
+#if ADD_GUI
+                                for (size_t i = 0u; i < mLetters.size(); i++)
+                                {
+                                    mLetters[i]->Pose();
+                                }
+#endif
                                 Region frustum(-man.GetView().GetTranslation(), man.GetView() * man.GetProjection());
                                 pRoot->Apply<IRenderable>(tr1::bind(Poser, frustum, tr1::placeholders::_1));
                                 pRoot->Apply<LightNode>(tr1::bind(Lighter, frustum, pRoot, tr1::placeholders::_1));
                                 pRoot->Apply<ReflectivePlaneNode>(tr1::bind(Reflector, frustum, pRoot, tr1::placeholders::_1));
+                                profiler.End("Pose");
                                 #pragma endregion
 
                                 #pragma region Debug text
-                                // man.AddConsoleLine("FPS: " + StringUtility::ToString(fps));
+#if FPS_COUNTER
+                                man.AddConsoleLine("FPS: " + StringUtility::ToString(fps));
+                                man.AddConsoleLine("Avg update time: " + StringUtility::ToString(profiler.GetAverageSeconds("Update")));
+                                man.AddConsoleLine("Avg pose time: " + StringUtility::ToString(profiler.GetAverageSeconds("Pose")));
+                                man.AddConsoleLine("Avg draw time: " + StringUtility::ToString(profiler.GetAverageSeconds("Draw")));
+#endif
                                 #pragma endregion
 
                                 #pragma region Draw
+                                profiler.Begin("Draw");
                                 man.Render();
+                                profiler.End("Draw");
                                 #pragma endregion
                             }
                         }

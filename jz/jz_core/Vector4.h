@@ -73,7 +73,7 @@ namespace jz
         static const Vector4 kZero;
     };
 
-    inline Vector4 operator*(float s, const Vector4& v)
+    __inline Vector4 operator*(float s, const Vector4& v)
     {
         return (v * s);
     }

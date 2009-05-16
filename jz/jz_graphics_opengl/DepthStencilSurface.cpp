@@ -58,7 +58,7 @@ namespace jz
         {
             OPENGL_ASSERT();
 
-            uint handle = mHandle.CastUInt();
+            uint handle = StaticCast<uint>(mHandle);
             if (GlIdIsValid(gOpenGlFbo) && GlIdIsValid(handle))
             {
                 glBindFramebuffer(GL_FRAMEBUFFER, gOpenGlFbo);
@@ -80,7 +80,7 @@ namespace jz
         {
             OPENGL_ASSERT();
             
-            uint handle = mHandle.CastUInt();
+            uint handle = StaticCast<uint>(mHandle);
             glDeleteRenderbuffers(1, &handle);
             mHandle.Reset();
         }

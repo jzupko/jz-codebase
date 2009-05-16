@@ -26,6 +26,12 @@
 
 #include <jz_core/Prereqs.h>
 
+#if !NDEBUG
+#   include <jz_core/StringUtility.h>
+#   include <jz_system/Files.h>
+#   include <jz_system/WriteHelpers.h>
+#endif
+
 namespace jz
 {
     namespace graphics
@@ -47,6 +53,31 @@ namespace jz
 
             ~RenderNode()
             {}
+
+#if !NDEBUG
+            void SaveDigraph(const string& aFilename)
+            {
+                system::IWriteFilePtr pFile = system::Files::GetSingleton().OpenWriteable(aFilename.c_str());
+                
+                system::WriteTextLine(pFile, "digraph jz\n{\n\tnode [shape = box];");
+                {
+                    string name = StringUtility::ToString(mpInstance) + ":" + StringUtility::ToString(mSortOrder);
+                    Digraph(pFile, name);
+                }
+                system::WriteTextLine(pFile, "}");
+            }
+
+            void Digraph(system::IWriteFilePtr& pFile, const string& aParentName)
+            {
+                string name = StringUtility::ToString(mpInstance) + ":" + StringUtility::ToString(mSortOrder);
+                system::WriteTextLine(pFile, "\t\"" + name + "\" -> \"" + aParentName + "\";");
+
+                for (RenderNode* e = mpHead; e != null; e = e->mpNext)
+                {
+                    e->Digraph(pFile, name);
+                }
+            }
+#endif
 
             RenderNode* Adopt(RenderNodeDelegate aDelegate, voidc_p apInstance);
             RenderNode* AdoptAndUpdateSort(RenderNodeDelegate aDelegate, voidc_p apInstance, float aSortOrder);

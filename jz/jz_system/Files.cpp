@@ -128,9 +128,9 @@ namespace jz
         ReadFile::~ReadFile()
         {
 #           if JZ_PLATFORM_WINDOWS
-                CloseHandle(mpFile.Cast<HANDLE>());
+                CloseHandle(StaticCast<HANDLE>(mpFile));
 #           else
-                fclose(mpFile.Cast<HANDLE>());
+                fclose(StaticCast<HANDLE>(mpFile));
 #           endif
         }
         
@@ -139,9 +139,9 @@ namespace jz
             Lock lock(const_cast<Mutex&>(mMutex));
             
 #           if JZ_PLATFORM_WINDOWS
-                return SetFilePointer(mpFile.Cast<HANDLE>(), 0u, null, FILE_CURRENT);
+                return SetFilePointer(StaticCast<HANDLE>(mpFile), 0u, null, FILE_CURRENT);
 #           else
-                return ftell(mpFile.Cast<FILE>());
+                return ftell(StaticCast<FILE>(mpFile));
 #           endif
         }
 
@@ -151,11 +151,11 @@ namespace jz
 
 #           if JZ_PLATFORM_WINDOWS
                 DWORD read = 0u;
-                ::ReadFile(mpFile.Cast<HANDLE>(), apOutBuffer, aSize, &read, null);
+                ::ReadFile(StaticCast<HANDLE>(mpFile), apOutBuffer, aSize, &read, null);
 
                 return (read);
 #           else
-                return (fread(apOutBuffer, 1, aSize, mpFile.Cast<FILE>()));
+                return (fread(apOutBuffer, 1, aSize, StaticCast<FILE>(mpFile)));
 #           endif
         }
         
@@ -163,9 +163,18 @@ namespace jz
         {
             Lock lock(mMutex);
 #           if JZ_PLATFORM_WINDOWS
-                return (SetFilePointer(mpFile.Cast<HANDLE>(), aPosition, null, (abRelative) ? FILE_CURRENT : FILE_BEGIN) == aPosition);
+                DWORD ret = SetFilePointer(StaticCast<HANDLE>(mpFile), aPosition, null, (abRelative) ? FILE_CURRENT : FILE_BEGIN);
+                if (ret == INVALID_SET_FILE_POINTER)
+                {
+                    if (GetLastError() != NO_ERROR) 
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
 #           else
-                return (fseek(mpFile.Cast<FILE>(), aPosition, (abRelative) ? SEEK_CUR : SEEK_SET));
+                return (fseek(StaticCast<FILE>(mpFile), aPosition, (abRelative) ? SEEK_CUR : SEEK_SET));
 #           endif
         }
 
@@ -175,7 +184,7 @@ namespace jz
                 mpFile = CreateFile(mFilename.c_str(), GENERIC_READ, FILE_SHARE_READ, null, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, null);
                 if (mpFile)
                 {
-                    mSize = GetFileSize(mpFile.Cast<HANDLE>(), null);
+                    mSize = GetFileSize(StaticCast<HANDLE>(mpFile), null);
                 }
                 else
                 {
@@ -370,24 +379,15 @@ namespace jz
 
         bool ZipArchive::GetExists(const char* apFilename) const
         {
-            string filename(apFilename);
-            Files::CleanFilename(filename);
+            string filename(Files::CleanFilename(apFilename));
             
-            for (CompressedFiles::const_iterator I = mFiles.begin(); I != mFiles.end(); I++)
-            {
-                if (I->Filename == filename)
-                {
-                    return true;
-                }
-            }
-            
-            return false;
+            if (mFiles.find(filename) != mFiles.end()) { return true; }
+            else { return false; }
         }
 
         IReadFile* ZipArchive::Open(const char* apFilename) const
         {
-            string filename(apFilename);
-            Files::CleanFilename(filename);
+            string filename(Files::CleanFilename(apFilename));
             
             return _Open(filename);
         }
@@ -396,29 +396,23 @@ namespace jz
         {
             const ZipFileEntry* pEntry(0);
             
-            for (CompressedFiles::const_iterator I = mFiles.begin(); I != mFiles.end(); I++)
-            {
-                if (I->Filename == aFilename)
-                {
-                    pEntry = &(*I);
-                    break;
-                }
-            }
-            
-            JZ_E_ON_FAIL(pEntry, "file not found.");
+            CompressedFiles::const_iterator I = mFiles.find(aFilename);
+            JZ_E_ON_FAIL(I != mFiles.end(), "file not found.");
+
+            pEntry = &(I->second);
            
             switch (pEntry->Header.CompressionMethod)
             {
                 case gkZipCompressionStore:
-                    return new SubReadFile(pEntry->Filename, mpZipFile, pEntry->Offset, pEntry->Offset + pEntry->Header.DataDescriptor.UncompressedSize);
+                    return new SubReadFile(pEntry->FullFilename, mpZipFile, pEntry->Offset, pEntry->Offset + pEntry->Header.DataDescriptor.UncompressedSize);
                 break;
                 case gkZipCompressionDeflated:
                     {
                         u32 cSize = pEntry->Header.DataDescriptor.CompressedSize;
                         u32 uSize = pEntry->Header.DataDescriptor.UncompressedSize;
 
-                        byte* pcBuf = (byte*)Malloc(cSize);
-                        byte* puBuf = (byte*)Malloc(uSize);
+                        byte* pcBuf = (byte*)Malloc(cSize, JZ_ALIGN_OF(byte));
+                        byte* puBuf = (byte*)Malloc(uSize, JZ_ALIGN_OF(byte));
 
                         const_cast< AutoPtr<IReadFile>& >(mpZipFile)->Seek(pEntry->Offset, false);
                         const_cast< AutoPtr<IReadFile>& >(mpZipFile)->Read(pcBuf, cSize);
@@ -458,7 +452,7 @@ namespace jz
                         }
                         else
                         {
-                            return new MemoryReadFile(pEntry->Filename, puBuf, uSize, true);
+                            return new MemoryReadFile(pEntry->FullFilename, puBuf, uSize, true);
                         }
                     }
                 break;
@@ -508,7 +502,8 @@ namespace jz
 
                 JZ_E_ON_FAIL(mpZipFile->Seek(entry.Header.DataDescriptor.CompressedSize, true), "failed skipping compressed data.");
 
-	            mFiles.push_back(entry);
+                // THis is not general. Two folders deep will fail.
+                mFiles.insert(make_pair(entry.FullFilename, entry));
 
 	            return true;
             }
@@ -516,33 +511,9 @@ namespace jz
 
         void ZipArchive::ProcessFilename(const char* apFilename, ZipFileEntry& arOut)
         {
-            natural offset = arOut.Header.FilenameLength - 1;
-
-            if (offset <= 0)
-            {
-                return;
-            }
-
-            const char* p = apFilename + offset;
-
-            while ((*p != '/') && p != apFilename)
-            {
-                p--;
-                offset--;
-            }
-
-            bool bPath = (p != apFilename);
-            
-            if (bPath)
-            {
-                p++;
-                
-                arOut.Path = string(apFilename);
-                StringUtility::Crop(arOut.Path, 0, offset);
-            }
-         
-            arOut.Filename = string(p);
-            Files::CleanFilename(arOut.Filename); 
+            arOut.Path = Files::CleanFilename(Files::ExtractPath(apFilename));
+            arOut.ShortFilename = Files::CleanFilename(Files::ExtractBase(apFilename) + "." + Files::ExtractExtension(apFilename));
+            arOut.FullFilename = Files::CleanFilename(apFilename);
         }
 
         
@@ -581,9 +552,27 @@ namespace jz
         Files::~Files()
         {}
 
-        void Files::CleanFilename(string& arFilename)
+        string Files::CleanFilename(const string& aFilename)
         {
-            StringUtility::MakeLowercase(arFilename);
+            size_t size = aFilename.length();
+
+            string ret;
+            ret.resize(size);
+
+            for (size_t i = 0u; i < size; i++)
+            {
+#               if JZ_PLATFORM_WINDOWS
+                    if (aFilename[i] == '/') { ret[i] = '\\'; }
+#               else
+                    if (aFilename[i] == '\\') { ret[i] = '/'; }
+#               endif
+                    else
+                    {
+                        ret[i] = tolower(aFilename[i]);
+                    }
+            }
+
+            return ret;
         }
            
         void Files::AddArchive(const AutoPtr<IArchive>& apArchive)
@@ -596,11 +585,9 @@ namespace jz
         {
             if (Files::Exists(apFilename)) { return true; }
             
-            string cleanedFilename(apFilename);
-            CleanFilename(cleanedFilename);
+            string cleanedFilename(CleanFilename(apFilename));
 
             if (Files::Exists(cleanedFilename.c_str())) { return true; }
-
             {
                 Lock lock(const_cast<Mutex&>(mMutex));
                 for (Archives::const_iterator I = mArchives.begin(); I != mArchives.end(); I++)
@@ -619,8 +606,7 @@ namespace jz
                 return new ReadFile(apFilename);
             }
             
-            string cleanedFilename(apFilename);
-            CleanFilename(cleanedFilename);
+            string cleanedFilename(CleanFilename(apFilename));
 
             if (Files::Exists(cleanedFilename.c_str()))
             {
@@ -638,25 +624,13 @@ namespace jz
                 }
             }
 
-            throw std::exception(__FUNCTION__ ": load failed.");
+            string msg = __FUNCTION__ ": load failed, \"" + string(apFilename) + "\".";
+            throw std::exception(msg.c_str());
         }
 
         IWriteFile* Files::OpenWriteable(const char* apFilename) const
         {
-            if (Files::Exists(apFilename))
-            {
-                return new WriteFile(apFilename);
-            }
-
-            string cleanedFilename(apFilename);
-            CleanFilename(cleanedFilename);
-
-            if (Files::Exists(cleanedFilename.c_str()))
-            {
-                return new WriteFile(cleanedFilename);
-            }
-
-            throw std::exception(__FUNCTION__ ": open failed.");
+            return new WriteFile(apFilename);
         }
 
         string Files::Combine(const string& aPathLeft, const string& aPathRight)
@@ -722,6 +696,8 @@ namespace jz
                     break;
                 }
             }
+
+            if (lPos < 0) { lPos = 0; }
 
             string ret = aFilename.substr(lPos, (rPos - lPos) + 1);
             return ret;

@@ -55,7 +55,8 @@ int WINAPI WinMain(HINSTANCE aWindowInstance, HINSTANCE, LPSTR, int)
             std::tr1::bind(jz::system::Files::SetWorkingDirectory, modulePath),
             std::tr1::bind(jz::system::Files::SetWorkingDirectory, origDir));
      
-        jz::system::Files::GetSingleton().AddArchive(new jz::system::FileArchive("..\\media\\compiled"));
+        jz::system::Files& files = jz::system::Files::GetSingleton();
+        files.AddArchive(new jz::system::ZipArchive("media.dat"));
 
         jz::graphics::Graphics graphics;
         jz::engine_2D::DrawMan dm;

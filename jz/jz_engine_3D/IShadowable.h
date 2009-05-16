@@ -35,7 +35,7 @@ namespace jz
         class IShadowable abstract
         {
         public:
-            virtual BoundingBox GetAABB() const = 0;
+            virtual const BoundingBox& GetAABB() const = 0;
             virtual void PoseForShadow(LightNode* apLight) = 0;
         };
 

@@ -28,7 +28,7 @@
 #include <type_traits>
 
 // uses the following standards:
-// - row-major storage for matrices
+// - column major storage for matrices
 // - vectors-as-rows (left-to-right matrix multiplication)
 // - right-handed coordinate system
 // - x to the right, y up, -z into the screen
@@ -50,20 +50,20 @@ namespace jz
 
 #define JZ_STATIC_ASSERT( a )                       \
     typedef ::jz::__StaticAssertHelper__<            \
-        sizeof(::jz::__StaticAssert__<(bool)( a )>)> \
-        __StaticAssertTypedef__
+    sizeof(::jz::__StaticAssert__<(bool)( a )>)> \
+    __StaticAssertTypedef__
 
 namespace jz
 {
 
-    #pragma region EnableIf
+#pragma region EnableIf
     template <bool B, typename T = void> struct EnableIf { typedef T type; };
     template <typename T> struct EnableIf<false, T> {};
-    #pragma endregion
+#pragma endregion
 
-	using namespace std;
+    using namespace std;
 
-//  basic platform defines.
+    //  basic platform defines.
 #   if WIN32 || _WIN32
 #       define JZ_PLATFORM_MACOS   0
 #       define JZ_PLATFORM_WINDOWS 1
@@ -72,11 +72,15 @@ namespace jz
 
 #       define JZ_PLATFORM_32      1
 #       define JZ_PLATFORM_64      0
+
+#       define JZ_PLATFORM_SSE     1
+
+#       define JZ_ALIGN_OF __alignof
 #   else
 #       error "Platform not yet supported."
 #   endif
 
-// define JZ_STATICLIB if you want to link as a static library.
+    // define JZ_STATICLIB if you want to link as a static library.
 #   ifndef JZ_STATICLIB
 #       ifdef JZ_BUILD
 #           define JZ_EXPORT __declspec(dllexport)
@@ -89,13 +93,13 @@ namespace jz
 
 #if !NDEBUG
 #   if JZ_PLATFORM_WINDOWS
-        inline void jz_win32_assert(bool b)
+    __inline void jz_win32_assert(bool b)
+    {
+        if (!b)
         {
-            if (!b)
-            {
-                _asm int 3;
-            }
+            _asm int 3;
         }
+    }
 #       define JZ_ASSERT(b) jz::jz_win32_assert(b);
 #   else
 #       define JZ_ASSERT(b) assert(b);
@@ -110,8 +114,8 @@ namespace jz
     typedef unsigned long  ulong;
 
 #   if JZ_PLATFORM_WINDOWS && JZ_PLATFORM_32
-        typedef long  natural;
-        typedef ulong unatural;
+    typedef long  natural;
+    typedef ulong unatural;
 #   endif
 
     typedef void* void_p;
@@ -152,22 +156,22 @@ namespace jz
     JZ_STATIC_ASSERT(std::numeric_limits<s32>::is_integer);
 
 #   if JZ_PLATFORM_32
-        typedef float f32;
+    typedef float f32;
 
-        typedef unsigned __int64 u64;
-        JZ_STATIC_ASSERT(std::numeric_limits<u64>::digits == 64);
-        JZ_STATIC_ASSERT(!std::numeric_limits<u64>::is_signed);
-        JZ_STATIC_ASSERT(std::numeric_limits<u64>::is_integer);
+    typedef unsigned __int64 u64;
+    JZ_STATIC_ASSERT(std::numeric_limits<u64>::digits == 64);
+    JZ_STATIC_ASSERT(!std::numeric_limits<u64>::is_signed);
+    JZ_STATIC_ASSERT(std::numeric_limits<u64>::is_integer);
 
-        typedef __int64 s64;
-        JZ_STATIC_ASSERT(std::numeric_limits<s64>::digits == 63);
-        JZ_STATIC_ASSERT(std::numeric_limits<s64>::is_signed);
-        JZ_STATIC_ASSERT(std::numeric_limits<s64>::is_integer);
+    typedef __int64 s64;
+    JZ_STATIC_ASSERT(std::numeric_limits<s64>::digits == 63);
+    JZ_STATIC_ASSERT(std::numeric_limits<s64>::is_signed);
+    JZ_STATIC_ASSERT(std::numeric_limits<s64>::is_integer);
 #   endif
 
     static const int null = 0;
     static const char string_terminator = 0;
-    
+
     struct Handle
     {
         Handle()
@@ -177,7 +181,7 @@ namespace jz
         Handle(uint i)
             : V(i)
         {}
-        
+
         template <typename T>
         Handle(T* p)
             : P(p)
@@ -193,43 +197,9 @@ namespace jz
             return (P == h.P);
         }
 
-        template <typename T>
-        T Cast(typename EnableIf<tr1::is_pointer<T>::value && !tr1::is_const<typename tr1::remove_pointer<T>::type>::value>::type* pDummy = null) const
-        {
-            return static_cast<T>(P);
-        }
-
-        template <typename T>
-        T Cast(typename EnableIf<tr1::is_pointer<T>::value && tr1::is_const<typename tr1::remove_pointer<T>::type>::value>::type* pDummy = null) const
-        {
-            return static_cast<T const>(const_cast<voidc_p>(P));
-        }
-
-        uint CastUInt() const
-        {
-            return (V);
-        }
-
-        voidc_p CastVoidCP() const
-        {
-            return (P);
-        }
-
         void Reset()
         {
             P = null;
-        }
-
-        template <typename T>
-        T* Cast(typename EnableIf<!tr1::is_pointer<T>::value && !tr1::is_const<T>::value>::type* pDummy = null) const
-        {
-            return static_cast<T*>(P);
-        }
-
-        template <typename T>
-        T* Cast(typename EnableIf<!tr1::is_pointer<T>::value && tr1::is_const<T>::value>::type* pDummy = null) const
-        {
-            return static_cast<T const*>(const_cast<voidc_p>(P));
         }
 
         operator bool() const { return (P != null); }
@@ -237,7 +207,6 @@ namespace jz
         operator void_p() const { return P; }
         operator voidc_p() const { return const_cast<voidc_p>(P); }
 
-    private:
         JZ_STATIC_ASSERT(sizeof(uint) == sizeof(void_p));
 
         union
@@ -246,6 +215,18 @@ namespace jz
             uint V;
         };
     };
+
+    template <typename T>
+    __inline T StaticCast(Handle v)
+    {
+        return static_cast<T>(v.P);
+    }
+
+    template <>
+    __inline uint StaticCast<uint>(Handle v)
+    {
+        return (v.V);
+    }
 
 #   define kUnreachableException "expected unreachable code reached."
 
@@ -328,8 +309,11 @@ namespace jz
     const size_t Constants<size_t>::kMin = 0u;
     const size_t Constants<size_t>::kMax = UINT_MAX;
 
+    const unatural Constants<unatural>::kMin = 0u;
+    const unatural Constants<unatural>::kMax = UINT_MAX;
+
     template <typename T>
-    inline T Clamp(T aValue, T aMin, T aMax)
+    __inline T Clamp(T aValue, T aMin, T aMax)
     {
         JZ_ASSERT(!IsNan(aValue));
 
@@ -339,49 +323,49 @@ namespace jz
     }
 
     template <typename T>
-    inline bool IsNan(T a)
+    __inline bool IsNan(T a)
     {
         return (a != a);
     }
 
     template <typename T>
-    inline T Max(T a, T b)
+    __inline T Max(T a, T b)
     {
         return ((a > b) ? a : b);
     }
 
     template <typename T>
-    inline T Max(T a, T b, T c)
+    __inline T Max(T a, T b, T c)
     {
         return Max(a, Max(b, c));
     }
 
     template <typename T>
-    inline T Max(T a, T b, T c, T d)
+    __inline T Max(T a, T b, T c, T d)
     {
         return Max(a, b, Max(c, d));
     }
 
     template <typename T>
-    inline T Min(T a, T b)
+    __inline T Min(T a, T b)
     {
         return ((a < b) ? a : b);
     }
 
     template <typename T>
-    inline T Min(T a, T b, T c)
+    __inline T Min(T a, T b, T c)
     {
         return Min(a, Min(b, c));
     }
 
     template <typename T>
-    inline T Min(T a, T b, T c, T d)
+    __inline T Min(T a, T b, T c, T d)
     {
         return Min(a, b, Min(c, d));
     }
 
     template <typename T>
-    inline void Swap(T& a, T& b)
+    __inline void Swap(T& a, T& b)
     {
         T tmp = a;
         a = b;
@@ -391,16 +375,16 @@ namespace jz
 #   define JZ_E_ON_FAIL(a, msg) if (!(a)) { throw std::exception(__FUNCTION__ ": " msg); }
 
     template <typename T> struct _stride_helper { T a; char b; };
-    
-    #define JZ_STRIDE_OF(T) \
-        ((sizeof(::jz::_stride_helper<T>) > sizeof(T)) ?  \
-        sizeof(::jz::_stride_helper<T>) - sizeof(T) : sizeof(T))
+
+#define JZ_STRIDE_OF(T) \
+    ((sizeof(::jz::_stride_helper<T>) > sizeof(T)) ?  \
+    sizeof(::jz::_stride_helper<T>) - sizeof(T) : sizeof(T))
 
     template <typename T>
-    void SafeDelete(T*& aP)
+    __inline void SafeDelete(T*& arpData)
     {
-        T* p = aP;
-        aP = null;
+        T* p = arpData;
+        arpData = null;
 
         if (p)
         {
@@ -409,9 +393,9 @@ namespace jz
     }
 
     template <typename T>
-    uint SafeAcquire(Handle& ap)
+    uint SafeAcquire(Handle ap)
     {
-        T* p = ap.Cast<T>();
+        T* p = StaticCast<T*>(ap);
 
         if (p)
         {
@@ -424,8 +408,8 @@ namespace jz
     template <typename T>
     ulong SafeRelease(Handle& ap)
     {
-        T* p = ap.Cast<T>();
-        ap = Handle();
+        T* p = StaticCast<T*>(ap);
+        ap.Reset();
 
         if (p)
         {
@@ -471,7 +455,23 @@ namespace jz
     template <typename T> void __IncrementRefCount(T* p);
     template <typename T> size_t __GetRefCount(T* p);
     template <typename T> void __DecrementRefCount(T* p);
-    
+
+    // Low-level memory management. Note that unlike C malloc, realloc, these will 
+    // throw exceptions on failed allocation.
+    void Free(void_p p);
+    void_p Malloc(size_t aSize, size_t aAlignment);
+    void_p Realloc(void_p p, size_t aSize, size_t aAlignment);
 }
+
+#if JZ_PLATFORM_SSE
+#   include <new>
+#   define JZ_ALIGNED_NEW \
+    __forceinline void_p operator new(size_t aSize) { return Malloc(aSize, 16u); }   \
+   __forceinline void  operator delete(void_p p) { Free(p); }   \
+   __forceinline void_p operator new[](size_t aSize) { return Malloc(aSize, 16u); }   \
+   __forceinline void  operator delete[](void_p p) { Free(p); }
+#else
+#   define JZ_ALIGNED_NEW
+#endif
 
 #endif

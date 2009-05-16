@@ -32,7 +32,7 @@ namespace jz
         {
             CG_ASSERT();
 
-            cgUpdatePassParameters(mHandle.Cast<CGpass>());
+            cgUpdatePassParameters(StaticCast<CGpass>(mHandle));
         }
 
         bool Pass::Begin() const
@@ -40,7 +40,7 @@ namespace jz
             if (mHandle)
             {
                 CG_ASSERT();
-                cgSetPassState(mHandle.Cast<CGpass>());
+                cgSetPassState(StaticCast<CGpass>(mHandle));
 
                 return true;
             }
@@ -52,7 +52,7 @@ namespace jz
         {
             CG_ASSERT();
 
-            cgResetPassState(mHandle.Cast<CGpass>());
+            cgResetPassState(StaticCast<CGpass>(mHandle));
         }
 
         Pass Pass::Next() const
@@ -61,7 +61,7 @@ namespace jz
 
             Pass ret;
             ret.mEffect = mEffect;
-            ret.mHandle = cgGetNextPass(mHandle.Cast<CGpass>());
+            ret.mHandle = cgGetNextPass(StaticCast<CGpass>(mHandle));
 
             return ret;
         }

@@ -281,7 +281,7 @@ namespace jz
         static Quaternion CreateFromAxisAngle(const Vector3& aAxis, Radian aAngle);
     };
 
-    inline Quaternion operator*(float s, const Quaternion& q)
+    __inline Quaternion operator*(float s, const Quaternion& q)
     {
         return (q * s);
     }

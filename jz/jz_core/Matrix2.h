@@ -40,11 +40,11 @@ namespace jz
 
         union
         {
-            // row major storage
+            // column major storage
             struct
             {
-                float M11, M12;
-                float M21, M22;
+                float M11, M21;
+                float M12, M22;
             };
 
             float pData[N];
@@ -288,14 +288,14 @@ namespace jz
         static Matrix2 CreateScale(const Vector2& s);
 
     private:
-        // row major storage
+        // column major storage
         int I(int aRow, int aColumn) const
         {
-            return (aRow * S) + aColumn;
+            return (aColumn * S) + aRow;
         }
     };
 
-    inline Matrix2 operator*(float s, const Matrix2& m)
+    __inline Matrix2 operator*(float s, const Matrix2& m)
     {
         return (m * s);
     }

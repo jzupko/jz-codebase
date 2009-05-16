@@ -9,11 +9,14 @@ namespace jz
     {
         public AnimationKeyFrame(float aTime, Matrix M)
         {
-            Time = aTime;
             Key = M;
+            TimeAndPadding.X = aTime;
+            TimeAndPadding.Y = 0.0f;
+            TimeAndPadding.Z = 0.0f;
+            TimeAndPadding.W = 0.0f;
         }
 
-        public float Time;
         public Matrix Key;
+        public Vector4 TimeAndPadding; // align to 16-byte boundary.
     }
 }

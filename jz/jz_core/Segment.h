@@ -95,12 +95,12 @@ namespace jz
         bool Intersects(const Plane& aPlane, float& t) const;
     };
 
-    inline bool operator==(const Segment& a, const Segment& b)
+    __inline bool operator==(const Segment& a, const Segment& b)
     {
         return (a.P0 == b.P0 && a.P1 == b.P1);
     }
 
-    inline bool operator!=(const Segment& a, const Segment& b)
+    __inline bool operator!=(const Segment& a, const Segment& b)
     {
         return (a.P0 != b.P0 || a.P1 != b.P1);
     }

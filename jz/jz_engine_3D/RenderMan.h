@@ -32,6 +32,7 @@
 #include <jz_core/Utility.h>
 #include <jz_graphics/RenderNode.h>
 #include <jz_graphics/RenderPack.h>
+#include <vector>
 
 namespace jz
 {
@@ -54,18 +55,25 @@ namespace jz
         class RenderMan sealed : public Singleton<RenderMan>
         {
         public:
+            JZ_ALIGNED_NEW
+
+            static const size_t kMaxInstances = 80u;
+            static const size_t kMaxEntries = (kMaxInstances * 3u);
+
             RenderMan();
             ~RenderMan();
 
             JZ_EXPORT void Pose(const graphics::RenderPack& r);
             JZ_EXPORT void Render();
 
+            const vector<graphics::BufferEntry>& GetInstanceBuffers() const { return (*mpInstanceBuffer); }
             SimpleEffect* GetSimpleEffect() const { return (mpSimpleEffect.Get()); }
 
-            graphics::Mesh* GetUnitBoxMesh() const;
-            graphics::Mesh* GetUnitQuadMesh() const;
-            graphics::Mesh* GetUnitFrustumMesh() const;
-            graphics::Mesh* GetUnitSphereMesh() const;
+            graphics::Mesh* GetUnitBoxMesh() const { return (mpUnitBox.Get()); }
+            graphics::Mesh* GetUnitQuadMesh() const { return (mpUnitQuad.Get()); }
+            graphics::Mesh* GetUnitInstanceableQuadMesh() const { return (mpInstanceableQuad.Get()); }
+            graphics::Mesh* GetUnitFrustumMesh() const { return (mpUnitFrustum.Get()); }
+            graphics::Mesh* GetUnitSphereMesh() const { return (mpUnitSphere.Get()); }
 
             const Matrix4& GetInverseView() const { return mInverseView; }
             const Matrix4& GetProjection() const { return mProjection; }
@@ -116,6 +124,7 @@ namespace jz
 
             graphics::MeshPtr mpUnitBox;
             graphics::MeshPtr mpUnitFrustum;
+            graphics::MeshPtr mpInstanceableQuad;
             graphics::MeshPtr mpUnitQuad;
             graphics::MeshPtr mpUnitSphere;
 
@@ -136,12 +145,21 @@ namespace jz
             RenderMan& operator=(const RenderMan&);
 
             graphics::RenderNode mRenderOpaque;
+            graphics::RenderNode mRenderTransparent;
+            graphics::RenderNode mRenderGuiOpaque;
+            graphics::RenderNode mRenderGuiTransparent;
             graphics::RenderNode mRenderReflectionOpaque;
             graphics::RenderNode mRenderReflectionTransparent;
             graphics::RenderNode mRenderShadow;
-            graphics::RenderNode mRenderTransparent;
 
+            graphics::RenderNode* _GetNode(const graphics::RenderPack& r);
             void _ResetTrees();
+
+            u32 mCurrentBuffer;
+            vector<graphics::BufferEntry>* mpInstanceBuffer;
+
+            void _ClearInstanceBuffers();
+            void _InsertInstancingOp(graphics::RenderNode* p, graphics::InstancingOp iOp, voidc_p apInstanceOpParam, graphics::DrawOp dOp, graphics::AdoptOp aOp, float aSortOrder);
         };
 
     }

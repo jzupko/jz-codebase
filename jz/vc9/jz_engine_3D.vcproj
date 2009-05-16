@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)d.lib"
+				OutputFile="$(OutDir)\$(SafeParentName)_d.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -107,6 +107,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="..\"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;JZ_STATICLIB"
@@ -126,6 +128,70 @@
 			<Tool
 				Name="VCLibrarianTool"
 				OutputFile="$(OutDir)\$(SafeParentName).lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Profiling|Win32"
+			OutputDirectory="$(SolutionDir)..\..\build\win-i386-vc8.0\lib"
+			IntermediateDirectory="$(SolutionDir)..\..\temp\$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="0"
+			WholeProgramOptimization="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				WholeProgramOptimization="false"
+				AdditionalIncludeDirectories="..\"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;JZ_STATICLIB"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\$(SafeParentName)_p.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -166,8 +232,8 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
-						Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)compiled\$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)compiled\$(InputName).cfx&quot;"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -175,8 +241,17 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
-						Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)compiled\$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)compiled\$(InputName).cfx&quot;"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profiling|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)compiled\$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)compiled\$(InputName).cfx&quot;"
 					/>
 				</FileConfiguration>
 			</File>
@@ -212,8 +287,8 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
-						Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)compiled\$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)compiled\$(InputName).cfx&quot;"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -221,8 +296,17 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
-						Outputs="&quot;$(InputDir)$(InputName).cfx&quot;"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)compiled\$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)compiled\$(InputName).cfx&quot;"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Profiling|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="@echo off&#x0D;&#x0A;fxc /T fx_2_0 /Fo &quot;$(InputDir)compiled\$(InputName).cfx&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+						Outputs="&quot;$(InputDir)compiled\$(InputName).cfx&quot;"
 					/>
 				</FileConfiguration>
 			</File>

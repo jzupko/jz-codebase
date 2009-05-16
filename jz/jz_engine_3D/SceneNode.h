@@ -55,6 +55,8 @@ namespace jz
         class SceneNode : public TreeNode<SceneNode>
         {
         public:
+            JZ_ALIGNED_NEW
+
             typedef tr1::function<void(SceneNode*)> RetrieveAction;
 
             SceneNode();
@@ -64,7 +66,7 @@ namespace jz
             bool bDirty() const { return mbDirty; }
             bool bValidBounding() const { return mbValidBounding; }
             const Matrix4& GetWit() const { return mWit; }
-            const BoundingSphere& GetWorldBounding() const { return mWorldBounding; }
+            const BoundingSphere& GetBoundingSphere() const { return mWorldBounding; }
             const string& GetId() const { return mId; }
             void SetId(const string& v);
 

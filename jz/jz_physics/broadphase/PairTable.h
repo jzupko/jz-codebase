@@ -86,24 +86,24 @@ namespace jz
             }
         };
 
-        inline bool operator<(const Pair& a, const Pair& b)
+        __inline bool operator<(const Pair& a, const Pair& b)
         {
             if (a.A == b.A) { return (a.B < b.B); }
             else { return (a.A < b.A); }
         }
 
-        inline bool operator>(const Pair& a, const Pair& b)
+        __inline bool operator>(const Pair& a, const Pair& b)
         {
             if (a.A == b.A) { return (a.B > b.B); }
             else { return (a.A > b.A); }
         }
 
-        inline bool operator==(const Pair& a, const Pair& b)
+        __inline bool operator==(const Pair& a, const Pair& b)
         {
             return (a.A == b.A) && (a.B == b.B);
         }
 
-        inline bool operator !=(const Pair& a, const Pair& b)
+        __inline bool operator !=(const Pair& a, const Pair& b)
         {
             return (a.A != b.A) || (a.B != b.B);
         }

@@ -37,14 +37,14 @@ namespace jz
     namespace graphics
     {
 
-        inline uint Pack(uint n, uint count)
+        __inline uint Pack(uint n, uint count)
         {
             uint ret = (((count << 16) & 0xFFFF0000) | (0x0000FFFF & n));
 
             return ret;
         }
 
-        inline void Unpack(uint v, uint& n, uint& count)
+        __inline void Unpack(uint v, uint& n, uint& count)
         {
             n = (v & 0x0000FFFF);
             count = ((v >> 16) & 0x0000FFFF);
@@ -65,7 +65,7 @@ namespace jz
         Pass Effect::Begin() const
         {
             uint passes = 0u;
-            if (mHandle && SUCCEEDED(mHandle.Cast<ID3DXEffect>()->Begin(&passes, D3DXFX_DONOTSAVESTATE)))
+            if (mHandle && SUCCEEDED(StaticCast<ID3DXEffect*>(mHandle)->Begin(&passes, D3DXFX_DONOTSAVESTATE)))
             {
                 Pass ret;
                 ret.mEffect = mHandle;
@@ -80,7 +80,7 @@ namespace jz
 
         void Effect::End() const
         {
-            JZ_DEBUG_DX_FAIL(mHandle.Cast<ID3DXEffect>()->End());
+            JZ_DEBUG_DX_FAIL(StaticCast<ID3DXEffect*>(mHandle)->End());
         }
 
         void Effect::SetTechnique(Technique aTechnique)
@@ -88,7 +88,7 @@ namespace jz
             mActiveTechnique = aTechnique;
 
             D3DXHANDLE t = (D3DXHANDLE)aTechnique.mHandle;
-            ID3DXEffect* e = mHandle.Cast<ID3DXEffect>();
+            ID3DXEffect* e = StaticCast<ID3DXEffect*>(mHandle);
             
             if (e)
             {
@@ -143,7 +143,7 @@ namespace jz
         {
             if (mHandle)
             {
-                JZ_DEBUG_DX_FAIL(mHandle.Cast<ID3DXEffect*>()->OnLostDevice());
+                JZ_DEBUG_DX_FAIL(StaticCast<ID3DXEffect*>(mHandle)->OnLostDevice());
             }
 
             return (kLost);
@@ -153,7 +153,7 @@ namespace jz
         {
             if (mHandle)
             {
-                JZ_DEBUG_DX_FAIL(mHandle.Cast<ID3DXEffect*>()->OnResetDevice());
+                JZ_DEBUG_DX_FAIL(StaticCast<ID3DXEffect*>(mHandle)->OnResetDevice());
             }
 
             return (kReset);
@@ -161,7 +161,7 @@ namespace jz
 
         Handle Effect::_GetParameterAnnotationByName(voidc_p apObject, const string& aName) const
         {
-            ID3DXEffect* e = mHandle.Cast<ID3DXEffect>();
+            ID3DXEffect* e = StaticCast<ID3DXEffect*>(mHandle);
 
             if (e)
             {
@@ -175,7 +175,7 @@ namespace jz
 
         Handle Effect::_GetTechniqueAnnotationByName(voidc_p apObject, const string& aName) const
         {
-            ID3DXEffect* e = mHandle.Cast<ID3DXEffect>();
+            ID3DXEffect* e = StaticCast<ID3DXEffect*>(mHandle);
 
             if (e)
             {
@@ -194,14 +194,14 @@ namespace jz
 
             if (mHandle)
             {
-                ID3DXEffect* p = mHandle.Cast<ID3DXEffect>();
+                ID3DXEffect* p = StaticCast<ID3DXEffect*>(mHandle);
                 arHandle = p->GetParameterBySemantic(null, s.c_str());
             }
         }
 
         Handle Effect::_GetTechniqueByName(const string& aName) const
         {
-            ID3DXEffect* e = mHandle.Cast<ID3DXEffect>();
+            ID3DXEffect* e = StaticCast<ID3DXEffect*>(mHandle);
 
             if (e)
             {

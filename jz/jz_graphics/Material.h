@@ -38,6 +38,7 @@ namespace jz
     namespace graphics
     {
         class Texture;
+        class VolatileTexture;
         class Graphics;
         class Effect; typedef AutoPtr<Effect> EffectPtr;
         class IMaterialParameter abstract
@@ -68,6 +69,7 @@ namespace jz
             void AddParameter(const string& s, const Vector3& v);
             void AddParameter(const string& s, const Vector4& v);
             void AddParameter(const string& s, Texture* v);
+            void AddParameter(const string& s, VolatileTexture* v);
 
         protected:
             JZ_EXPORT virtual ~Material();

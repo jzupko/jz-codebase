@@ -105,13 +105,13 @@ namespace jz
         static const Vector3 kZero;
     };
 
-    inline Vector3 operator*(float s, const Vector3& v)
+    __inline Vector3 operator*(float s, const Vector3& v)
     {
         return (v * s);
     }
 
 	template <typename ITR>
-	static int CalculatePrincipalComponentAxes(ITR aBegin, ITR aEnd, Vector3& arR, Vector3& arS, Vector3& arT)
+	int CalculatePrincipalComponentAxes(ITR aBegin, ITR aEnd, Vector3& arR, Vector3& arS, Vector3& arT)
 	{
 		int count = 0;
 		Vector3 mean = Vector3::kZero;
@@ -220,7 +220,7 @@ namespace jz
 	}
 
 	template <typename ITR>
-	static void CalculateCenter(ITR aBegin, ITR aEnd, const Vector3& r, const Vector3& s, const Vector3& t, Vector3& arCenter)
+	void CalculateCenter(ITR aBegin, ITR aEnd, const Vector3& r, const Vector3& s, const Vector3& t, Vector3& arCenter)
 	{
 		Vector3 min = Vector3::kMax;
 		Vector3 max = Vector3::kMin;
@@ -241,7 +241,7 @@ namespace jz
 	}
 
 	template <typename ITR>
-	static void CalculateCenterAndHalfExtents(ITR aBegin, ITR aEnd, const Vector3& r, const Vector3& s, const Vector3& t, Vector3& arCenter, Vector3& arHalfExtents)
+	void CalculateCenterAndHalfExtents(ITR aBegin, ITR aEnd, const Vector3& r, const Vector3& s, const Vector3& t, Vector3& arCenter, Vector3& arHalfExtents)
 	{
 		Vector3 min = Vector3::kMax;
 		Vector3 max = Vector3::kMin;

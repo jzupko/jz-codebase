@@ -48,6 +48,8 @@ namespace jz
         class Deferred sealed : public Singleton<Deferred>
         {
         public:
+            JZ_ALIGNED_NEW
+
             Deferred();
             ~Deferred();
 
@@ -85,6 +87,8 @@ namespace jz
             {
                 if (mbActive && apNode) { mLights.push_back(apNode); }
             }
+
+            void ClearLights() { mLights.clear(); }
 
             void Begin(const ColorRGBA& c = ColorRGBA::kBlack);
             void PreTransparency();

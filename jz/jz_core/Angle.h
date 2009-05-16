@@ -55,7 +55,7 @@ namespace jz
 #       include <jz_core/_Angle.h>
     };
 
-    inline Degree operator*(float a, Degree b)
+    __inline Degree operator*(float a, Degree b)
     {
         return (b * a);
     }
@@ -82,67 +82,67 @@ namespace jz
 
     };
 
-    inline Radian operator*(float a, Radian b)
+    __inline Radian operator*(float a, Radian b)
     {
         return (b * a);
     }
 
-    inline Degree::Degree(Radian a)
+    __inline Degree::Degree(Radian a)
         : mValue((a.GetValue() / Constants<float>::kTwoPi) * 360.0f)
     {}
 
-    inline Degree& Degree::operator=(Radian a)
+    __inline Degree& Degree::operator=(Radian a)
     {
         mValue = (a.GetValue() / Constants<float>::kTwoPi) * 360.0f;   
         return *this;
     }
 
-    inline Radian::Radian(Degree a)
+    __inline Radian::Radian(Degree a)
         : mValue((a.GetValue() / 360.0f) * Constants<float>::kTwoPi)
     {}
 
-    inline Radian& Radian::operator=(Degree a)
+    __inline Radian& Radian::operator=(Degree a)
     {
         mValue = (a.GetValue() / 360.0f) * Constants<float>::kTwoPi;
         return *this;
     }
 
-    inline float Sin(Radian a)
+    __inline float Sin(Radian a)
     {
         return std::sin(a.GetValue());
     }
 
-    inline float Cos(Radian a)
+    __inline float Cos(Radian a)
     {
         return std::cos(a.GetValue());
     }
 
-    inline float Tan(Radian a)
+    __inline float Tan(Radian a)
     {
         return std::tan(a.GetValue());
     }
 
-    inline float Cot(Radian a)
+    __inline float Cot(Radian a)
     {
         return 1.0f / std::tan(a.GetValue());
     }
 
-    inline Radian ASin(float a)
+    __inline Radian ASin(float a)
     {
         return Radian(std::asin(a));
     }
 
-    inline Radian ACos(float a)
+    __inline Radian ACos(float a)
     {
         return Radian(std::acos(a));
     }
 
-    inline Radian ATan(float a)
+    __inline Radian ATan(float a)
     {
         return Radian(std::atan(a));
     }
     
-    inline Radian ATan2(float y, float x)
+    __inline Radian ATan2(float y, float x)
     {
         return Radian(std::atan2(y, x));
     }
@@ -150,74 +150,37 @@ namespace jz
     const Degree Constants<Degree>::kZeroTolerance = Degree(Constants<float>::kZeroTolerance);
     const Radian Constants<Radian>::kZeroTolerance = Radian(Constants<float>::kZeroTolerance);
 
-    inline bool AboutZero(Degree a, float aEpsilon = Constants<float>::kZeroTolerance)
+    __inline bool AboutZero(Degree a, float aEpsilon = Constants<float>::kZeroTolerance)
     {
         return jz::AboutZero(a.GetValue(), aEpsilon);
     }
 
-    inline bool AboutZero(Radian a, float aEpsilon = Constants<float>::kZeroTolerance)
+    __inline bool AboutZero(Radian a, float aEpsilon = Constants<float>::kZeroTolerance)
     {
         return jz::AboutZero(a.GetValue(), aEpsilon);
     }
 
-    inline bool AboutEqual(Degree a, Degree b, float aEpsilon = Constants<float>::kZeroTolerance)
+    __inline bool AboutEqual(Degree a, Degree b, float aEpsilon = Constants<float>::kZeroTolerance)
     {
         return jz::AboutEqual(a.GetValue(), b.GetValue(), aEpsilon);
     }
 
-    inline bool AboutEqual(Radian a, Radian b, float aEpsilon = Constants<float>::kZeroTolerance)
+    __inline bool AboutEqual(Radian a, Radian b, float aEpsilon = Constants<float>::kZeroTolerance)
     {
         return jz::AboutEqual(a.GetValue(), b.GetValue(), aEpsilon);
     }
 
-    inline Degree Clamp(Degree a, Degree aMin, Degree aMax)
-    {
-        while (a > (aMax + Degree::k180)) { a -= Degree::k360; }
-        while (a < (aMin - Degree::k180)) { a += Degree::k360; }
+    Degree Clamp(Degree a, Degree aMin, Degree aMax);
+    Radian Clamp(Radian a, Radian aMin, Radian aMax);
+    Degree Lerp(Degree a, Degree b, float aWeightOfB);
+    Radian Lerp(Radian a, Radian b, float aWeightOfB);
 
-        if (a > aMax) { return aMax; }
-        else if (a < aMin) { return aMin; }
-        else { return a; }
-    }
-
-    inline Radian Clamp(Radian a, Radian aMin, Radian aMax)
-    {
-        while (a > (aMax + Radian::kPi)) { a -= Radian::kTwoPi; }
-        while (a < (aMin - Radian::kPi)) { a += Radian::kTwoPi; }
-
-        if (a > aMax) { return aMax; }
-        else if (a < aMin) { return aMin; }
-        else { return a; }
-    }
-
-    inline Degree Lerp(Degree a, Degree b, float aWeightOfB)
-    {
-        float av = a.GetValue();
-        float bv = b.GetValue();
-
-        while (av > (bv + 180.0f)) { av -= 360.0f; }
-        while (bv > (av + 180.0f)) { bv -= 360.0f; }
-
-        return Degree(jz::Lerp(av, bv, aWeightOfB));
-    }
-
-    inline Radian Lerp(Radian a, Radian b, float aWeightOfB)
-    {
-        float av = a.GetValue();
-        float bv = b.GetValue();
-
-        while (av > (bv + Radian::kPi.GetValue())) { av -= Radian::kTwoPi.GetValue(); }
-        while (bv > (av + Radian::kPi.GetValue())) { bv -= Radian::kTwoPi.GetValue(); }
-
-        return Radian(jz::Lerp(av, bv, aWeightOfB));
-    }
-
-    inline Degree Sign(Degree d)
+    __inline Degree Sign(Degree d)
     {
         return Degree(Sign(d.GetValue()));
     }
 
-    inline Radian Sign(Radian r)
+    __inline Radian Sign(Radian r)
     {
         return Radian(Sign(r.GetValue()));
     }
