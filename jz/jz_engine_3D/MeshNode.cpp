@@ -50,8 +50,10 @@ namespace jz
                 pEffect->SetThreePoint(p->GetThreePoint());
             }
 
-            pEffect->SetWit(p->GetWit());
-            pEffect->SetWorld(p->GetWorldTransform());
+            Matrix4 scale = Matrix4::CreateScale(p->GetScale());
+
+            pEffect->SetWit(scale * p->GetWit());
+            pEffect->SetWorld(scale * p->GetWorldTransform());
 
             graphics::Graphics::GetSingleton().GetActivePass()->Commit();
 
@@ -101,11 +103,25 @@ namespace jz
         }
 
         MeshNode::MeshNode()
-            : SceneNode(), mbNonDeferred(false), mAABB(BoundingBox::kZero), mPack(graphics::RenderPack::Create()), mbVisible(true)
+            : SceneNode(), 
+            mbVisible(true),
+            mbNonDeferred(false),
+            mPack(graphics::RenderPack::Create()),
+            mbHasTp(false),
+            mTp(ThreePoint::Create()),
+            mbCastShadow(true),
+            mScale(Vector3::kOne)
         {}
 
-        MeshNode::MeshNode(const string& aId)
-            : SceneNode(aId), mbNonDeferred(false), mAABB(BoundingBox::kZero), mPack(graphics::RenderPack::Create()), mbVisible(true)
+        MeshNode::MeshNode(const string& aBaseId, const string& aId)
+            : SceneNode(aBaseId, aId), 
+            mbVisible(true),
+            mbNonDeferred(false),
+            mPack(graphics::RenderPack::Create()),
+            mbHasTp(false),
+            mTp(ThreePoint::Create()),
+            mbCastShadow(true),
+           mScale(Vector3::kOne)
         {}
 
         MeshNode::~MeshNode()
@@ -231,35 +247,21 @@ namespace jz
         {
             MeshNode* p = static_cast<MeshNode*>(apNode);
 
-            p->mAABB = mAABB;
             p->mPack = mPack;
         }
 
-        SceneNode* MeshNode::_SpawnClone(const string& aCloneId)
+        SceneNode* MeshNode::_SpawnClone(const string& aBaseId, const string& aCloneId)
         {
-            return new MeshNode(aCloneId);
+            return new MeshNode(aBaseId, aCloneId);
         }
 
         void MeshNode::_PostUpdate(bool abChanged)
         {
-            if (abChanged)
+            if (abChanged && mPack.pMesh.IsValid())
             {
-                if (mPack.pMesh.IsValid())
-                {
-                    BoundingSphere bounding = BoundingSphere::Transform(mWorld, mPack.pMesh->GetBoundingSphere());
-
-                    if (mbValidBounding)
-                    {
-                        mWorldBounding = BoundingSphere::Merge(mWorldBounding, bounding);
-                    }
-                    else
-                    {
-                        mWorldBounding = bounding;
-                        mbValidBounding = true;
-                    }
-
-                    mAABB = BoundingBox::Transform(mWorld, mPack.pMesh->GetAABB());
-                }
+                mWorldAABB = BoundingBox::Transform(mWorld, mPack.pMesh->GetAABB());
+                mWorldBounding = BoundingSphere::Transform(mWorld, mPack.pMesh->GetBoundingSphere());
+                mbValidBounding = true;
             }
 
             SceneNode::_PostUpdate(abChanged);

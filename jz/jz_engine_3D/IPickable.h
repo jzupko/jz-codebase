@@ -35,7 +35,7 @@ namespace jz
         class IPickable abstract
         {
         public:
-            virtual const BoundingBox& GetAABB() const = 0;
+            virtual const BoundingBox& GetBoundingBox() const = 0;
             virtual void Pick(const Ray3D& aRay) = 0;
         };
 

@@ -49,7 +49,7 @@ namespace jz
         extern struct IDirect3DDevice9* gpD3dDevice9;
 
     #   if !NDEBUG
-    #       define JZ_DEBUG_DX_FAIL(a) if ((a) < 0) { ::jz::LogMessage((string(__FUNCTION__) + "," + ::jz::StringUtility::ToString(__LINE__) + ":" + string(::jz::graphics::GetDXErrorAsString(a))).c_str(), Logger::kError);  }
+    #       define JZ_DEBUG_DX_FAIL(a) if ((a) < 0) { ::jz::LogMessage((string(__FUNCTION__) + "," + ::jz::StringUtility::ToString(__LINE__) + ":" + string(::jz::graphics::GetDXErrorAsString(a))).c_str(), Logger::kError); JZ_ASSERT(false); }
     #   else
     #       define JZ_DEBUG_DX_FAIL(a) a
     #   endif

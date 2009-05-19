@@ -34,6 +34,21 @@ namespace jz
 
         struct ThreePoint
         {
+            static ThreePoint Create()
+            {
+                ThreePoint ret;
+                ret.KeyPosition = Vector3::kZero;
+                ret.KeyDiffuse = ColorRGB::kBlack;
+                ret.KeySpecular = ColorRGB::kBlack;
+                ret.FillDirection = Vector3::kForward;
+                ret.KeyToFillRatio = 0.0f;
+                ret.BackPosition = Vector3::kZero;
+                ret.BackDiffuse = ColorRGB::kBlack;
+                ret.BackSpecular = ColorRGB::kBlack;
+
+                return ret;
+            }
+
 	        Vector3 KeyPosition;
 	        ColorRGB KeyDiffuse;
 	        ColorRGB KeySpecular;

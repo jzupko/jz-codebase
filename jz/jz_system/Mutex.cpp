@@ -20,64 +20,66 @@
 // THE SOFTWARE.
 //
 
-#include <jz_system/Mutex.h>
+#if JZ_MULTITHREADED
+#   include <jz_system/Mutex.h>
 
-#if JZ_PLATFORM_WINDOWS
-#   include <jz_system/Win32.h>
-#endif
+#   if JZ_PLATFORM_WINDOWS
+#       include <jz_system/Win32.h>
+#   endif
 
-namespace jz
-{
-    namespace system
+    namespace jz
     {
-
-    #   if JZ_PLATFORM_WINDOWS
-            Mutex::Mutex()
-                : mHandle(CreateMutex(null, false, null))
-            {}
-            
-            Mutex::~Mutex()
-            {
-                CloseHandle(mHandle);
-            }
-            
-            void Mutex::Lock()
-            {
-                WaitForSingleObject(mHandle, INFINITE);
-            }
-            
-            bool Mutex::TryLock()
-            {
-                return (WaitForSingleObject(mHandle, 0) == WAIT_OBJECT_0);
-            }
-            
-            void Mutex::Unlock()
-            {
-                ReleaseMutex(mHandle);
-            }
-    #   endif
-
-        Lock::Lock(Mutex& aMutex)
-            : mMutex(aMutex)
+        namespace system
         {
-            mMutex.Lock();
-        }
+
+        #   if JZ_PLATFORM_WINDOWS
+                Mutex::Mutex()
+                    : mHandle(CreateMutex(null, false, null))
+                {}
+                
+                Mutex::~Mutex()
+                {
+                    CloseHandle(mHandle);
+                }
+                
+                void Mutex::Lock()
+                {
+                    WaitForSingleObject(mHandle, INFINITE);
+                }
+                
+                bool Mutex::TryLock()
+                {
+                    return (WaitForSingleObject(mHandle, 0) == WAIT_OBJECT_0);
+                }
+                
+                void Mutex::Unlock()
+                {
+                    ReleaseMutex(mHandle);
+                }
+        #   endif
+
+            Lock::Lock(Mutex& aMutex)
+                : mMutex(aMutex)
+            {
+                mMutex.Lock();
+            }
+            
+            Lock::~Lock()
+            {
+                mMutex.Unlock();
+            }
+            
+            TryLock::TryLock(Mutex& aMutex)
+                : mMutex(aMutex)
+            {
+                mbLocked = mMutex.TryLock();
+            }
         
-        Lock::~Lock()
-        {
-            mMutex.Unlock();
-        }
-        
-        TryLock::TryLock(Mutex& aMutex)
-            : mMutex(aMutex)
-        {
-            mbLocked = mMutex.TryLock();
-        }
-    
-        TryLock::~TryLock()
-        {
-            if (mbLocked) { mMutex.Unlock(); }
-        }
+            TryLock::~TryLock()
+            {
+                if (mbLocked) { mMutex.Unlock(); }
+            }
 
+        }
     }
-}
+#endif

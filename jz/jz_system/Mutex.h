@@ -24,67 +24,69 @@
 #ifndef _JZ_SYSTEM_MUTEX_H_
 #define _JZ_SYSTEM_MUTEX_H_
 
-#include <jz_core/Prereqs.h>
+#if JZ_MULTITHREADED
+#   include <jz_core/Prereqs.h>
 
-#if JZ_PLATFORM_WINDOWS
-    typedef jz::void_p HANDLE;
-#endif
+#   if JZ_PLATFORM_WINDOWS
+        typedef jz::void_p HANDLE;
+#   endif
 
-namespace jz
-{
-    namespace system
+    namespace jz
     {
-
-        class Lock;
-        class TryLock;
-        
-        class Mutex
+        namespace system
         {
-            public:
-                Mutex();
-                ~Mutex();
 
-                void Lock();
-                bool TryLock();
-                void Unlock();
+            class Lock;
+            class TryLock;
+            
+            class Mutex
+            {
+                public:
+                    Mutex();
+                    ~Mutex();
 
-            private:
-                HANDLE mHandle;
-                
-                friend class Lock;
-                friend class TryLock;
-        };
+                    void Lock();
+                    bool TryLock();
+                    void Unlock();
 
-        class Lock
-        {
-            public:
-                explicit Lock(Mutex& aMutex);
-                ~Lock();
-                
-            private:
-                Lock(const Lock&);
-                Lock& operator=(const Lock&);
-                
-                Mutex& mMutex;
-        };
-        
-        class TryLock
-        {
-            public:
-                explicit TryLock(Mutex& aMutex);
-                ~TryLock();
-                
-                bool bLocked() const { return mbLocked; }
-                
-            private:
-                TryLock(const TryLock&);
-                TryLock& operator=(const TryLock&);
-                
-                Mutex& mMutex;
-                bool mbLocked;
-        };
+                private:
+                    HANDLE mHandle;
+                    
+                    friend class Lock;
+                    friend class TryLock;
+            };
 
+            class Lock
+            {
+                public:
+                    explicit Lock(Mutex& aMutex);
+                    ~Lock();
+                    
+                private:
+                    Lock(const Lock&);
+                    Lock& operator=(const Lock&);
+                    
+                    Mutex& mMutex;
+            };
+            
+            class TryLock
+            {
+                public:
+                    explicit TryLock(Mutex& aMutex);
+                    ~TryLock();
+                    
+                    bool bLocked() const { return mbLocked; }
+                    
+                private:
+                    TryLock(const TryLock&);
+                    TryLock& operator=(const TryLock&);
+                    
+                    Mutex& mMutex;
+                    bool mbLocked;
+            };
+
+        }
     }
-}
+#endif
 
 #endif

@@ -31,31 +31,36 @@ namespace jz
         SceneNode::RetrieveContainer SceneNode::msToRetrieve;
 
         SceneNode::SceneNode()
-            : mId(string()),
+            : mBaseId(string()),
+            mId(string()),
             mbDirty(false),
             mFlags(SceneNodeFlags::kLocalDirty),
             mLocal(Matrix4::kIdentity),
             mWit(Matrix4::kIdentity),
             mWorld(Matrix4::kIdentity),
             mbValidBounding(false),
+            mWorldAABB(BoundingBox::kZero),
             mWorldBounding(BoundingSphere::kZero)
         {}
 
-        SceneNode::SceneNode(const string& aId)
-            : mId(aId),
+        SceneNode::SceneNode(const string& aBaseId, const string& aId)
+            : mBaseId(aBaseId),
+            mId(aId),
             mbDirty(false),
             mFlags(SceneNodeFlags::kLocalDirty),
             mLocal(Matrix4::kIdentity),
             mWit(Matrix4::kIdentity),
             mWorld(Matrix4::kIdentity),
             mbValidBounding(false),
+            mWorldAABB(BoundingBox::kZero),
             mWorldBounding(BoundingSphere::kZero)
         {
-            JZ_ASSERT(msNodes.find(aId) == msNodes.end());
+            string combinedId = (aBaseId + aId);
+            JZ_ASSERT(msNodes.find(combinedId) == msNodes.end());
 
-            msNodes.insert(make_pair(aId, this));
+            msNodes.insert(make_pair(combinedId, this));
 
-            RetrieveContainer::iterator I = msToRetrieve.find(aId);
+            RetrieveContainer::iterator I = msToRetrieve.find(combinedId);
 
             if (I != msToRetrieve.end())
             {
@@ -66,35 +71,64 @@ namespace jz
 
         SceneNode::~SceneNode()
         {
-            if (!mId.empty())
+            if (!mBaseId.empty() || !mId.empty())
             {
-                msNodes.erase(mId);
+                msNodes.erase(mBaseId + mId);
             }
+        }
+
+        void SceneNode::SetParent(weak_pointer p)
+        {
+            TreeNode<SceneNode>::SetParent(p);
+
+            if (GetParent() && (GetBaseId() == string()))
+            {
+                SetBaseId(GetParent()->GetBaseId());
+            }
+        }
+
+        void SceneNode::SetIds(const string& aBaseId, const string& aId)
+        {
+            JZ_ASSERT(msNodes.find(aBaseId + aId) == msNodes.end());
+
+            if (!(mBaseId + mId).empty()) { msNodes.erase(mBaseId + mId); }
+            mBaseId = aBaseId;
+            mId = aId;
+            if (!(mBaseId + mId).empty()) { msNodes.insert(make_pair(mBaseId + mId, this)); }
+        }
+
+        void SceneNode::SetBaseId(const string& v)
+        {
+            JZ_ASSERT(msNodes.find(v + mId) == msNodes.end());
+
+            if (!(mBaseId + mId).empty()) { msNodes.erase(mBaseId + mId); }
+            mBaseId = v;
+            if (!(mBaseId + mId).empty()) { msNodes.insert(make_pair(mBaseId + mId, this)); }
         }
 
         void SceneNode::SetId(const string& v)
         {
-            JZ_ASSERT(msNodes.find(v) == msNodes.end());
+            JZ_ASSERT(msNodes.find(mBaseId + v) == msNodes.end());
 
-            if (!mId.empty()) { msNodes.erase(mId); }
+            if (!(mBaseId + mId).empty()) { msNodes.erase(mBaseId + mId); }
             mId = v;
-            if (!mId.empty()) { msNodes.insert(make_pair(mId, this)); }
+            if (!(mBaseId + mId).empty()) { msNodes.insert(make_pair(mBaseId + mId, this)); }
         }
 
-        void SceneNode::Get(const string& aId, RetrieveAction aAction)
+        void SceneNode::Get(const string& aBaseId, const string& aId, RetrieveAction aAction)
         {
-            Container::iterator I = msNodes.find(aId);
+            Container::iterator I = msNodes.find(aBaseId + aId);
             
             if (I != msNodes.end()) { aAction(I->second); }
             else
             {
-                msToRetrieve.insert(make_pair(aId, aAction));
+                msToRetrieve.insert(make_pair(aBaseId + aId, aAction));
             }
         }
 
         AutoPtr<SceneNode> SceneNode::Clone(SceneNode* apParent, const string& aCloneIdPostfix)
         {
-            SceneNode* clone = _SpawnClone(mId + aCloneIdPostfix);
+            SceneNode* clone = _SpawnClone(mBaseId, mId + aCloneIdPostfix);
 
             if (clone)
             {
@@ -116,9 +150,9 @@ namespace jz
             apNode->mLocal = mLocal;
         }
 
-        SceneNode* SceneNode::_SpawnClone(const string& aCloneId)
+        SceneNode* SceneNode::_SpawnClone(const string& aBaseId, const string& aCloneId)
         {
-            return new SceneNode(aCloneId);
+            return new SceneNode(aBaseId, aCloneId);
         }
 
         void SceneNode::_CloneChildren(SceneNode* aToParent, const string& aCloneIdPostfix)
@@ -134,6 +168,33 @@ namespace jz
             mWit = Matrix4::CreateNormalTransform(mWorld);
         }
 
+        Matrix4 SceneNode::_GetUpdatedWorldTransform(const Matrix4& aParentWorld, bool abParentChanged) const
+        {
+            if ((mFlags & SceneNodeFlags::kIgnoreParent) == 0)
+            {
+                if ((mFlags & SceneNodeFlags::kWorldDirty) != 0)
+                {
+                    return (mWorld);
+                }
+                else if (abParentChanged || (mFlags & SceneNodeFlags::kLocalDirty) != 0)
+                {
+                    return (mLocal * aParentWorld);
+                }
+            }
+            else
+            {
+                if ((mFlags & SceneNodeFlags::kWorldDirty) != 0)
+                {
+                    return (mWorld);
+                }
+                else if ((mFlags & SceneNodeFlags::kLocalDirty) != 0)
+                {
+                    return (mLocal);
+                }
+            }
+
+            return (mWorld);
+        }
 
         bool SceneNode::_Update(const Matrix4& aParentWorld, bool abParentChanged)
         {
@@ -184,26 +245,36 @@ namespace jz
             bool bBoundingUpdate = bChanged;
             for (iterator I = begin(); I != end(); I++)
             {
-                bBoundingUpdate = I->Update(mWorld, bChanged) || bBoundingUpdate;
+                bBoundingUpdate = I->_DoUpdate(mWorld, bChanged) || bBoundingUpdate;
             }
 
             mbDirty = bBoundingUpdate;
 
-            return bBoundingUpdate;
+            if (mbDirty)
+            {
+                mWorldAABB = BoundingBox::kZero;
+                mWorldBounding = BoundingSphere::kZero;
+                mbValidBounding = false;
+            }
+
+            return mbDirty;
         }
 
         void SceneNode::_UpdateBounding()
         {
-            mbValidBounding = false;
-            mWorldBounding = BoundingSphere::kZero;
+            bool bValid = false;
+            BoundingBox box;
+            BoundingSphere sphere;
             iterator I = begin();
 
             for (; I != end(); I++)
             {
                 if (I->mbValidBounding && (I->mFlags & SceneNodeFlags::kExcludeFromBounding) == 0)
                 {
-                    mWorldBounding = I->mWorldBounding;
-                    mbValidBounding = true;
+                    bValid = true;
+                    box = I->mWorldAABB;
+                    sphere = I->mWorldBounding;
+                    
                     I++;
                     break;
                 }
@@ -213,7 +284,23 @@ namespace jz
             {
                 if (I->mbValidBounding && (I->mFlags & SceneNodeFlags::kExcludeFromBounding) == 0)
                 {
-                    mWorldBounding = BoundingSphere::Merge(mWorldBounding, I->mWorldBounding);
+                    box = BoundingBox::Merge(box, I->mWorldAABB);
+                    sphere = BoundingSphere::Merge(sphere, I->mWorldBounding);
+                }
+            }
+
+            if (bValid)
+            {
+                if (mbValidBounding)
+                {
+                    mWorldAABB = BoundingBox::Merge(box, mWorldAABB);
+                    mWorldBounding = BoundingSphere::Merge(sphere, mWorldBounding);
+                }
+                else
+                {
+                    mWorldAABB = box;
+                    mWorldBounding = sphere;
+                    mbValidBounding = true;
                 }
             }
         }

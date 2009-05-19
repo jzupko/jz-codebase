@@ -24,60 +24,62 @@
 #ifndef _JZ_SYSTEM_THREAD_H_
 #define _JZ_SYSTEM_THREAD_H_
 
-#include <jz_core/Prereqs.h>
-#include <functional>
+#if JZ_MULTITHREADED
+#   include <jz_core/Prereqs.h>
+#   include <functional>
 
-#if JZ_PLATFORM_WINDOWS
-    typedef jz::void_p HANDLE;
-#endif
+#   if JZ_PLATFORM_WINDOWS
+        typedef jz::void_p HANDLE;
+#   endif
 
-namespace jz
-{
-    namespace system
+    namespace jz
     {
-
-        class Thread
+        namespace system
         {
-            public:
-                enum Priority
-                {
-                    kLow = 0,
-                    kMed = 1,
-                    kHigh = 2,
-                    kCritical = 3
-                };
-            
-                static const size_t kDefaultStackSize = (1 << 15);
-            
-                typedef tr1::function<void(const Thread&)> ThreadFunc;
-            
-                Thread(ThreadFunc aFunc);
-                Thread(ThreadFunc aFunc, size_t aStackSize);
-                ~Thread();
 
-                bool bCurrent() const;
-                bool bDone() const { return mbThreadDone; }
-
-                void SetPriority(Priority aPriority);
-
-                static void Sleep(ulong aMilliseconds);
-
-            private:
-    #           if JZ_PLATFORM_WINDOWS
-                    static unsigned long __stdcall _ThreadStart(void_p apThread);
-    #           endif
-    	            
-                Thread(const Thread&);
-                Thread& operator=(const Thread&);
+            class Thread
+            {
+                public:
+                    enum Priority
+                    {
+                        kLow = 0,
+                        kMed = 1,
+                        kHigh = 2,
+                        kCritical = 3
+                    };
                 
-                ThreadFunc mFunc;
+                    static const size_t kDefaultStackSize = (1 << 15);
                 
-                volatile bool mbThreadDone;
+                    typedef tr1::function<void(const Thread&)> ThreadFunc;
                 
-                HANDLE mHandle;
-        };
+                    Thread(ThreadFunc aFunc);
+                    Thread(ThreadFunc aFunc, size_t aStackSize);
+                    ~Thread();
 
+                    bool bCurrent() const;
+                    bool bDone() const { return mbThreadDone; }
+
+                    void SetPriority(Priority aPriority);
+
+                    static void Sleep(ulong aMilliseconds);
+
+                private:
+        #           if JZ_PLATFORM_WINDOWS
+                        static unsigned long __stdcall _ThreadStart(void_p apThread);
+        #           endif
+        	            
+                    Thread(const Thread&);
+                    Thread& operator=(const Thread&);
+                    
+                    ThreadFunc mFunc;
+                    
+                    volatile bool mbThreadDone;
+                    
+                    HANDLE mHandle;
+            };
+
+        }
     }
-}
+#endif
 
 #endif

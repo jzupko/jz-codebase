@@ -136,7 +136,10 @@ namespace jz
             void_p   mpData;
             natural mPosition;
             size_t  mSize;
-            Mutex mMutex;
+
+#           if JZ_MULTITHREADED
+                Mutex mMutex;
+#           endif
 
             void Destroy();
         };
@@ -174,7 +177,10 @@ namespace jz
             string mFilename;
             Handle mpFile;
             size_t mSize;
-            Mutex mMutex;
+
+#           if JZ_MULTITHREADED
+                Mutex mMutex;
+#           endif
             
             void Load();
         };
@@ -211,7 +217,10 @@ namespace jz
             string mFilename;
             FILE*  mpFile;
             size_t mSize;
-            Mutex mMutex;
+
+#           if JZ_MULTITHREADED
+                Mutex mMutex;
+#           endif
             
             void Load();
         };
@@ -253,7 +262,10 @@ namespace jz
             natural mPosition;
             size_t mSize;
             natural mStart;
-            Mutex mMutex;
+
+#           if JZ_MULTITHREADED
+                Mutex mMutex;
+#           endif
         };
 
         class IArchive 
@@ -416,7 +428,10 @@ namespace jz
             typedef list<AutoPtr<IArchive>> Archives;
             
             Archives mArchives;
-            Mutex mMutex;
+
+#           if JZ_MULTITHREADED
+                Mutex mMutex;
+#           endif
         };
  
     }

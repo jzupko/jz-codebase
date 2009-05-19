@@ -31,8 +31,8 @@ namespace jz
             : SceneNode()
         {}
 
-        JointNode::JointNode(const string& aId)
-            : SceneNode(aId)
+        JointNode::JointNode(const string& aBaseId, const string& aId)
+            : SceneNode(aBaseId, aId)
         { }
 
         JointNode::~JointNode()
@@ -48,17 +48,17 @@ namespace jz
             p->mpAnimationControl = mpAnimationControl;
         }
 
-        SceneNode* JointNode::_SpawnClone(const string& aCloneId)
+        SceneNode* JointNode::_SpawnClone(const string& aBaseId, const string& aCloneId)
         {
-            return new JointNode(aCloneId);
+            return new JointNode(aBaseId, aCloneId);
         }
 
-        void JointNode::_PreUpdate(const Matrix4& aParentWorld, bool abParentChanged)
+        void JointNode::_PreUpdateA(const Matrix4& aParentWorld, bool abParentChanged)
         {
             if (mpParent && typeid(*mpParent) != typeid(JointNode)) { mFlags |= SceneNodeFlags::kIgnoreParent; }
             else { mFlags &= ~SceneNodeFlags::kIgnoreParent; }
 
-            SceneNode::_PreUpdate(aParentWorld, abParentChanged);
+            SceneNode::_PreUpdateA(aParentWorld, abParentChanged);
 
             if (mpAnimationControl.IsValid() && mpAnimationControl->Tick(mAnimation, mLocal))
             {

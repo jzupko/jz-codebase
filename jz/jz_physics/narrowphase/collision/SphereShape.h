@@ -31,27 +31,6 @@ namespace jz
     namespace physics
     {
 
-        class CircleShape : public ICollisionShape2D
-        {
-        public:
-            CircleShape(float aRadius = 0.0f)
-                : ICollisionShape2D(ICollisionShape2D::kCircle), Radius(aRadius)
-            {}
-            virtual ~CircleShape() {}
-
-            float Radius;
-
-            virtual BoundingRectangle GetBounding() const override
-            {
-                return (BoundingRectangle(Vector2(-Radius), Vector2(Radius)));
-            }
-
-        protected:
-            friend void ::jz::__IncrementRefCount<physics::CircleShape>(physics::CircleShape*);
-            friend void ::jz::__DecrementRefCount<physics::CircleShape>(physics::CircleShape*);
-        };
-        typedef AutoPtr<CircleShape> CircleShapePtr;
-
         class SphereShape : public ICollisionShape3D
         {
         public:
@@ -61,6 +40,11 @@ namespace jz
             virtual ~SphereShape() {}
 
             float Radius;
+
+            virtual bool bRotationallyInvariant() const override { return true; }
+
+            virtual Vector3 GetInertiaTensor(float aInverseMass) const;
+            virtual Vector3 GetInverseInertiaTensor(float aInverseMass) const;
 
             virtual BoundingBox GetBounding() const override
             {

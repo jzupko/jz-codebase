@@ -23,6 +23,7 @@
 #include <jz_core/BoundingBox.h>
 #include <jz_core/BoundingSphere.h>
 #include <jz_core/CoordinateFrame3D.h>
+#include <jz_core/CoordinateFrame3D.h>
 #include <jz_core/Matrix4.h>
 
 namespace jz

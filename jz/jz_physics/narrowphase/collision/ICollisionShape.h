@@ -27,50 +27,12 @@
 #include <jz_core/Auto.h>
 #include <jz_core/Prereqs.h>
 #include <jz_core/BoundingBox.h>
-#include <jz_core/BoundingRectangle.h>
+#include <jz_core/CoordinateFrame3D.h>
 
 namespace jz
 {
     namespace physics
     {
-
-        class ICollisionShape2D abstract
-        {
-        public:
-            enum Type
-            {
-                kNone = 0,
-                kCircle = 1,
-                kConvex = 2
-            };
-
-            virtual ~ICollisionShape2D() {}
-
-            bool bConvex() const
-            {
-                return (mType <= kConvex);
-            }
-            Type GetType() const { return mType; }
-
-            virtual BoundingRectangle GetBounding() const = 0;
-            
-        protected:
-            size_t mReferenceCount;
-
-            ICollisionShape2D(Type aType)
-                : mType(aType), mReferenceCount(0u)
-            {}
-
-            friend void ::jz::__IncrementRefCount<physics::ICollisionShape2D>(physics::ICollisionShape2D*);
-            friend void ::jz::__DecrementRefCount<physics::ICollisionShape2D>(physics::ICollisionShape2D*);
-
-        private:
-            Type mType;
-
-            ICollisionShape2D(const ICollisionShape2D&);
-            ICollisionShape2D& operator=(const ICollisionShape2D&);
-        };
-        typedef AutoPtr<ICollisionShape2D> ICollisionShape2DPtr;
 
         class ICollisionShape3D abstract
         {
@@ -78,11 +40,10 @@ namespace jz
             enum Type
             {
                 kNone = 0,
-                kCapsule = 1,
-                kSphere = 2,
-                kTriangle = 3,
-                kConvex = 4,
-                kTriangleTree = 5
+                kSphere = 1,
+                kBox = 2,
+                kConvex = 3,
+                kTriangleTree = 4
             };
 
             virtual ~ICollisionShape3D() {}
@@ -92,9 +53,14 @@ namespace jz
                 return (mType <= kConvex);
             }
 
+            virtual bool bRotationallyInvariant() const = 0;
+
+            virtual Vector3 GetInertiaTensor(float aInverseMass) const = 0;
+            virtual Vector3 GetInverseInertiaTensor(float aInverseMass) const = 0;
             Type GetType() const { return mType; }
 
             virtual BoundingBox GetBounding() const = 0;
+            Vector3 GetCenter() const { return (GetBounding().Center()); }
 
             // Default implementation is provided to support
             // concave shapes.
@@ -108,6 +74,14 @@ namespace jz
                 if (n.Z < 0.0f) { ret.Z = bb.Min.Z; }
 
                 return ret;
+            }
+
+            Vector3 GetSupport(const CoordinateFrame3D& cf, const Vector3& n) const
+            {
+                Vector3 p = GetSupport(Vector3::TransformDirection(CoordinateFrame3D::Invert(cf), n));
+                p = Vector3::TransformPosition(cf, p);
+
+                return p;
             }
 
         protected:

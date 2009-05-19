@@ -20,71 +20,74 @@
 // THE SOFTWARE.
 //
 
-#include <jz_system/Thread.h>
-#if JZ_PLATFORM_WINDOWS
-#   include <jz_system/Win32.h>
-#endif
+#if JZ_MULTITHREADED
+#   include <jz_system/Thread.h>
+#   if JZ_PLATFORM_WINDOWS
+#       include <jz_system/Win32.h>
+#   endif
 
-namespace jz
-{
-    namespace system
+    namespace jz
     {
+        namespace system
+        {
 
-    #if JZ_PLATFORM_WINDOWS
-            DWORD WINAPI Thread::_ThreadStart(LPVOID apThread)
-            {
-                Thread* pThread = static_cast<Thread*>(apThread);
-
-                (pThread->mFunc)(*pThread);
-
-                pThread->mbThreadDone = true;
-                
-                return 0u;
-            }
-
-
-            Thread::Thread(ThreadFunc aFunc)
-                : mFunc(aFunc), mbThreadDone(false)
-            {
-                DWORD d;
-                mHandle = CreateThread(null, kDefaultStackSize, &_ThreadStart, this, 0u, &d);
-            }
-            
-            Thread::Thread(ThreadFunc aFunc, size_t aStackSize)
-                : mFunc(aFunc), mbThreadDone(false)
-            {
-                DWORD d;
-                mHandle = CreateThread(null, aStackSize, &_ThreadStart, this, 0u, &d);
-            }
-            
-            Thread::~Thread()
-            {
-                WaitForSingleObject(mHandle, INFINITE);
-    		    CloseHandle(mHandle);
-            }
-            
-            bool Thread::bCurrent() const
-            {
-                return (mHandle == GetCurrentThread());
-            }
-
-            void Thread::SetPriority(Priority aPriority)
-            {
-                switch (aPriority)
+        #if JZ_PLATFORM_WINDOWS
+                DWORD WINAPI Thread::_ThreadStart(LPVOID apThread)
                 {
-                    case kLow: SetThreadPriority(mHandle, THREAD_PRIORITY_LOWEST); break;
-                    case kMed: SetThreadPriority(mHandle, THREAD_PRIORITY_NORMAL); break;
-                    case kHigh: SetThreadPriority(mHandle, THREAD_PRIORITY_HIGHEST); break;
-                    case kCritical: SetThreadPriority(mHandle, THREAD_PRIORITY_TIME_CRITICAL); break;
-                    default: break;
+                    Thread* pThread = static_cast<Thread*>(apThread);
+
+                    (pThread->mFunc)(*pThread);
+
+                    pThread->mbThreadDone = true;
+                    
+                    return 0u;
                 }
-            }
 
-            void Thread::Sleep(ulong aMilliseconds)
-            {
-                ::Sleep(aMilliseconds);
-            }
-    #   endif
 
+                Thread::Thread(ThreadFunc aFunc)
+                    : mFunc(aFunc), mbThreadDone(false)
+                {
+                    DWORD d;
+                    mHandle = CreateThread(null, kDefaultStackSize, &_ThreadStart, this, 0u, &d);
+                }
+                
+                Thread::Thread(ThreadFunc aFunc, size_t aStackSize)
+                    : mFunc(aFunc), mbThreadDone(false)
+                {
+                    DWORD d;
+                    mHandle = CreateThread(null, aStackSize, &_ThreadStart, this, 0u, &d);
+                }
+                
+                Thread::~Thread()
+                {
+                    WaitForSingleObject(mHandle, INFINITE);
+    		        CloseHandle(mHandle);
+                }
+                
+                bool Thread::bCurrent() const
+                {
+                    return (mHandle == GetCurrentThread());
+                }
+
+                void Thread::SetPriority(Priority aPriority)
+                {
+                    switch (aPriority)
+                    {
+                        case kLow: SetThreadPriority(mHandle, THREAD_PRIORITY_LOWEST); break;
+                        case kMed: SetThreadPriority(mHandle, THREAD_PRIORITY_NORMAL); break;
+                        case kHigh: SetThreadPriority(mHandle, THREAD_PRIORITY_HIGHEST); break;
+                        case kCritical: SetThreadPriority(mHandle, THREAD_PRIORITY_TIME_CRITICAL); break;
+                        default: break;
+                    }
+                }
+
+                void Thread::Sleep(ulong aMilliseconds)
+                {
+                    ::Sleep(aMilliseconds);
+                }
+        #   endif
+
+        }
     }
-}
+
+#endif

@@ -33,6 +33,7 @@ namespace jz
 
     struct BoundingSphere;
     struct CoordinateFrame3D;
+    struct CoordinateFrame3D;
     struct Matrix4;
     struct Ray;
 

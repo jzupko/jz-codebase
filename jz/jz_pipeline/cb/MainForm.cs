@@ -99,7 +99,7 @@ namespace jz.cb
         private string mInDirectory = string.Empty;
         private string mOutDirectory = string.Empty;
         private volatile Thread mWorker = null;
-        private BuilderFlags mFlags = (BuilderFlags.ProcessColladaFiles | BuilderFlags.ProcessHeightMaps | BuilderFlags.ProcessSprites);
+        private BuilderFlags mFlags = (BuilderFlags.ProcessColladaFiles);
 
         private void _Handler(string e)
         {
@@ -314,20 +314,5 @@ namespace jz.cb
             else { mFlags &= ~BuilderFlags.ProcessColladaFiles; }
         }
 
-        private void processHeightmapsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-
-            if (item.Checked) { mFlags |= BuilderFlags.ProcessHeightMaps; }
-            else { mFlags &= ~BuilderFlags.ProcessHeightMaps; }
-        }
-
-        private void processSpritesToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-
-            if (item.Checked) { mFlags |= BuilderFlags.ProcessSprites; }
-            else { mFlags &= ~BuilderFlags.ProcessSprites; }
-        }
     }
 }

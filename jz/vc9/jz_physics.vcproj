@@ -175,7 +175,7 @@
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="..\"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;JZ_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;JZ_STATICLIB;JZ_PROFILING"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -260,6 +260,10 @@
 				Name="collision"
 				>
 				<File
+					RelativePath="..\jz_physics\narrowphase\collision\_Collide.h"
+					>
+				</File>
+				<File
 					RelativePath="..\jz_physics\narrowphase\collision\BoxShape.cpp"
 					>
 				</File>
@@ -268,35 +272,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\jz_physics\narrowphase\collision\CapsuleShape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\jz_physics\narrowphase\collision\CapsuleShape.h"
-					>
-				</File>
-				<File
 					RelativePath="..\jz_physics\narrowphase\collision\Collide.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\jz_physics\narrowphase\collision\Collide.h"
-					>
-				</File>
-				<File
-					RelativePath="..\jz_physics\narrowphase\collision\CollideConvexShape2D.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\jz_physics\narrowphase\collision\CollideConvexShape3D.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\jz_physics\narrowphase\collision\ConvexShape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\jz_physics\narrowphase\collision\ConvexShape.h"
 					>
 				</File>
 				<File
@@ -312,14 +292,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\jz_physics\narrowphase\collision\TriangleShape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\jz_physics\narrowphase\collision\TriangleShape.h"
-					>
-				</File>
-				<File
 					RelativePath="..\jz_physics\narrowphase\collision\TriangleTreeShape.cpp"
 					>
 				</File>
@@ -327,6 +299,10 @@
 					RelativePath="..\jz_physics\narrowphase\collision\TriangleTreeShape.h"
 					>
 				</File>
+			</Filter>
+			<Filter
+				Name="dynamics"
+				>
 			</Filter>
 		</Filter>
 		<File

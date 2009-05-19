@@ -197,7 +197,7 @@
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="..\;..\zlib"
-				PreprocessorDefinitions="WIN32;NDEBUG;JZ_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;JZ_STATICLIB;JZ_PROFILING"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"

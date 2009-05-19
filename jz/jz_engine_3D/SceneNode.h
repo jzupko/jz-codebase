@@ -24,6 +24,7 @@
 #ifndef _JZ_ENGINE_3D_SCENE_NODE_H_
 #define _JZ_ENGINE_3D_SCENE_NODE_H_
 
+#include <jz_core/BoundingBox.h>
 #include <jz_core/BoundingSphere.h>
 #include <jz_core/Event.h>
 #include <jz_core/Matrix4.h>
@@ -57,18 +58,30 @@ namespace jz
         public:
             JZ_ALIGNED_NEW
 
+            bool IsIgnoringParent() const { return ((mFlags & SceneNodeFlags::kIgnoreParent) != 0); }
+            bool IsLocalDirty() const { return ((mFlags & SceneNodeFlags::kLocalDirty) != 0); }
+            bool IsWorldDirty() const { return ((mFlags & SceneNodeFlags::kWorldDirty) != 0); }
+
             typedef tr1::function<void(SceneNode*)> RetrieveAction;
 
+            virtual void SetParent(weak_pointer p) override;
+
             SceneNode();
-            SceneNode(const string& aId);
+            SceneNode(const string& aBaseId, const string& aId);
             virtual ~SceneNode();
 
             bool bDirty() const { return mbDirty; }
             bool bValidBounding() const { return mbValidBounding; }
             const Matrix4& GetWit() const { return mWit; }
-            const BoundingSphere& GetBoundingSphere() const { return mWorldBounding; }
+
+            virtual const BoundingBox& GetBoundingBox() const { return mWorldAABB; }
+            virtual const BoundingSphere& GetBoundingSphere() const { return mWorldBounding; }
+
+            virtual void SetIds(const string& aBaseId, const string& aId);
+            const string& GetBaseId() const { return mBaseId; }
+            virtual void SetBaseId(const string& v);
             const string& GetId() const { return mId; }
-            void SetId(const string& v);
+            virtual void SetId(const string& v);
 
             Quaternion GetLocalOrientation() const
             {
@@ -130,18 +143,12 @@ namespace jz
             Callback OnUpdateBegin;
             Callback OnUpdateEnd;
 
-            bool Update(const Matrix4& aParentWorld = Matrix4::kIdentity, bool abParentChanged = false)
+            void Update(const Matrix4& aParentWorld = Matrix4::kIdentity, bool abParentChanged = false)
             {
-                OnUpdateBegin(this);
-                _PreUpdate(aParentWorld, abParentChanged);
-
-                bool bReturn = _Update(aParentWorld, abParentChanged);
-                if (bReturn) { _UpdateBounding(); }
-
-                _PostUpdate(bReturn);
-                if (bReturn) { OnUpdateEnd(this); }
-
-                return bReturn;
+                _DoPreUpdateA(aParentWorld, abParentChanged);
+                _DoPreUpdateB(aParentWorld, abParentChanged);
+                _DoUpdate(aParentWorld, abParentChanged);
+                _DoPostUpdate();
             }
 
             template <typename T>
@@ -159,14 +166,14 @@ namespace jz
             AutoPtr<SceneNode> Clone(SceneNode* apParent, const string& aCloneIdPostfix);
 
             template <typename T>
-            static AutoPtr<T> Get(const string& aId)
+            static AutoPtr<T> Get(const string& aBaseId, const string& aId)
             {
-                Container::iterator I = msNodes.find(aId);
+                Container::iterator I = msNodes.find(aBaseId + aId);
                 if (I != msNodes.end()) { return dynamic_cast<T*>(I->second); }
                 else { return null; }
             }
 
-            static void Get(const string& aId, RetrieveAction aAction);
+            static void Get(const string& aBaseId, const string& aId, RetrieveAction aAction);
 
             template <typename U>
             void Apply(tr1::function<void(U*)> aAction)
@@ -186,16 +193,20 @@ namespace jz
             }
 
         protected:
+            Matrix4 _GetUpdatedWorldTransform(const Matrix4& aParentWorld, bool abParentChanged) const;
+
             virtual void _PopulateClone(SceneNode* apNode);
-            virtual void _PreUpdate(const Matrix4& aParentWorld, bool abParentChanged) {}
+            virtual void _PreUpdateA(const Matrix4& aParentWorld, bool abParentChanged) {}
+            virtual void _PreUpdateB(const Matrix4& aParentWorld, bool abParentChanged) {}
             virtual void _PostUpdate(bool abChanged) {}
-            virtual SceneNode* _SpawnClone(const string& aCloneId);
+            virtual SceneNode* _SpawnClone(const string& aBaseId, const string& aCloneId);
 
             unatural mFlags;
             Matrix4 mLocal;
             Matrix4 mWit;
             Matrix4 mWorld;
             bool mbValidBounding;
+            BoundingBox mWorldAABB;
             BoundingSphere mWorldBounding;
 
         private:
@@ -203,6 +214,7 @@ namespace jz
             SceneNode& operator=(const SceneNode&);
 
             bool mbDirty;
+            string mBaseId;
             string mId;
 
             typedef map<string, SceneNode*> Container;
@@ -216,6 +228,50 @@ namespace jz
 
             bool _Update(const Matrix4& aParentWorld, bool abParentChanged);
             void _UpdateBounding();
+
+            void _DoPreUpdateA(const Matrix4& aParentWorld, bool abParentChanged)
+            {
+                OnUpdateBegin(this);
+                _PreUpdateA(aParentWorld, abParentChanged);
+
+                for (iterator I = begin(); I != end(); I++)
+                {
+                    I->_DoPreUpdateA(mWorld, abParentChanged);
+                }
+            }
+
+            void _DoPreUpdateB(const Matrix4& aParentWorld, bool abParentChanged)
+            {
+                _PreUpdateB(aParentWorld, abParentChanged);
+
+                for (iterator I = begin(); I != end(); I++)
+                {
+                    I->_DoPreUpdateB(mWorld, abParentChanged);
+                }
+            }
+
+            bool _DoUpdate(const Matrix4& aParentWorld, bool abParentChanged)
+            {
+                bool bReturn = _Update(aParentWorld, abParentChanged);
+
+                return bReturn;
+            }
+
+            void _DoPostUpdate()
+            {
+                _PostUpdate(mbDirty);
+
+                for (iterator I = begin(); I != end(); I++)
+                {
+                    I->_DoPostUpdate();
+                }
+
+                if (mbDirty)
+                {
+                    _UpdateBounding();
+                    OnUpdateEnd(this);
+                }
+            }
         };
 
         typedef AutoPtr<SceneNode> SceneNodePtr;

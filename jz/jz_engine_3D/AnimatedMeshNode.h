@@ -40,7 +40,7 @@ namespace jz
         {
         public:
             AnimatedMeshNode();
-            AnimatedMeshNode(const string& aId);
+            AnimatedMeshNode(const string& aBaseId, const string& aId);
             virtual ~AnimatedMeshNode();
 
             virtual void Pick(const Ray3D& aRay) override;
@@ -66,7 +66,7 @@ namespace jz
         protected:
             virtual void _PopulateClone(SceneNode* apNode) override;
             virtual void _PostUpdate(bool abChanged)  override;
-            virtual SceneNode* _SpawnClone(const string& aCloneId) override;
+            virtual SceneNode* _SpawnClone(const string& aBaseId, const string& aCloneId) override;
 
             Matrix4 mBind;
             AnimationControlPtr mpAnimationControl;

@@ -24,75 +24,135 @@
 #define _JZ_PHYSICS_COLLIDE_H_
 
 #include <jz_core/Prereqs.h>
+#include <jz_physics/narrowphase/WorldContactPoint.h>
 
 namespace jz
 {
-    struct CoordinateFrame2D;
     struct CoordinateFrame3D;
-    struct BoundingSphere;
-    struct Plane;
     struct Triangle3D;
     struct Vector3;
     namespace physics
     {
 
-        class ICollisionShape2D;
         class ICollisionShape3D;
-        class Body2D;
-        class Body3D;
-        class CircleShape;
-        class ConvexShape2D;
-        class ConvexShape3D;
-        class Box2DShape;
-        class Box3DShape;
         class SphereShape;
-        class TriangleShape;
-        class TriangleTreeShape;
-        struct WorldContactPoint2D;
-        struct WorldContactPoint3D;
         namespace Collide
         {
 
-            #pragma region Collision2D
-            bool Collide(
-                ICollisionShape2D* a, const CoordinateFrame2D& acf,
-                ICollisionShape2D* b, const CoordinateFrame2D& bcf,
-                WorldContactPoint2D& cp);
+            #pragma region Discrete collision   
+            static const float kMprTolerance = 1e-4f;
+
+#if JZ_PROFILING
+            extern unatural AverageMprCollideIterations;
+            extern unatural AverageMprDistanceIterations;
+#endif
 
             bool Collide(
-                CircleShape* a, const CoordinateFrame2D& acf,
-                CircleShape* b, const CoordinateFrame2D& bcf,
-                WorldContactPoint2D& cp);
+                ICollisionShape3D const* a, const CoordinateFrame3D& acf,
+                ICollisionShape3D const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp);
 
             bool Collide(
-                ConvexShape2D* a, const CoordinateFrame2D& acf,
-                ConvexShape2D* b, const CoordinateFrame2D& bcf,
-                WorldContactPoint2D& cp);
+                SphereShape const* a, const CoordinateFrame3D& acf,
+                SphereShape const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp);
+
+            bool Collide(
+                ICollisionShape3D const* a, const CoordinateFrame3D& acf,
+                Triangle3D const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp);
+
+            __inline bool Collide(
+                Triangle3D const* a, const CoordinateFrame3D& acf,
+                ICollisionShape3D const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp)
+            {
+                bool bReturn = Collide(b, bcf, a, acf, cp);
+                cp = WorldContactPoint3D::Flip(cp);
+
+                return bReturn;
+            }
+
+            bool Collide(
+                SphereShape const* a, const CoordinateFrame3D& acf,
+                Triangle3D const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp);
+
+            __inline bool Collide(
+                Triangle3D const* a, const CoordinateFrame3D& acf,
+                SphereShape const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp)
+            {
+                bool bReturn = Collide(b, bcf, a, acf, cp);
+                cp = WorldContactPoint3D::Flip(cp);
+
+                return bReturn;
+            }
             #pragma endregion
 
-            #pragma region Collision3D
-            bool Collide(
-                ICollisionShape3D* a, const CoordinateFrame3D& acf,
-                ICollisionShape3D* b, const CoordinateFrame3D& bcf,
-                WorldContactPoint3D& cp);
+            #pragma region Continuous collision
+            bool ContinuousCollide(
+                ICollisionShape3D const* a, const CoordinateFrame3D& pacf, const CoordinateFrame3D& acf,
+                ICollisionShape3D const* b, const CoordinateFrame3D& pbcf, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp, float& t);
 
-            bool Collide(
-                SphereShape* a, const CoordinateFrame3D& acf,
-                SphereShape* b, const CoordinateFrame3D& bcf,
-                WorldContactPoint3D& cp);
+            bool ContinuousCollide(
+                ICollisionShape3D const* a, const CoordinateFrame3D& pacf, const CoordinateFrame3D& acf,
+                Triangle3D const* b, const CoordinateFrame3D& pbcf, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp, float& t);
 
-            bool Collide(
-                ConvexShape3D* a, const CoordinateFrame3D& acf,
-                ConvexShape3D* b, const CoordinateFrame3D& bcf,
-                WorldContactPoint3D& cp);
+            __inline bool ContinuousCollide(
+                Triangle3D const* a, const CoordinateFrame3D& pacf, const CoordinateFrame3D& acf,
+                ICollisionShape3D const* b, const CoordinateFrame3D& pbcf, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp, float& t)
+            {
+                bool bReturn = ContinuousCollide(b, pbcf, bcf, a, pacf, acf, cp, t);
+                cp = WorldContactPoint3D::Flip(cp);
 
-            bool Collide(
-                SphereShape* a, const CoordinateFrame3D& acf,
-                TriangleShape* b, const CoordinateFrame3D& bcf,
-                WorldContactPoint3D& cp);
+                return bReturn;
+            }
+
+            bool ContinuousCollide(
+                SphereShape const* a, const CoordinateFrame3D& pacf, const CoordinateFrame3D& acf,
+                Triangle3D const* b, const CoordinateFrame3D& pbcf, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp, float& t);
+
+            __inline bool ContinuousCollide(
+                Triangle3D const* a, const CoordinateFrame3D& pacf, const CoordinateFrame3D& acf,
+                SphereShape const* b, const CoordinateFrame3D& pbcf, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp, float& t)
+            {
+                bool bReturn = ContinuousCollide(b, pbcf, bcf, a, pacf, acf, cp, t);
+                cp = WorldContactPoint3D::Flip(cp);
+
+                return bReturn;
+            }
             #pragma endregion
 
+            #pragma region Distance estimate
             Vector3 ClosestPointOnTriangleToP(const Vector3& p, const Triangle3D& t);
+
+            float ConservativeDistanceEstimate(
+                ICollisionShape3D const* a, const CoordinateFrame3D& acf,
+                ICollisionShape3D const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp);
+
+            float ConservativeDistanceEstimate(
+                ICollisionShape3D const* a, const CoordinateFrame3D& acf,
+                Triangle3D const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp);
+
+            __inline float ConservativeDistanceEstimate(
+                Triangle3D const* a, const CoordinateFrame3D& acf,
+                ICollisionShape3D const* b, const CoordinateFrame3D& bcf,
+                WorldContactPoint3D& cp)
+            {
+                float ret = ConservativeDistanceEstimate(b, bcf, a, acf, cp);
+                cp = WorldContactPoint3D::Flip(cp);
+
+                return ret;
+            }
+            #pragma endregion
 
         }
 

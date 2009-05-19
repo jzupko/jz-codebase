@@ -44,19 +44,17 @@ namespace jz
             mpWorldBody(mpWorld->Create(mpWorldTree.Get(),
                 physics::Body3D::kStatic, physics::Body3D::kDynamic)),
             mbTreeDirty(false),
-            mbDebugPhysics(false),
-            mAABB(BoundingBox::kZero)
+            mbDebugPhysics(false)
         {}
 
-        PhysicsNode::PhysicsNode(const string& aId)
-            : SceneNode(aId),
+        PhysicsNode::PhysicsNode(const string& aBaseId, const string& aId)
+            : SceneNode(aBaseId, aId),
             mpWorld(new physics::World3D()),
             mpWorldTree(new physics::TriangleTreeShape()),
             mpWorldBody(mpWorld->Create(mpWorldTree.Get(),
                 physics::Body3D::kStatic, physics::Body3D::kDynamic)),
             mbTreeDirty(false),
-            mbDebugPhysics(false),
-            mAABB(BoundingBox::kZero)
+            mbDebugPhysics(false)
         {}
 
         PhysicsNode::~PhysicsNode()
@@ -64,17 +62,6 @@ namespace jz
             mpWorldBody.Reset();
             mpWorldTree.Reset();
             SafeDelete(mpWorld);
-        }
-
-        const BoundingBox& PhysicsNode::GetAABB() const
-        {
-            if (mbTreeDirty)
-            {
-                const_cast<BoundingBox&>(mAABB) = mpWorldTree->GetBounding();
-                const_cast<bool&>(mbTreeDirty) = false;
-            }
-
-            return mAABB;
         }
 
         static void DrawPhysicsNode(graphics::RenderNode* apNode, voidc_p apInstance)
@@ -107,16 +94,29 @@ namespace jz
             }
         }
 
-        SceneNode* PhysicsNode::_SpawnClone(const string& aCloneId)
+        SceneNode* PhysicsNode::_SpawnClone(const string& aBaseId, const string& aCloneId)
         {
-            throw std::exception(__FUNCTION__ "cannot clone PhysicsNode.");
+            throw std::exception(__FUNCTION__ ": cannot clone PhysicsNode.");
         }
 
-        void PhysicsNode::_PreUpdate(const Matrix4& aParentWorld, bool abParentChanged)
+        void PhysicsNode::_PostUpdate(bool abChanged)
         {
-            mpWorld->Tick(system::Time::GetSingleton().GetElapsedSeconds());
+            if (abChanged || mbTreeDirty)
+            {
+                mWorldAABB = BoundingBox::Transform(mWorld, mpWorldTree->GetBounding());
+                mWorldBounding = BoundingSphere::CreateFrom(mWorldAABB);
+                mbValidBounding = true;
 
-            SceneNode::_PreUpdate(aParentWorld, abParentChanged);
+                mbTreeDirty = false;
+            }
+        }
+
+        void PhysicsNode::_PreUpdateB(const Matrix4& aParentWorld, bool abParentChanged)
+        {
+            float tick = system::Time::GetSingleton().GetElapsedSeconds();
+            mpWorld->Tick(tick);
+
+            SceneNode::_PreUpdateB(aParentWorld, abParentChanged);
         }
 
     }

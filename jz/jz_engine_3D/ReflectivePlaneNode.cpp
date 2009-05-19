@@ -54,14 +54,14 @@ namespace jz
         }
       
         ReflectivePlaneNode::ReflectivePlaneNode()
-            : SceneNode(), mbNonDeferred(false), mAABB(BoundingBox::kZero), mPack(graphics::RenderPack::Create()), 
+            : SceneNode(), mbNonDeferred(false), mPack(graphics::RenderPack::Create()), 
             mbVisible(true), mHandle(-1), mPlane(Vector3::kForward, 0.0f)
         {
             mHandle = ReflectionMan::GetSingleton().Grab();
         }
 
-        ReflectivePlaneNode::ReflectivePlaneNode(const string& aId)
-            : SceneNode(aId), mbNonDeferred(false), mAABB(BoundingBox::kZero), mPack(graphics::RenderPack::Create()), 
+        ReflectivePlaneNode::ReflectivePlaneNode(const string& aBaseId, const string& aId)
+            : SceneNode(aBaseId, aId), mbNonDeferred(false), mPack(graphics::RenderPack::Create()), 
             mbVisible(true), mHandle(-1), mPlane(Vector3::kForward, 0.0f)
         {
             mHandle = ReflectionMan::GetSingleton().Grab();
@@ -146,13 +146,12 @@ namespace jz
         {
             ReflectivePlaneNode* p = static_cast<ReflectivePlaneNode*>(apNode);
 
-            p->mAABB = mAABB;
             p->mPack = mPack;
         }
 
-        SceneNode* ReflectivePlaneNode::_SpawnClone(const string& aCloneId)
+        SceneNode* ReflectivePlaneNode::_SpawnClone(const string& aBaseId, const string& aCloneId)
         {
-            return new ReflectivePlaneNode(aCloneId);
+            return new ReflectivePlaneNode(aBaseId, aCloneId);
         }
 
         void ReflectivePlaneNode::_PostUpdate(bool abChanged)
@@ -161,19 +160,9 @@ namespace jz
             {
                 if (mPack.pMesh.IsValid())
                 {
-                    BoundingSphere bounding = BoundingSphere::Transform(mWorld, mPack.pMesh->GetBoundingSphere());
-
-                    if (mbValidBounding)
-                    {
-                        mWorldBounding = BoundingSphere::Merge(mWorldBounding, bounding);
-                    }
-                    else
-                    {
-                        mWorldBounding = bounding;
-                        mbValidBounding = true;
-                    }
-
-                    mAABB = BoundingBox::Transform(mWorld, mPack.pMesh->GetAABB());
+                    mWorldAABB = BoundingBox::Transform(mWorld, mPack.pMesh->GetAABB());
+                    mWorldBounding = BoundingSphere::Transform(mWorld, mPack.pMesh->GetBoundingSphere());
+                    mbValidBounding = true;
                 }
             }
 

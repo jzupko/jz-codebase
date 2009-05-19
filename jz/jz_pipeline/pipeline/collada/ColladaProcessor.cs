@@ -311,14 +311,14 @@ namespace jz.pipeline.collada
             }
 
             _ColladaArray<object> colladaJoints = skin.Joints;
-            string rootJoint = mBaseName + ((ColladaNode)instanceController.SkeletonRoot).Id;
+            string rootJoint = ((ColladaNode)instanceController.SkeletonRoot).Id;
 
             uint jointCount = colladaJoints.Count;
             string[] joints = new string[jointCount];
             for (uint i = 0; i < jointCount; i++)
             {
                 ColladaNode node = (ColladaNode)colladaJoints[i];
-                joints[i] = mBaseName + node.Id;
+                joints[i] = node.Id;
             }
 
             #region Remove any joints and inv bind transforms for those joints that are not going to be used.
@@ -340,14 +340,14 @@ namespace jz.pipeline.collada
             #endregion
 
             SceneNodeContent parentNode = new SceneNodeContent(
-                mBaseName + aNode.Id, (aChildrenCount + mesh.Parts.Count), ref aLocalTransform);
+                mBaseName, aNode.Id, (aChildrenCount + mesh.Parts.Count), ref aLocalTransform);
             mScene.Nodes.Add(parentNode);
 
             int count = 0;
             foreach (JzMeshContent.Part e in mesh.Parts)
             {
                 AnimatedMeshPartSceneNodeContent meshPartNode = new
-                    AnimatedMeshPartSceneNodeContent(mBaseName + aNode.Id + kMeshPartPostfix + count.ToString(),
+                    AnimatedMeshPartSceneNodeContent(mBaseName, aNode.Id + kMeshPartPostfix + count.ToString(),
                     0, ref Utilities.kIdentity, effects[e.Effect],
                     materials[e.Effect], e, ref bindMatrix, invBindTransforms, rootJoint, joints);
 
@@ -469,7 +469,7 @@ namespace jz.pipeline.collada
                 keyFrames[i].Key = keyFrames[i].Key;
             }
 
-            JointSceneNodeContent jointNode = new JointSceneNodeContent(mBaseName + aNode.Id, childrenCount,
+            JointSceneNodeContent jointNode = new JointSceneNodeContent(mBaseName, aNode.Id, childrenCount,
                 ref aLocalTransform, new AnimationContent(animationId, keyFrames));
 
             msJoints.Add(jointNode.Id, jointNode);
@@ -529,13 +529,13 @@ namespace jz.pipeline.collada
             EffectsBySymbol effects;
             _GetMeshAndMaterials(aNode, out mesh, out materials, out effects);
 
-            SceneNodeContent parentNode = new SceneNodeContent(mBaseName + aNode.Id, (aChildrenCount + mesh.Parts.Count), ref aLocalTransform);
+            SceneNodeContent parentNode = new SceneNodeContent(mBaseName, aNode.Id, (aChildrenCount + mesh.Parts.Count), ref aLocalTransform);
             mScene.Nodes.Add(parentNode);
 
             int count = 0;
             foreach (JzMeshContent.Part e in mesh.Parts)
             {
-                MeshPartSceneNodeContent meshPartNode = new MeshPartSceneNodeContent(mBaseName + aNode.Id + kMeshPartPostfix + count.ToString(), 0, ref Utilities.kIdentity, ref aWorldTransform, effects[e.Effect], materials[e.Effect], e);
+                MeshPartSceneNodeContent meshPartNode = new MeshPartSceneNodeContent(mBaseName, aNode.Id + kMeshPartPostfix + count.ToString(), 0, ref Utilities.kIdentity, ref aWorldTransform, effects[e.Effect], materials[e.Effect], e);
                 mScene.Nodes.Add(meshPartNode);
                 count++;
             }
@@ -559,18 +559,18 @@ namespace jz.pipeline.collada
                         aNode.Id + "\" has been converted into a directional light.");
                 }
 
-                mScene.Nodes.Add(new DirectionalLightSceneNodeContent(mBaseName + aNode.Id, childrenCount, ref aLocalTransform, lightColor));
+                mScene.Nodes.Add(new DirectionalLightSceneNodeContent(mBaseName, aNode.Id, childrenCount, ref aLocalTransform, lightColor));
                 return;
             }
             else if (lightData.Type == _ColladaElement.Enums.LightType.kDirectional)
             {
-                mScene.Nodes.Add(new DirectionalLightSceneNodeContent(mBaseName + aNode.Id, childrenCount, ref aLocalTransform, lightColor));
+                mScene.Nodes.Add(new DirectionalLightSceneNodeContent(mBaseName, aNode.Id, childrenCount, ref aLocalTransform, lightColor));
                 return;
             }
             else if (lightData.Type == _ColladaElement.Enums.LightType.kPoint)
             {
                 Vector3 attenuation = new Vector3(lightData.ConstantAttenuation, lightData.LinearAttenuation, lightData.QuadraticAttenuation);
-                mScene.Nodes.Add(new PointLightSceneNodeContent(mBaseName + aNode.Id, childrenCount, ref aLocalTransform, lightColor, attenuation));
+                mScene.Nodes.Add(new PointLightSceneNodeContent(mBaseName, aNode.Id, childrenCount, ref aLocalTransform, lightColor, attenuation));
                 return;
             }
             else if (lightData.Type == _ColladaElement.Enums.LightType.kSpot)
@@ -579,7 +579,7 @@ namespace jz.pipeline.collada
                 Vector3 attenuation = new Vector3(lightData.ConstantAttenuation, lightData.LinearAttenuation, lightData.QuadraticAttenuation);
                 float angleInRadians = MathHelper.ToRadians(lightData.FalloffAngleInDegrees);
                 float falloffExponent = Utilities.AboutZero(dropoff, Utilities.kLooseToleranceFloat) ? lightData.FalloffExponent : dropoff;
-                mScene.Nodes.Add(new SpotLightSceneNodeContent(mBaseName + aNode.Id, childrenCount, ref aLocalTransform, lightColor, attenuation, angleInRadians, falloffExponent));
+                mScene.Nodes.Add(new SpotLightSceneNodeContent(mBaseName, aNode.Id, childrenCount, ref aLocalTransform, lightColor, attenuation, angleInRadians, falloffExponent));
                 return;
             }
 
@@ -631,7 +631,7 @@ namespace jz.pipeline.collada
                                 "release but the <node> \"" + aNode.Id + "\" has been converted to a " +
                                 "standard scene node for now.");
                         }
-                        mScene.Nodes.Add(new SceneNodeContent(mBaseName + aNode.Id, childrenCount, ref localTransform));
+                        mScene.Nodes.Add(new SceneNodeContent(mBaseName, aNode.Id, childrenCount, ref localTransform));
                     }
                     else if (e is ColladaInstanceController)
                     {
@@ -658,7 +658,7 @@ namespace jz.pipeline.collada
                                 "release but the <node> \"" + aNode.Id + "\" has been converted to a " +
                                 "standard scene node for now.");
                         }
-                        mScene.Nodes.Add(new SceneNodeContent(mBaseName + aNode.Id, childrenCount, ref localTransform));
+                        mScene.Nodes.Add(new SceneNodeContent(mBaseName, aNode.Id, childrenCount, ref localTransform));
                     }
                 }
             }
@@ -666,7 +666,7 @@ namespace jz.pipeline.collada
             // If this node wasn't a special node, add a regular scene node.
             if (!bFoundInstanceElement)
             {
-                mScene.Nodes.Add(new SceneNodeContent(mBaseName + aNode.Id, childrenCount, ref localTransform));
+                mScene.Nodes.Add(new SceneNodeContent(mBaseName, aNode.Id, childrenCount, ref localTransform));
             }
 
             // Process children.
@@ -684,7 +684,7 @@ namespace jz.pipeline.collada
             ColladaVisualScene visualScene = aRoot.GetFirst<ColladaScene>().GetFirst<ColladaInstanceVisualScene>().Instance;
 
             int childrenCount = visualScene.GetChildCount<ColladaNode>();
-            SceneNodeContent root = new SceneNodeContent(mBaseName + visualScene.Id, childrenCount, ref Utilities.kIdentity);
+            SceneNodeContent root = new SceneNodeContent(mBaseName, visualScene.Id, childrenCount, ref Utilities.kIdentity);
             mScene.Nodes.Add(root);
 
             foreach (ColladaNode n in visualScene.GetEnumerable<ColladaNode>())
@@ -696,7 +696,7 @@ namespace jz.pipeline.collada
 
         public SceneContent Process(ColladaCOLLADA aRoot, ContentProcessorContext aContext)
         {
-            mBaseName = Path.GetFileNameWithoutExtension(aRoot.SourceFile) + "_";
+            mBaseName = Path.GetFileNameWithoutExtension(aRoot.SourceFile);
             mIdentity = new ContentIdentity(aRoot.SourceFile);
             mContext = aContext;
 
@@ -728,7 +728,7 @@ namespace jz.pipeline.collada
                 if (mScene.Nodes.Count < 1 || mScene.Nodes[0] == null) { throw new ArgumentNullException(); }
 
                 mScene.Nodes[0].ChildrenCount++;
-                mScene.Nodes.Insert(1, new PhysicsSceneNodeContent(mBaseName + "physics_node", tree));
+                mScene.Nodes.Insert(1, new PhysicsSceneNodeContent(mBaseName, "physics_node", tree));
             }
 
             return mScene;

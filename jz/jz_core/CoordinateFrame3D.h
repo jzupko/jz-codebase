@@ -39,6 +39,8 @@ namespace jz
         Matrix3 Orientation;
         Vector3 Translation;
 
+        static CoordinateFrame3D CreateFromMatrix4(const Matrix4& v);
+
         CoordinateFrame3D()
             : Orientation(Matrix3::kIdentity), Translation(Vector3::kZero)
         {}

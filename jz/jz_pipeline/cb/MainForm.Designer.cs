@@ -43,8 +43,6 @@ namespace jz.cb
             this.instancingQuadToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.processOptionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.processColladaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.processHeightmapsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.processSpritesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.Output = new System.Windows.Forms.TextBox();
             this.InFolder = new System.Windows.Forms.TextBox();
             this.OutFolder = new System.Windows.Forms.TextBox();
@@ -110,9 +108,9 @@ namespace jz.cb
             this.createToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.unitBoxToolStripMenuItem,
             this.unitFrustumToolStripMenuItem,
+            this.instancingQuadToolStripMenuItem,
             this.unitQuadToolStripMenuItem,
-            this.unitSphereToolStripMenuItem,
-            this.instancingQuadToolStripMenuItem});
+            this.unitSphereToolStripMenuItem});
             this.createToolStripMenuItem.Name = "createToolStripMenuItem";
             this.createToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
             this.createToolStripMenuItem.Text = "Create";
@@ -120,44 +118,42 @@ namespace jz.cb
             // unitBoxToolStripMenuItem
             // 
             this.unitBoxToolStripMenuItem.Name = "unitBoxToolStripMenuItem";
-            this.unitBoxToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.unitBoxToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.unitBoxToolStripMenuItem.Text = "Unit Box";
             this.unitBoxToolStripMenuItem.Click += new System.EventHandler(this.unitBoxToolStripMenuItem_Click);
             // 
             // unitFrustumToolStripMenuItem
             // 
             this.unitFrustumToolStripMenuItem.Name = "unitFrustumToolStripMenuItem";
-            this.unitFrustumToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.unitFrustumToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.unitFrustumToolStripMenuItem.Text = "Unit Frustum";
             this.unitFrustumToolStripMenuItem.Click += new System.EventHandler(this.unitFrustumToolStripMenuItem_Click);
             // 
             // unitQuadToolStripMenuItem
             // 
             this.unitQuadToolStripMenuItem.Name = "unitQuadToolStripMenuItem";
-            this.unitQuadToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.unitQuadToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.unitQuadToolStripMenuItem.Text = "Unit Quad";
             this.unitQuadToolStripMenuItem.Click += new System.EventHandler(this.unitQuadToolStripMenuItem_Click);
             // 
             // unitSphereToolStripMenuItem
             // 
             this.unitSphereToolStripMenuItem.Name = "unitSphereToolStripMenuItem";
-            this.unitSphereToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.unitSphereToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.unitSphereToolStripMenuItem.Text = "Unit Sphere";
             this.unitSphereToolStripMenuItem.Click += new System.EventHandler(this.unitSphereToolStripMenuItem_Click);
             // 
             // instancingQuadToolStripMenuItem
             // 
             this.instancingQuadToolStripMenuItem.Name = "instancingQuadToolStripMenuItem";
-            this.instancingQuadToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
-            this.instancingQuadToolStripMenuItem.Text = "Instancing Quad";
+            this.instancingQuadToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
+            this.instancingQuadToolStripMenuItem.Text = "Unit Instancing Quad";
             this.instancingQuadToolStripMenuItem.Click += new System.EventHandler(this.instancingQuadToolStripMenuItem_Click);
             // 
             // processOptionsToolStripMenuItem
             // 
             this.processOptionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.processColladaToolStripMenuItem,
-            this.processHeightmapsToolStripMenuItem,
-            this.processSpritesToolStripMenuItem});
+            this.processColladaToolStripMenuItem});
             this.processOptionsToolStripMenuItem.Name = "processOptionsToolStripMenuItem";
             this.processOptionsToolStripMenuItem.Size = new System.Drawing.Size(96, 20);
             this.processOptionsToolStripMenuItem.Text = "Process Options";
@@ -168,29 +164,9 @@ namespace jz.cb
             this.processColladaToolStripMenuItem.CheckOnClick = true;
             this.processColladaToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.processColladaToolStripMenuItem.Name = "processColladaToolStripMenuItem";
-            this.processColladaToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
+            this.processColladaToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.processColladaToolStripMenuItem.Text = "Process Collada";
             this.processColladaToolStripMenuItem.Click += new System.EventHandler(this.processColladaToolStripMenuItem_Click);
-            // 
-            // processHeightmapsToolStripMenuItem
-            // 
-            this.processHeightmapsToolStripMenuItem.Checked = true;
-            this.processHeightmapsToolStripMenuItem.CheckOnClick = true;
-            this.processHeightmapsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.processHeightmapsToolStripMenuItem.Name = "processHeightmapsToolStripMenuItem";
-            this.processHeightmapsToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
-            this.processHeightmapsToolStripMenuItem.Text = "Process Heightmaps";
-            this.processHeightmapsToolStripMenuItem.Click += new System.EventHandler(this.processHeightmapsToolStripMenuItem_Click);
-            // 
-            // processSpritesToolStripMenuItem
-            // 
-            this.processSpritesToolStripMenuItem.Checked = true;
-            this.processSpritesToolStripMenuItem.CheckOnClick = true;
-            this.processSpritesToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.processSpritesToolStripMenuItem.Name = "processSpritesToolStripMenuItem";
-            this.processSpritesToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
-            this.processSpritesToolStripMenuItem.Text = "Process Sprites";
-            this.processSpritesToolStripMenuItem.Click += new System.EventHandler(this.processSpritesToolStripMenuItem_Click);
             // 
             // Output
             // 
@@ -295,7 +271,5 @@ namespace jz.cb
         private System.Windows.Forms.ToolStripMenuItem OutFolderMenuItem;
         private System.Windows.Forms.ToolStripMenuItem processOptionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem processColladaToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem processHeightmapsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem processSpritesToolStripMenuItem;
     }
 }

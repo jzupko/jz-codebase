@@ -640,10 +640,10 @@ namespace jz.pipeline
     #region Scene
     public sealed class AnimatedMeshPartSceneNodeContent : SceneNodeContent
     {
-        public AnimatedMeshPartSceneNodeContent(string aId, int aChildrenCount, ref Matrix aLocalTransform,
+        public AnimatedMeshPartSceneNodeContent(string aBaseId, string aId, int aChildrenCount, ref Matrix aLocalTransform,
             JzEffectContent aEffect, JzMaterialContent aMaterial, JzMeshContent.Part aMeshPart,
             ref Matrix aBindMatrix, Matrix[] aInverseBindTransforms, string aRootJoint, string[] aJoints)
-            : base(aId, aChildrenCount, ref aLocalTransform, SceneNodeType.AnimatedMeshPart)
+            : base(aBaseId, aId, aChildrenCount, ref aLocalTransform, SceneNodeType.AnimatedMeshPart)
         {
             Effect = aEffect;
             Material = aMaterial;
@@ -665,8 +665,8 @@ namespace jz.pipeline
 
     public sealed class DirectionalLightSceneNodeContent : SceneNodeContent
     {
-        public DirectionalLightSceneNodeContent(string aId, int aChildrenCount, ref Matrix aLocalTransform, Vector3 aLightColor)
-            : base(aId, aChildrenCount, ref aLocalTransform, SceneNodeType.DirectionalLight)
+        public DirectionalLightSceneNodeContent(string aBaseId, string aId, int aChildrenCount, ref Matrix aLocalTransform, Vector3 aLightColor)
+            : base(aBaseId, aId, aChildrenCount, ref aLocalTransform, SceneNodeType.DirectionalLight)
         {
             LightColor = aLightColor;
         }
@@ -676,8 +676,8 @@ namespace jz.pipeline
 
     public sealed class JointSceneNodeContent : SceneNodeContent
     {
-        public JointSceneNodeContent(string aId, int aChildrenCount, ref Matrix aLocalTransform, AnimationContent aAnimation)
-            : base(aId, aChildrenCount, ref aLocalTransform, SceneNodeType.Joint)
+        public JointSceneNodeContent(string aBaseId, string aId, int aChildrenCount, ref Matrix aLocalTransform, AnimationContent aAnimation)
+            : base(aBaseId, aId, aChildrenCount, ref aLocalTransform, SceneNodeType.Joint)
         {
             Animation = aAnimation;
         }
@@ -687,8 +687,8 @@ namespace jz.pipeline
 
     public sealed class MeshPartSceneNodeContent : SceneNodeContent
     {
-        public MeshPartSceneNodeContent(string aId, int aChildrenCount, ref Matrix aLocalTransform, ref Matrix aWorldTransform, JzEffectContent aEffect, JzMaterialContent aMaterial, JzMeshContent.Part aMeshPart)
-            : base(aId, aChildrenCount, ref aLocalTransform,  SceneNodeType.MeshPart)
+        public MeshPartSceneNodeContent(string aBaseId, string aId, int aChildrenCount, ref Matrix aLocalTransform, ref Matrix aWorldTransform, JzEffectContent aEffect, JzMaterialContent aMaterial, JzMeshContent.Part aMeshPart)
+            : base(aBaseId, aId, aChildrenCount, ref aLocalTransform, SceneNodeType.MeshPart)
         {
             Effect = aEffect;
             Material = aMaterial;
@@ -704,8 +704,8 @@ namespace jz.pipeline
 
     public sealed class PhysicsSceneNodeContent : SceneNodeContent
     {
-        public PhysicsSceneNodeContent(string aId, TriangleTree aTree)
-            : base(aId, 0, ref Utilities.kIdentity, SceneNodeType.Physics)
+        public PhysicsSceneNodeContent(string aBaseId, string aId, TriangleTree aTree)
+            : base(aBaseId, aId, 0, ref Utilities.kIdentity, SceneNodeType.Physics)
         {
             Tree = aTree;
         }
@@ -715,8 +715,8 @@ namespace jz.pipeline
 
     public sealed class PointLightSceneNodeContent : SceneNodeContent
     {
-        public PointLightSceneNodeContent(string aId, int aChildrenCount, ref Matrix aLocalTransform, Vector3 aLightColor, Vector3 aAttenuation)
-            : base(aId, aChildrenCount, ref aLocalTransform, SceneNodeType.PointLight)
+        public PointLightSceneNodeContent(string aBaseId, string aId, int aChildrenCount, ref Matrix aLocalTransform, Vector3 aLightColor, Vector3 aAttenuation)
+            : base(aBaseId, aId, aChildrenCount, ref aLocalTransform, SceneNodeType.PointLight)
         {
             LightAttenuation = aAttenuation;
             LightColor = aLightColor;
@@ -729,8 +729,9 @@ namespace jz.pipeline
     public class SceneNodeContent
     {
         #region Protected members
-        protected SceneNodeContent(string aId, int aChildrenCount, ref Matrix aLocalTransform, SceneNodeType aType)
+        protected SceneNodeContent(string aBaseId, string aId, int aChildrenCount, ref Matrix aLocalTransform, SceneNodeType aType)
         {
+            BaseId = aBaseId;
             Id = aId;
             ChildrenCount = aChildrenCount;
             LocalTransform = aLocalTransform;
@@ -738,11 +739,12 @@ namespace jz.pipeline
         }
         #endregion
 
-        public SceneNodeContent(string aId, int aChildrenCount, ref Matrix aLocalTransform)
-            : this(aId, aChildrenCount, ref aLocalTransform, SceneNodeType.Node)
+        public SceneNodeContent(string aBaseId, string aId, int aChildrenCount, ref Matrix aLocalTransform)
+            : this(aBaseId, aId, aChildrenCount, ref aLocalTransform, SceneNodeType.Node)
         { }
 
         public int ChildrenCount;
+        public string BaseId;
         public string Id;
         public Matrix LocalTransform;
         public SceneNodeType Type;
@@ -750,8 +752,8 @@ namespace jz.pipeline
 
     public sealed class SpotLightSceneNodeContent : SceneNodeContent
     {
-        public SpotLightSceneNodeContent(string aId, int aChildrenCount, ref Matrix aLocalTransform, Vector3 aLightColor, Vector3 aAttenuation, float aFalloffAngleInRadians, float aFalloffExponent)
-            : base(aId, aChildrenCount, ref aLocalTransform, SceneNodeType.SpotLight)
+        public SpotLightSceneNodeContent(string aBaseId, string aId, int aChildrenCount, ref Matrix aLocalTransform, Vector3 aLightColor, Vector3 aAttenuation, float aFalloffAngleInRadians, float aFalloffExponent)
+            : base(aBaseId, aId, aChildrenCount, ref aLocalTransform, SceneNodeType.SpotLight)
         {
             FalloffAngleInRadians = aFalloffAngleInRadians;
             FalloffExponent = aFalloffExponent;

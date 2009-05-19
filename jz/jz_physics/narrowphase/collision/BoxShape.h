@@ -24,70 +24,48 @@
 #ifndef _JZ_PHYSICS_BOX_SHAPE_H_
 #define _JZ_PHYSICS_BOX_SHAPE_H_
 
-#include <jz_physics/narrowphase/collision/ConvexShape.h>
+#include <jz_physics/narrowphase/collision/ICollisionShape.h>
 
 namespace jz
 {
     namespace physics
     {
 
-        __inline ConvexShape2D::Container GetPoints(const BoundingRectangle& abr)
-        {
-            ConvexShape2D::Container ret(4);
-            ret[0] = Vector2(abr.Min.X, abr.Min.Y);
-            ret[1] = Vector2(abr.Min.X, abr.Max.Y);
-            ret[2] = Vector2(abr.Max.X, abr.Max.Y);
-            ret[3] = Vector2(abr.Max.X, abr.Min.Y);
-
-            return ret;
-        }
-
-        class Box2DShape : public ConvexShape2D
+        class BoxShape : public ICollisionShape3D
         {
         public:
-            Box2DShape(const BoundingRectangle& abr = BoundingRectangle::kZero)
-                : ConvexShape2D(physics::GetPoints(abr))
+            BoxShape(const Vector3& aHalfExtents)
+                : ICollisionShape3D(ICollisionShape3D::kBox), HalfExtents(aHalfExtents)
             {}
+            virtual ~BoxShape() {}
 
-            virtual ~Box2DShape() {}
+            Vector3 HalfExtents;
+
+            virtual bool bRotationallyInvariant() const override { return false; }
+
+            virtual BoundingBox GetBounding() const override
+            {
+                return (BoundingBox(-HalfExtents, HalfExtents));
+            }
+
+            virtual Vector3 GetInertiaTensor(float aInverseMass) const;
+            virtual Vector3 GetInverseInertiaTensor(float aInverseMass) const;
+
+            virtual Vector3 GetSupport(const Vector3& n) const override
+            {
+                Vector3 ret = (HalfExtents);
+                if (n.X < 0.0f) { ret.X = -HalfExtents.X; }
+                if (n.Y < 0.0f) { ret.Y = -HalfExtents.Y; }
+                if (n.Z < 0.0f) { ret.Z = -HalfExtents.Z; }
+
+                return ret;
+            }
 
         protected:
-            friend void ::jz::__IncrementRefCount<physics::Box2DShape>(physics::Box2DShape*);
-            friend void ::jz::__DecrementRefCount<physics::Box2DShape>(physics::Box2DShape*);
-
+            friend void ::jz::__IncrementRefCount<physics::BoxShape>(physics::BoxShape*);
+            friend void ::jz::__DecrementRefCount<physics::BoxShape>(physics::BoxShape*);
         };
-        typedef AutoPtr<physics::Box2DShape> Box2DShapePtr;
-
-        __inline ConvexShape3D::Container GetPoints(const BoundingBox& bb)
-        {
-            ConvexShape3D::Container ret(8);
-            ret[0] = Vector3(bb.Min.X, bb.Min.Y, bb.Min.Z);
-            ret[1] = Vector3(bb.Min.X, bb.Max.Y, bb.Min.Z);
-            ret[2] = Vector3(bb.Max.X, bb.Max.Y, bb.Min.Z);
-            ret[3] = Vector3(bb.Max.X, bb.Min.Y, bb.Min.Z);
-            ret[4] = Vector3(bb.Min.X, bb.Min.Y, bb.Max.Z);
-            ret[5] = Vector3(bb.Min.X, bb.Max.Y, bb.Max.Z);
-            ret[6] = Vector3(bb.Max.X, bb.Max.Y, bb.Max.Z);
-            ret[7] = Vector3(bb.Max.X, bb.Min.Y, bb.Max.Z);
-
-            return ret;
-        }
-
-        class Box3DShape : public ConvexShape3D
-        {
-        public:
-            Box3DShape(const BoundingBox& bb = BoundingBox::kZero)
-                : ConvexShape3D(physics::GetPoints(bb))
-            {}
-
-            virtual ~Box3DShape() {}
-
-        protected:
-            friend void ::jz::__IncrementRefCount<physics::Box3DShape>(physics::Box3DShape*);
-            friend void ::jz::__DecrementRefCount<physics::Box3DShape>(physics::Box3DShape*);
-
-        };
-        typedef AutoPtr<physics::Box3DShape> Box3DShapePtr;
+        typedef AutoPtr<BoxShape> BoxShapePtr;
 
     }
 }

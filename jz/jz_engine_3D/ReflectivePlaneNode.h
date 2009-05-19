@@ -48,14 +48,15 @@ namespace jz
         {
         public:
             ReflectivePlaneNode();
-            ReflectivePlaneNode(const string& aId);
+            ReflectivePlaneNode(const string& aBaseId, const string& aId);
             virtual ~ReflectivePlaneNode();
 
             bool bVisible() const { return mbVisible; }
             void SetVisible(bool b) { mbVisible = b; }
 
+            virtual const BoundingBox& GetBoundingBox() const override { return mWorldAABB; }
+
             virtual void PoseForRender() override;
-            virtual const BoundingBox& GetAABB() const override { return mAABB; }
 
             StandardEffectPtr GetEffect() const;
             graphics::MaterialPtr GetMaterial() const { return mPack.pMaterial; }
@@ -79,10 +80,9 @@ namespace jz
         protected:
             virtual void _PopulateClone(SceneNode* apNode) override;
             virtual void _PostUpdate(bool abChanged)  override;
-            virtual SceneNode* _SpawnClone(const string& aCloneId) override;
+            virtual SceneNode* _SpawnClone(const string& aBaseId, const string& aCloneId) override;
 
             bool mbVisible;
-            BoundingBox mAABB;
             bool mbNonDeferred;
             graphics::RenderPack mPack;
             int mHandle;

@@ -42,6 +42,11 @@ namespace jz
 
             TriangleTree mTriangleTree;
 
+            virtual bool bRotationallyInvariant() const override { return false; }
+
+            virtual Vector3 GetInertiaTensor(float aInverseMass) const;
+            virtual Vector3 GetInverseInertiaTensor(float aInverseMass) const;
+
             virtual BoundingBox GetBounding() const override
             {
                 return (mTriangleTree.GetTotalAABB());

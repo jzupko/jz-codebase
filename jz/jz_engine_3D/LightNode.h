@@ -51,16 +51,18 @@ namespace jz
         {
         public:
             LightNode();
-            LightNode(const string& aId);
+            LightNode(const string& aBaseId, const string& aId);
             virtual ~LightNode();
 
             void ClearFixedRange()
             {
                 mbFixedRange = false;
                 mRange = CalculateLightRange(mAttenuation, mColor);
+                mFlags |= SceneNodeFlags::kLocalDirty;
             }
 
-            virtual const BoundingBox& GetAABB() const override { return mAABB; }
+            virtual const BoundingBox& GetBoundingBox() const override { return mWorldAABB; }
+
             virtual void PoseForRender() override;
 
             const Vector3& GetAttenuation() const { return mAttenuation; }
@@ -71,6 +73,7 @@ namespace jz
                 if (!mbFixedRange)
                 {
                     mRange = CalculateLightRange(mAttenuation, mColor);
+                    mFlags |= SceneNodeFlags::kLocalDirty;
                 }
             }
 
@@ -82,6 +85,7 @@ namespace jz
                 if (!mbFixedRange)
                 {
                     mRange = CalculateLightRange(mAttenuation, mColor);
+                    mFlags |= SceneNodeFlags::kLocalDirty;
                 }
             }
 
@@ -123,9 +127,8 @@ namespace jz
         protected:
             virtual void _PopulateClone(SceneNode* apNode) override;
             virtual void _PostUpdate(bool abChanged)  override;
-            virtual SceneNode* _SpawnClone(const string& aCloneId) override;
+            virtual SceneNode* _SpawnClone(const string& aBaseId, const string& aCloneId) override;
 
-            BoundingBox mAABB;
             Vector3 mAttenuation;
             Vector3 mColor;
             float mFalloffCosHalfAngle;

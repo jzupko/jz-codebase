@@ -20,14 +20,24 @@
 // THE SOFTWARE.
 // 
 
-#include <jz_physics/narrowphase/collision/TriangleShape.h>
+#include <jz_core/Matrix3.h>
+#include <jz_physics/narrowphase/collision/TriangleTreeShape.h>
 
 namespace jz
 {
     namespace physics
     {
 
+        Vector3 TriangleTreeShape::GetInertiaTensor(float aInverseMass) const
+        {
+            return (Vector3::kZero);
+        }
 
+
+        Vector3 TriangleTreeShape::GetInverseInertiaTensor(float aInverseMass) const
+        {
+            return (Vector3::kZero);
+        }
 
     }
 }

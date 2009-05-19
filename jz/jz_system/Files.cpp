@@ -60,7 +60,9 @@ namespace jz
             size_t n   = aSize;
 
             {
+#           if JZ_MULTITHREADED
                 Lock lock(mMutex);
+#           endif
                 
                 size_t pos = mPosition + n;
                 
@@ -87,7 +89,10 @@ namespace jz
         {
             if (abRelative)
             {
-                Lock lock(mMutex);
+#               if JZ_MULTITHREADED
+                    Lock lock(mMutex);
+#               endif
+
                 if (((size_t)mPosition + (size_t)aPosition) > mSize)
                 {
                     return false;
@@ -99,7 +104,10 @@ namespace jz
             }
             else
             {
-                Lock lock(mMutex);
+#               if JZ_MULTITHREADED
+                    Lock lock(mMutex);
+#               endif
+
                 if ((size_t)aPosition > mSize)
                 {
                     return false;
@@ -136,7 +144,9 @@ namespace jz
         
         natural ReadFile::GetPosition() const
         {
-            Lock lock(const_cast<Mutex&>(mMutex));
+#           if JZ_MULTITHREADED
+                Lock lock(const_cast<Mutex&>(mMutex));
+#           endif
             
 #           if JZ_PLATFORM_WINDOWS
                 return SetFilePointer(StaticCast<HANDLE>(mpFile), 0u, null, FILE_CURRENT);
@@ -147,7 +157,9 @@ namespace jz
 
         size_t ReadFile::Read(void_p apOutBuffer, size_t aSize)
         {
-            Lock lock(mMutex);
+#           if JZ_MULTITHREADED
+                Lock lock(mMutex);
+#           endif
 
 #           if JZ_PLATFORM_WINDOWS
                 DWORD read = 0u;
@@ -161,7 +173,10 @@ namespace jz
         
         bool ReadFile::Seek(natural aPosition, bool abRelative)
         {
-            Lock lock(mMutex);
+#           if JZ_MULTITHREADED
+                Lock lock(mMutex);
+#           endif
+
 #           if JZ_PLATFORM_WINDOWS
                 DWORD ret = SetFilePointer(StaticCast<HANDLE>(mpFile), aPosition, null, (abRelative) ? FILE_CURRENT : FILE_BEGIN);
                 if (ret == INVALID_SET_FILE_POINTER)
@@ -225,19 +240,28 @@ namespace jz
         
         natural WriteFile::GetPosition() const
         {
-            Lock lock(const_cast<Mutex&>(mMutex));
+#           if JZ_MULTITHREADED
+                Lock lock(const_cast<Mutex&>(mMutex));
+#           endif
+
             return (ftell(mpFile));
         }
 
         bool WriteFile::Seek(natural aPosition, bool abRelative)
         {
-            Lock lock(mMutex);
+#           if JZ_MULTITHREADED
+                Lock lock(mMutex);
+#           endif
+
             return (fseek(mpFile, aPosition, abRelative ? SEEK_CUR : SEEK_SET) == 0);
         }
 
         size_t WriteFile::Write(voidc_p apOutBuffer, size_t aSize)
         {
-            Lock lock(mMutex);
+#           if JZ_MULTITHREADED
+                Lock lock(mMutex);
+#           endif
+
             return (fwrite(apOutBuffer, 1, aSize, mpFile));
         }
 
@@ -277,7 +301,9 @@ namespace jz
             size_t ret = 0u;
 
             {
-                Lock lock(mMutex);
+#               if JZ_MULTITHREADED
+                    Lock lock(mMutex);
+#               endif
 
                 size_t  n    = aSize;
                 natural orig = mpFile->GetPosition();
@@ -311,7 +337,10 @@ namespace jz
         {
             if (abRelative)
             {
-                Lock lock(mMutex);
+#               if JZ_MULTITHREADED
+                    Lock lock(mMutex);
+#               endif
+
                 if ((size_t)mPosition + (size_t)aPosition > mSize)
                 {
                     return false;
@@ -323,7 +352,10 @@ namespace jz
             }
             else
             {
-                Lock lock(mMutex);
+#               if JZ_MULTITHREADED
+                    Lock lock(mMutex);
+#               endif
+
                 if ((size_t)aPosition > mSize)
                 {
                     return false;
@@ -577,7 +609,10 @@ namespace jz
            
         void Files::AddArchive(const AutoPtr<IArchive>& apArchive)
         {
-            Lock lock(mMutex);
+#           if JZ_MULTITHREADED
+                Lock lock(mMutex);
+#           endif
+
             mArchives.push_back(apArchive);
         }
 
@@ -589,7 +624,10 @@ namespace jz
 
             if (Files::Exists(cleanedFilename.c_str())) { return true; }
             {
-                Lock lock(const_cast<Mutex&>(mMutex));
+#               if JZ_MULTITHREADED
+                    Lock lock(const_cast<Mutex&>(mMutex));
+#               endif
+
                 for (Archives::const_iterator I = mArchives.begin(); I != mArchives.end(); I++)
                 {
                     if ((*I)->GetExists(cleanedFilename.c_str())) { return true; }
@@ -614,7 +652,10 @@ namespace jz
             }
                 
             {
-                Lock lock(const_cast<Mutex&>(mMutex));
+#               if JZ_MULTITHREADED
+                    Lock lock(const_cast<Mutex&>(mMutex));
+#               endif
+
                 for (Archives::const_iterator I = mArchives.begin(); I != mArchives.end(); I++)
                 {
                     if ((*I)->GetExists(cleanedFilename.c_str()))

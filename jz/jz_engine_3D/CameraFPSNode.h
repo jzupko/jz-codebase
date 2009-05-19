@@ -31,6 +31,11 @@
 
 namespace jz
 {
+    namespace physics
+    {
+        class Body3D; typedef AutoPtr<Body3D> Body3DPtr;
+    }
+
     namespace engine_3D
     {
 
@@ -68,13 +73,16 @@ namespace jz
                 mMouseSavedX(0),
                 mMouseSavedY(0),
                 mPitch(0.0f),
-                mYaw(0.0f)
+                mYaw(0.0f),
+                mbWantsPhysicsBody(false),
+                mCollisionRadius(0.0f),
+                mbWantsFriction(false)
             { 
                 memset(mMouseButtons, system::Mouse::kReleased, system::Mouse::kButtonCount * sizeof(system::Mouse::State));
             }
 
-            CameraFPSNode(const string& aId)
-                : CameraNode(aId),
+            CameraFPSNode(const string& aBaseId, const string& aId)
+                : CameraNode(aBaseId, aId),
                 mbUpdateMouseLook(false),
                 mbCustomMouseLookRate(false),
                 mbUpdateCamera(true),
@@ -94,7 +102,10 @@ namespace jz
                 mMouseSavedX(0),
                 mMouseSavedY(0),
                 mPitch(0.0f),
-                mYaw(0.0f)
+                mYaw(0.0f),
+                mbWantsPhysicsBody(false),
+                mCollisionRadius(0.0f),
+                mbWantsFriction(false)
             { 
                 memset(mMouseButtons, system::Mouse::kReleased, system::Mouse::kButtonCount * sizeof(system::Mouse::State));            
             }
@@ -132,11 +143,68 @@ namespace jz
 
             virtual void SetActive(bool b) override;
 
+            bool bCollisionEnabled() const { return (mpPhysicsBody.IsValid()); }
+            void SetCollisionEnabled(bool b, float aCollisionRadius = 0.0f, bool abFriction = false);
+
+            virtual void SetParent(weak_pointer p) override
+            {
+                if (p && p->GetBaseId() != GetBaseId())
+                {
+                    CameraNode::SetParent(p);
+
+                    if (mbWantsPhysicsBody)
+                    {
+                        SetCollisionEnabled(false);
+                        SetCollisionEnabled(true, mCollisionRadius, mbWantsFriction);
+                    }
+                }
+                else
+                {
+                    CameraNode::SetParent(p);
+                }
+            }
+
+            virtual void SetIds(const string& aBaseId, const string& aId) override
+            {
+                if (aBaseId != GetBaseId())
+                {
+                    CameraNode::SetIds(aBaseId, aId);
+
+                    if (mbWantsPhysicsBody)
+                    {
+                        SetCollisionEnabled(false);
+                        SetCollisionEnabled(true, mCollisionRadius, mbWantsFriction);
+                    }
+                }
+                else
+                {
+                    CameraNode::SetIds(aBaseId, aId);
+                }
+            }
+
+            virtual void SetBaseId(const string& v) override
+            {
+                if (v != GetBaseId())
+                {
+                    CameraNode::SetBaseId(v);
+
+                    if (mbWantsPhysicsBody)
+                    {
+                        SetCollisionEnabled(false);
+                        SetCollisionEnabled(true, mCollisionRadius, mbWantsFriction);
+                    }
+                }
+                else
+                {
+                    CameraNode::SetBaseId(v);
+                }
+            }
+
         protected:
             virtual ~CameraFPSNode()
             {}
 
-            virtual void _PreUpdate(const Matrix4& aParentWorld, bool abParentChanged) override;
+            virtual void _PreUpdateA(const Matrix4& aParentWorld, bool abParentChanged) override;
             virtual void ResizeHandler() override;
 
         private:
@@ -213,6 +281,13 @@ namespace jz
             natural mMouseSavedY;
             Radian mPitch;
             Radian mYaw;
+
+            bool mbWantsPhysicsBody;
+            float mCollisionRadius;
+            bool mbWantsFriction;
+            physics::Body3DPtr mpPhysicsBody;
+            void __UpdateHandler(physics::Body3D* apBody);
+            Event<void(physics::Body3D*)>::Entry mUpdateConnection;
         };
 
         typedef AutoPtr<CameraFPSNode> CameraFPSNodePtr;

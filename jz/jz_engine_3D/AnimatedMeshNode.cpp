@@ -48,8 +48,10 @@ namespace jz
             }
 
             pEffect->SetSkinning(p->GetSkinning());
-            pEffect->SetWit(p->GetWit());
-            pEffect->SetWorld(p->GetWorldTransform());
+
+            Matrix4 scale = Matrix4::CreateScale(p->GetScale());
+            pEffect->SetWit(scale * p->GetWit());
+            pEffect->SetWorld(scale * p->GetWorldTransform());
             
             graphics::Graphics::GetSingleton().GetActivePass()->Commit();
 
@@ -82,8 +84,8 @@ namespace jz
             mRootIndex(-1)
         {}
 
-        AnimatedMeshNode::AnimatedMeshNode(const string& aId)
-            : MeshNode(aId),
+        AnimatedMeshNode::AnimatedMeshNode(const string& aBaseId, const string& aId)
+            : MeshNode(aBaseId, aId),
             mpAnimationControl(new AnimationControl()),
             mBind(Matrix4::kIdentity),
             mbJointsDirty(false),
@@ -172,9 +174,9 @@ namespace jz
             p->mSkinning = mSkinning;
         }
 
-        SceneNode* AnimatedMeshNode::_SpawnClone(const string& aCloneId)
+        SceneNode* AnimatedMeshNode::_SpawnClone(const string& aBaseId, const string& aCloneId)
         {
-            return new AnimatedMeshNode(aCloneId);
+            return new AnimatedMeshNode(aBaseId, aCloneId);
         }
 
         void AnimatedMeshNode::_SetJoint(size_t i, SceneNode* p)
@@ -237,10 +239,10 @@ namespace jz
 
                 for (size_t i = 0; i < count; i++)
                 {
-                    Get(mJointIds[i], bind(&AnimatedMeshNode::_SetJoint, this, i, tr1::placeholders::_1));
+                    Get(GetBaseId(), mJointIds[i], bind(&AnimatedMeshNode::_SetJoint, this, i, tr1::placeholders::_1));
                 }
 
-                Get(mRootJointId, bind(&AnimatedMeshNode::_SetRootJoint, this, tr1::placeholders::_1));
+                Get(GetBaseId(), mRootJointId, bind(&AnimatedMeshNode::_SetRootJoint, this, tr1::placeholders::_1));
 
                 mbJointsDirty = false;
                 abChanged = true;
@@ -287,7 +289,7 @@ namespace jz
                     mBoundingCached[curIndex] = true;
                 }
             
-                mAABB = BoundingBox::Transform(mWorld, mAABBCache[curIndex]);
+                mWorldAABB = BoundingBox::Transform(mWorld, mAABBCache[curIndex]);
                 mWorldBounding = BoundingSphere::Transform(mWorld, mBoundingCache[curIndex]);
                 mbValidBounding = true;
 

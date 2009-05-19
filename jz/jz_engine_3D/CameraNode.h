@@ -46,8 +46,8 @@ namespace jz
                 mFlags |= SceneNodeFlags::kExcludeFromBounding;
             }
 
-            CameraNode(const string& aId)
-                : SceneNode(aId),
+            CameraNode(const string& aBaseId, const string& aId)
+                : SceneNode(aBaseId, aId),
                 mbActive(false),
                 mbProjectionDirty(false),
                 mbViewDirty(false),

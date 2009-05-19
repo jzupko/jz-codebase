@@ -29,78 +29,19 @@ namespace jz
     namespace physics
     {
 
-        #pragma region Body2D
-        Body2D::Body2D(World2D* apWorld, ICollisionShape2D* apShape, u32 aType, u32 aCollidesWith)
-            : mReferenceCount(0u),
-            mHandle(Constants<u16>::kMax),
-            mFriction(1.0f),
-            mInverseMass(0.0f),
-            mpShape(apShape),
-            mPrevTranslation(Vector2::kZero),
-            mTranslation(Vector2::kZero),
-            mType(aType), mCollidesWith(aCollidesWith),
-            mVelocity(Vector2::kZero),
-            mpWorld(apWorld)
-        {}
-
-        Body2D::~Body2D()
-        {
-            if (mpWorld)
-            {
-                mpWorld->_Remove(this);
-            }
-        }
-
-        BoundingRectangle Body2D::GetLocalBounding() const
-        {
-            if (mpShape.IsValid())
-            {
-                return (mpShape->GetBounding());
-            }
-            else
-            {
-                return (BoundingRectangle::kInvertedMax);
-            }
-        }
-
-        void Body2D::SetTranslation(const Vector2& v)
-        {
-            mPrevTranslation = v;
-            mTranslation = v;
-            Update();
-        }
-
-        void Body2D::Update()
-        {
-            if (mpWorld)
-            {
-                BoundingRectangle prevRect = mpShape->GetBounding();
-                BoundingRectangle nextRect = prevRect;
-
-                prevRect.Max += mPrevTranslation;
-                prevRect.Min += mPrevTranslation;
-                nextRect.Max += mTranslation;
-                nextRect.Min += mTranslation;
-
-                BoundingRectangle rect = BoundingRectangle::Merge(prevRect, nextRect);
-
-                mpWorld->_Update(this, rect);
-            }
-        }
-        #pragma endregion
-
-        #pragma region Body3D
         Body3D::Body3D(World3D* apWorld, ICollisionShape3D* apShape, u32 aType, u32 aCollidesWith)
             : mReferenceCount(0u),
-            mHandle(Constants<u16>::kMax),
+            mCollidesWith(aCollidesWith),
+            mType(aType),
             mFriction(1.0f),
             mInverseMass(0.0f),
+            mpWorld(apWorld),
             mpShape(apShape),
-            mPrevTranslation(Vector3::kZero),
-            mTranslation(Vector3::kZero),
-            mType(aType), mCollidesWith(aCollidesWith),
-            mVelocity(Vector3::kZero),
-            mpWorld(apWorld)
+            mPrevFrame(CoordinateFrame3D::kIdentity),
+            mFrame(CoordinateFrame3D::kIdentity),
+            mAngularVelocity(Vector3::kZero),
+            mLinearVelocity(Vector3::kZero),
+            mHandle(Constants<u16>::kMax)
         {}
 
         Body3D::~Body3D()
@@ -108,6 +49,30 @@ namespace jz
             if (mpWorld)
             {
                 mpWorld->_Remove(this);
+            }
+        }
+
+        Vector3 Body3D::GetInertiaTensor() const
+        {
+            if (mpShape.IsValid())
+            {
+                return (mpShape->GetInertiaTensor(mInverseMass));
+            }
+            else
+            {
+                return (Vector3::kZero);
+            }
+        }
+
+        Vector3 Body3D::GetInverseInertiaTensor() const
+        {
+            if (mpShape.IsValid())
+            {
+                return (mpShape->GetInverseInertiaTensor(mInverseMass));
+            }
+            else
+            {
+                return (Vector3::kZero);
             }
         }
 
@@ -123,10 +88,48 @@ namespace jz
             }
         }
 
+        BoundingBox Body3D::GetWorldBounding(const CoordinateFrame3D& v) const
+        {
+            if (mpShape.IsValid())
+            {
+                if (mpShape->bRotationallyInvariant())
+                {
+                    BoundingBox ret = (mpShape->GetBounding());
+                    ret.Min += v.Translation;
+                    ret.Max += v.Translation;
+
+                    return ret;
+                }
+                else
+                {
+                    BoundingBox ret = BoundingBox::Transform(v, (mpShape->GetBounding()));
+                    return ret;
+                }
+            }
+            else
+            {
+                return (BoundingBox::kInvertedMax);
+            }
+        }
+
+        void Body3D::SetFrame(const CoordinateFrame3D& v)
+        {
+            mPrevFrame = v;
+            mFrame = v;
+            Update();
+        }
+
+        void Body3D::SetOrientation(const Matrix3& v)
+        {
+            mPrevFrame.Orientation = v;
+            mFrame.Orientation = v;
+            Update();
+        }
+
         void Body3D::SetTranslation(const Vector3& v)
         {
-            mPrevTranslation = v;
-            mTranslation = v;
+            mPrevFrame.Translation = v;
+            mFrame.Translation = v;
             Update();
         }
 
@@ -134,20 +137,9 @@ namespace jz
         {
             if (mpWorld)
             {
-                BoundingBox prevRect = mpShape->GetBounding();
-                BoundingBox nextRect = prevRect;
-
-                prevRect.Max += mPrevTranslation;
-                prevRect.Min += mPrevTranslation;
-                nextRect.Max += mTranslation;
-                nextRect.Min += mTranslation;
-
-                BoundingBox rect = BoundingBox::Merge(prevRect, nextRect);
-
-                mpWorld->_Update(this, rect);
+                mpWorld->_Update(this, GetWorldBounding());
             }
         }
-        #pragma endregion
 
     }
 }

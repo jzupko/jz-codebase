@@ -175,7 +175,7 @@
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="..\;..\freetype2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;JZ_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;JZ_STATICLIB;JZ_PROFILING"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"

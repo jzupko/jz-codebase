@@ -24,86 +24,88 @@
 #ifndef JZ_SYSTEM_LOADER_H_
 #define JZ_SYSTEM_LOADER_H_
 
-#include <jz_core/Auto.h>
-#include <jz_core/Utility.h>
-#include <jz_system/Mutex.h>
-#include <jz_system/Thread.h>
+#if JZ_MULTITHREADED
+#   include <jz_core/Auto.h>
+#   include <jz_core/Utility.h>
+#   include <jz_system/Mutex.h>
+#   include <jz_system/Thread.h>
 
-namespace jz
-{
-    namespace system
+    namespace jz
     {
-        class IReadFile;
-        class Loader;
-        class ILoaderEntry abstract
+        namespace system
         {
-        public:
-            enum NextAction
+            class IReadFile;
+            class Loader;
+            class ILoaderEntry abstract
             {
-                kMainThread = 0,
-                kLoaderThread = 1,
-                kComplete = 2
+            public:
+                enum NextAction
+                {
+                    kMainThread = 0,
+                    kLoaderThread = 1,
+                    kComplete = 2
+                };
+        
+                virtual NextAction GetNextAction() const = 0;
+                virtual NextAction MainThreadAction() = 0;
+                virtual NextAction LoaderThreadAction() = 0;
+
+            protected:
+                ILoaderEntry()
+                    : mReferenceCount(0u), mpPrev(null)
+                {}
+                virtual ~ILoaderEntry() {}
+
+                size_t mReferenceCount;
+
+            private:
+                friend void jz::__IncrementRefCount<system::ILoaderEntry>(system::ILoaderEntry* p);
+                friend size_t jz::__GetRefCount<system::ILoaderEntry>(system::ILoaderEntry* p);
+                friend void jz::__DecrementRefCount<system::ILoaderEntry>(system::ILoaderEntry* p);
+
+                ILoaderEntry(const ILoaderEntry&);
+                ILoaderEntry& operator=(const ILoaderEntry&);
+
+                friend class Loader;
+                AutoPtr<ILoaderEntry> mpNext;
+                ILoaderEntry* mpPrev;
             };
-    
-            virtual NextAction GetNextAction() const = 0;
-            virtual NextAction MainThreadAction() = 0;
-            virtual NextAction LoaderThreadAction() = 0;
 
-        protected:
-            ILoaderEntry()
-                : mReferenceCount(0u), mpPrev(null)
-            {}
-            virtual ~ILoaderEntry() {}
+            typedef AutoPtr<ILoaderEntry> ILoaderEntryPtr;
 
-            size_t mReferenceCount;
+            class Loader sealed : public Singleton<Loader>
+            {
+            public:
+                Loader();
+                ~Loader();
 
-        private:
-            friend void jz::__IncrementRefCount<system::ILoaderEntry>(system::ILoaderEntry* p);
-            friend size_t jz::__GetRefCount<system::ILoaderEntry>(system::ILoaderEntry* p);
-            friend void jz::__DecrementRefCount<system::ILoaderEntry>(system::ILoaderEntry* p);
+                void Add(ILoaderEntry* p);
+                void SetMainThreadMillisecondsPerTick(unatural v) { mMilliseconds = v; }
+                void Tick();
 
-            ILoaderEntry(const ILoaderEntry&);
-            ILoaderEntry& operator=(const ILoaderEntry&);
+            private:
+                Loader(const Loader&);
+                Loader& operator=(const Loader&);
 
-            friend class Loader;
-            AutoPtr<ILoaderEntry> mpNext;
-            ILoaderEntry* mpPrev;
-        };
+                unatural mMilliseconds;
 
-        typedef AutoPtr<ILoaderEntry> ILoaderEntryPtr;
+                ILoaderEntryPtr mpMainHead;
+                ILoaderEntry* mpMainTail;
+                ILoaderEntryPtr mpLoaderHead;
+                ILoaderEntry* mpLoaderTail;
 
-        class Loader sealed : public Singleton<Loader>
-        {
-        public:
-            Loader();
-            ~Loader();
+                void _Insert(ILoaderEntryPtr& pHead, ILoaderEntry*& pTail, ILoaderEntry* p);
+                void _Remove(ILoaderEntryPtr& pHead, ILoaderEntry*& pTail, ILoaderEntry* p);
 
-            void Add(ILoaderEntry* p);
-            void SetMainThreadMillisecondsPerTick(unatural v) { mMilliseconds = v; }
-            void Tick();
+                static void _LoaderFunction(const Thread& t);
+                volatile bool mbDone;
 
-        private:
-            Loader(const Loader&);
-            Loader& operator=(const Loader&);
+                Mutex mMutex;
+                Thread mThread;
+            };
 
-            unatural mMilliseconds;
-
-            ILoaderEntryPtr mpMainHead;
-            ILoaderEntry* mpMainTail;
-            ILoaderEntryPtr mpLoaderHead;
-            ILoaderEntry* mpLoaderTail;
-
-            void _Insert(ILoaderEntryPtr& pHead, ILoaderEntry*& pTail, ILoaderEntry* p);
-            void _Remove(ILoaderEntryPtr& pHead, ILoaderEntry*& pTail, ILoaderEntry* p);
-
-            static void _LoaderFunction(const Thread& t);
-            volatile bool mbDone;
-
-            Mutex mMutex;
-            Thread mThread;
-        };
-
+        }
     }
-}
+#endif
 
 #endif

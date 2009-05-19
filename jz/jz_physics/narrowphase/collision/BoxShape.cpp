@@ -20,6 +20,7 @@
 // THE SOFTWARE.
 // 
 
+#include <jz_core/Matrix3.h>
 #include <jz_physics/narrowphase/collision/BoxShape.h>
 
 namespace jz
@@ -27,7 +28,42 @@ namespace jz
     namespace physics
     {
 
+        Vector3 BoxShape::GetInertiaTensor(float aInverseMass) const
+        {
+            if (AboutZero(aInverseMass)) { return Vector3::kZero; }
+            else
+            {
+                static const float kFactor = (float)(1.0 / 3.0);
 
+                float m = (1.0f / aInverseMass);
+
+                Vector3 ret;
+                ret.X = (m * (HalfExtents.Y * HalfExtents.Y + HalfExtents.Z * HalfExtents.Z) * kFactor);
+                ret.Y = (m * (HalfExtents.X * HalfExtents.X + HalfExtents.Z * HalfExtents.Z) * kFactor);
+                ret.Z = (m * (HalfExtents.X * HalfExtents.X + HalfExtents.Y * HalfExtents.Y) * kFactor);
+
+                return ret;
+            }
+        }
+
+        Vector3 BoxShape::GetInverseInertiaTensor(float aInverseMass) const
+        {
+            static const float kFactor = (3.0f);
+
+            if (HalfExtents.LengthSquared() < (Constants<float>::kZeroTolerance * Constants<float>::kZeroTolerance))
+            {
+                return Vector3::kZero;
+            }
+            else
+            {
+                Vector3 ret;
+                ret.X = (aInverseMass * kFactor) / (HalfExtents.Y * HalfExtents.Y + HalfExtents.Z * HalfExtents.Z);
+                ret.Y = (aInverseMass * kFactor) / (HalfExtents.X * HalfExtents.X + HalfExtents.Z * HalfExtents.Z);
+                ret.Z = (aInverseMass * kFactor) / (HalfExtents.X * HalfExtents.X + HalfExtents.Y * HalfExtents.Y);
+
+               return ret;
+            }
+        }
 
     }
 }

@@ -37,7 +37,7 @@ technique jz_Render
 		AlphaBlendEnable = false;
 		AlphaTestEnable = false;
 		CullMode = None;
-		FillMode = Wireframe;
+		FillMode = Solid;
 		ZEnable = true;
 		ZWriteEnable = true;
 	

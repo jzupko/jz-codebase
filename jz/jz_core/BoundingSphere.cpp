@@ -101,6 +101,13 @@ namespace jz
 		return ret;
     }
 
+    BoundingSphere BoundingSphere::CreateFrom(const BoundingBox& b)
+    {
+        float radius = b.HalfExtents().Max();
+
+        return BoundingSphere(b.Center(), radius);
+    }
+
 	BoundingSphere BoundingSphere::Transform(const CoordinateFrame3D& cf, const BoundingSphere& a)
 	{
         BoundingSphere ret;

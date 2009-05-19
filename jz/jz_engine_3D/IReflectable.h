@@ -35,7 +35,7 @@ namespace jz
         class IReflectable abstract
         {
         public:
-            virtual const BoundingBox& GetAABB() const = 0;
+            virtual const BoundingBox& GetBoundingBox() const = 0;
             virtual void PoseForReflection(ReflectivePlaneNode* apReflectivePlane) = 0;
         };
 

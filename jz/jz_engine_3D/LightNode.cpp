@@ -88,8 +88,8 @@ namespace jz
             mShadowProjection(Matrix4::kIdentity)
         {}
 
-        LightNode::LightNode(const string& aId)
-            : SceneNode(aId),
+        LightNode::LightNode(const string& aBaseId, const string& aId)
+            : SceneNode(aBaseId, aId),
             mType(LightNodeType::kDirectional),
             mAttenuation(Vector3::kUnitX),
             mColor(Vector3::kZero),
@@ -159,9 +159,9 @@ namespace jz
             p->SetCastShadow((mShadowHandle >= 0));
         }
 
-        SceneNode* LightNode::_SpawnClone(const string& aCloneId)
+        SceneNode* LightNode::_SpawnClone(const string& aBaseId, const string& aCloneId)
         {
-            return new LightNode(aCloneId);
+            return new LightNode(aBaseId, aCloneId);
         }
 
         void LightNode::_PostUpdate(bool abChanged)
@@ -171,17 +171,9 @@ namespace jz
                 #pragma region Update bounding based on light range.
                 if (GreaterThan(mRange, 0.0f, Constants<float>::kLooseTolerance))
                 {
-                    BoundingSphere bounding(GetWorldTranslation(), mRange);
-
-                    if (mbValidBounding)
-                    {
-                        mWorldBounding = BoundingSphere::Merge(mWorldBounding, bounding);
-                    }
-                    else
-                    {
-                        mWorldBounding = bounding;
-                        mbValidBounding = true;
-                    }
+                    mWorldBounding = BoundingSphere(GetWorldTranslation(), mRange);
+                    mWorldAABB = BoundingBox::CreateFrom(mWorldBounding);
+                    mbValidBounding = true;
                 }
                 #pragma endregion
 
@@ -207,8 +199,6 @@ namespace jz
                     mWorldFrustum.Set(GetWorldTranslation(), mShadowTransform);
                 }
                 #pragma endregion
-
-                mAABB = BoundingBox::CreateFrom(mWorldBounding);
             }
 
             SceneNode::_PostUpdate(abChanged);

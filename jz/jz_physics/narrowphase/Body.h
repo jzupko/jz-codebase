@@ -26,9 +26,9 @@
 
 #include <jz_core/Auto.h>
 #include <jz_core/BoundingBox.h>
-#include <jz_core/BoundingRectangle.h>
+#include <jz_core/CoordinateFrame3D.h>
 #include <jz_core/Event.h>
-#include <jz_core/Vector2.h>
+#include <jz_core/Matrix3.h>
 #include <jz_core/Vector3.h>
 #include <jz_physics/narrowphase/WorldContactPoint.h>
 
@@ -37,66 +37,8 @@ namespace jz
     namespace physics
     {
 
-        class ICollisionShape2D; typedef AutoPtr<ICollisionShape2D> ICollisionShape2DPtr;
         class ICollisionShape3D; typedef AutoPtr<ICollisionShape3D> ICollisionShape3DPtr;
-        class World2D;
         class World3D;
-        class Body2D sealed
-        {
-        public:
-            enum Flags
-            {
-                kNone = 0,
-                kDynamic = (1 << 0),
-                kStatic = (1 << 1)
-            };
-
-            ~Body2D();
-
-            ICollisionShape2D* GetCollisionShape() const { return mpShape.Get(); }
-            u32 GetCollidesWith() const { return mCollidesWith; }
-            BoundingRectangle GetLocalBounding() const;
-            u32 GetType() const { return mType; }
-
-            const Vector2& GetPrevTranslation() const { return (mPrevTranslation); }
-            const Vector2& GetTranslation() const { return (mTranslation); }
-            void SetTranslation(const Vector2& v);
-
-            const Vector2& GetVelocity() const { return mVelocity; }
-            void SetVelocity(const Vector2& v) { mVelocity = v; }
-
-            float GetFriction() const { return (mFriction); }
-            void SetFriction(float v) { mFriction = Clamp(v, 0.0f, 1.0f); }
-
-            float GetMass() const { return (mInverseMass > Constants<float>::kZeroTolerance) ? (1.0f / mInverseMass) : 0.0f; }
-            void SetMass(float v) { mInverseMass = (v > Constants<float>::kZeroTolerance) ? (1.0f / v) : 0.0f; }
-
-            void Update();
-
-        private:
-            size_t mReferenceCount;
-
-            u32 mCollidesWith;
-            u32 mType;
-
-            friend void ::jz::__IncrementRefCount<Body2D>(Body2D*);
-            friend void ::jz::__DecrementRefCount<Body2D>(Body2D*);
-
-            friend class World2D;
-
-            ushort mHandle;
-            float mFriction;
-            float mInverseMass;
-            ICollisionShape2DPtr mpShape;
-            Vector2 mPrevTranslation;
-            Vector2 mTranslation;
-            Vector2 mVelocity;
-            World2D* mpWorld;
-
-            Body2D(World2D* apWorld, ICollisionShape2D* apShape, u32 aType, u32 aCollidesWith);
-        };
-        typedef AutoPtr<Body2D> Body2DPtr;
-
         class Body3D sealed
         {
         public:
@@ -104,22 +46,59 @@ namespace jz
             {
                 kNone = 0,
                 kDynamic = (1 << 0),
-                kStatic = (1 << 1)
+                kStatic = (1 << 1),
+                kNonAngular = (1 << 2),
+                kNotAffectedByGravity = (1 << 3),
+                kSleeping = (1 << 4)
             };
 
             ~Body3D();
 
+            bool IsAffectedByGravity() const { return ((mType & kNotAffectedByGravity) == 0 && !IsStatic()); }
+            bool IsAngular() const { return ((mType & kNonAngular) == 0 && !IsStatic()); }
+            bool IsDynamic() const { return ((mType & kDynamic) != 0 && !IsStatic()); }
+            bool IsSleeping() const { return ((mType & kSleeping) != 0 || IsStatic()); }
+            bool IsStatic() const { return ((mType & kStatic) != 0 || (mInverseMass == 0.0f)); }
+
+            void SetAffectedByGravity(bool b)
+            {
+                if (b) { mType &= ~kNotAffectedByGravity; }
+                else { mType |= kNotAffectedByGravity; }
+            }
+
+            void SetAngular(bool b)
+            {
+                if (b) { mType &= ~kNonAngular; }
+                else { mType |= kNonAngular; }
+            }
+
+            void SetSleeping(bool b)
+            {
+                if (b) { mType |= kSleeping; }
+                else { mType &= ~kSleeping; }
+            }
+
             ICollisionShape3D* GetCollisionShape() const { return mpShape.Get(); }
             u32 GetCollidesWith() const { return mCollidesWith; }
+            Vector3 GetInertiaTensor() const;
+            Vector3 GetInverseInertiaTensor() const;
             BoundingBox GetLocalBounding() const;
+            BoundingBox GetWorldBounding(const CoordinateFrame3D& v) const;
+            BoundingBox GetWorldBounding() const { return GetWorldBounding(mFrame); }
             u32 GetType() const { return mType; }
 
-            const Vector3& GetPrevTranslation() const { return (mPrevTranslation); }
-            const Vector3& GetTranslation() const { return (mTranslation); }
+            const CoordinateFrame3D& GetFrame() const { return (mFrame); }
+            const Vector3& GetTranslation() const { return (mFrame.Translation); }
+
+            void SetFrame(const CoordinateFrame3D& v);
+            void SetOrientation(const Matrix3& v);
             void SetTranslation(const Vector3& v);
 
-            const Vector3& GetVelocity() const { return mVelocity; }
-            void SetVelocity(const Vector3& v) { mVelocity = v; }
+            const Vector3& GetAngularVelocity() const { return mAngularVelocity; }
+            void SetAngularVelocity(const Vector3& v) { mAngularVelocity = v; }
+
+            const Vector3& GetLinearVelocity() const { return mLinearVelocity; }
+            void SetLinearVelocity(const Vector3& v) { mLinearVelocity = v; }
 
             float GetFriction() const { return (mFriction); }
             void SetFriction(float v) { mFriction = Clamp(v, 0.0f, 1.0f); }
@@ -128,26 +107,26 @@ namespace jz
             void SetMass(float v) { mInverseMass = (v > Constants<float>::kZeroTolerance) ? (1.0f / v) : 0.0f; }
 
             void Update();
+            Event<void(Body3D*)> OnUpdate;
 
         private:
-            size_t mReferenceCount;
-
-            u32 mCollidesWith;
-            u32 mType;
+            friend class World3D;
 
             friend void ::jz::__IncrementRefCount<Body3D>(Body3D*);
             friend void ::jz::__DecrementRefCount<Body3D>(Body3D*);
 
-            friend class World3D;
-
-            ushort mHandle;
+            size_t mReferenceCount;
+            u32 mCollidesWith;
+            u32 mType;
             float mFriction;
             float mInverseMass;
-            ICollisionShape3DPtr mpShape;
-            Vector3 mPrevTranslation;
-            Vector3 mTranslation;
-            Vector3 mVelocity;
             World3D* mpWorld;
+            ICollisionShape3DPtr mpShape;
+            CoordinateFrame3D mPrevFrame;
+            CoordinateFrame3D mFrame;
+            Vector3 mAngularVelocity;
+            Vector3 mLinearVelocity;
+            ushort mHandle;
 
             Body3D(World3D* apWorld, ICollisionShape3D* apShape, u32 aType, u32 aCollidesWith);
         };

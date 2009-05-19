@@ -26,35 +26,11 @@
 
 #include <jz_core/Auto.h>
 #include <jz_core/BoundingBox.h>
-#include <jz_core/BoundingRectangle.h>
 
 namespace jz
 {
     namespace physics
     {
-
-        class IBroadphase2D
-        {
-        public:
-            IBroadphase2D()
-                : mReferenceCount(0u)
-            {}
-
-            virtual ~IBroadphase2D() {}
-
-            virtual u16 Add(void_p apCollideable, u32 aType, u32 aCollidesWith, const BoundingRectangle& aBounding) = 0;
-            virtual void Remove(u16 aHandle) = 0;
-            virtual float GetUnitMeter() const = 0;
-            virtual void SetUnitMeter(float v) = 0;
-            virtual void Tick() = 0;
-            virtual void Update(u16 aHandle, const BoundingRectangle& aNewBounding) = 0;
-
-        protected:
-            size_t mReferenceCount;
-            friend void ::jz::__IncrementRefCount<IBroadphase2D>(IBroadphase2D*);
-            friend void ::jz::__DecrementRefCount<IBroadphase2D>(IBroadphase2D*);
-        };
-        typedef AutoPtr<IBroadphase2D> IBroadphase2DPtr;
 
         class IBroadphase3D
         {

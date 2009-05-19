@@ -335,6 +335,7 @@ namespace jz.cb
         private static void _WriteSceneNode(BinaryWriter aOut, DocInfo aInfo, SceneNodeContent aNode)
         {
             Helpers.Write(aOut, (Int32)aNode.ChildrenCount);
+            Helpers.Write(aOut, aNode.BaseId);
             Helpers.Write(aOut, aNode.Id);
             Helpers.Write(aOut, aNode.LocalTransform);
             Helpers.Write(aOut, (Int32)aNode.Type);

@@ -29,6 +29,14 @@ namespace jz
     const CoordinateFrame3D CoordinateFrame3D::kIdentity = CoordinateFrame3D(Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1), Vector3(0));
     const CoordinateFrame3D CoordinateFrame3D::kZero = CoordinateFrame3D(Matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0), Vector3(0));
 
+    CoordinateFrame3D CoordinateFrame3D::CreateFromMatrix4(const Matrix4& v)
+    {
+        CoordinateFrame3D ret;
+        FromTransform(v, ret);
+
+        return ret;
+    }
+
     void FromTransform(const Matrix4& a, CoordinateFrame3D& b)
     {
         b.Orientation = Matrix3::CreateFromUpperLeft(a);

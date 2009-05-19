@@ -20,6 +20,7 @@
 // THE SOFTWARE.
 // 
 
+#include <jz_core/CoordinateFrame3D.h>
 #include <jz_physics/narrowphase/WorldContactPoint.h>
 
 namespace jz
@@ -27,11 +28,18 @@ namespace jz
     namespace physics
     {
 
-        const float WorldContactPoint2D::kDistanceTolerance = 1e-2f;
-        const float WorldContactPoint2D::kNormalTolerance = 0.9f;
-
         const float WorldContactPoint3D::kDistanceTolerance = 1e-2f;
         const float WorldContactPoint3D::kNormalTolerance = 0.9f;
+
+        WorldContactPoint3D WorldContactPoint3D::Transform(const CoordinateFrame3D& cf, const WorldContactPoint3D& cp)
+        {
+            WorldContactPoint3D ret;
+            ret.WorldPointA = Vector3::TransformPosition(cf, cp.WorldPointA);
+            ret.WorldPointB = Vector3::TransformPosition(cf, cp.WorldPointB);
+            ret.WorldNormal = Vector3::TransformDirection(cf, cp.WorldNormal);
+
+            return ret;
+        }
 
     }
 }

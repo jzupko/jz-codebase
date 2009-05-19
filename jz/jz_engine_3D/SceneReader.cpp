@@ -157,6 +157,7 @@ namespace jz
         static SceneNode* ReadSceneNode(system::IReadFilePtr& in)
         {
             int childrenCount = ReadInt32(in);
+            string baseId = ReadString(in);
             string id = ReadString(in);
             Matrix4 localTransform = ReadMatrix4(in);
             SceneNodeType::Enum type = (SceneNodeType::Enum)ReadInt32(in);
@@ -177,7 +178,7 @@ namespace jz
                 throw exception("should not be here.");
             }
 
-            pNode->SetId(id);
+            pNode->SetIds(baseId, id);
             pNode->SetLocalTransform(localTransform);
 
             for (int i = 0; i < childrenCount; i++)
@@ -198,8 +199,7 @@ namespace jz
         {
             system::IReadFilePtr pFile = system::Files::GetSingleton().Open(aFilename.c_str());
 
-            SceneNode* pRet = new SceneNode();
-            ReadSceneNode(pFile, pRet);
+            SceneNode* pRet = ReadSceneNode(pFile);
 
             return pRet;
         }

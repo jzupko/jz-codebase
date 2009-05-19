@@ -33,130 +33,132 @@ namespace jz
     namespace graphics
     {
 
-        class TextureLoader : public system::ILoaderEntry
-        {
-        public:
-            enum Stages
+#       if JZ_MULTITHREADED
+            class TextureLoader : public system::ILoaderEntry
             {
-                kLoadData = 0,
-                kCreateTexture = 1,
-                kDone = 2
-            };
-
-            virtual NextAction GetNextAction() const override
-            {
-                switch (mStage)
+            public:
+                enum Stages
                 {
-                case kLoadData: return (kLoaderThread); break;
-                case kCreateTexture: return (kMainThread); break;
-                default:
-                    return (kComplete);
-                break;
-                }
-            }
+                    kLoadData = 0,
+                    kCreateTexture = 1,
+                    kDone = 2
+                };
 
-            virtual NextAction MainThreadAction() override
-            {
-                switch (mStage)
+                virtual NextAction GetNextAction() const override
                 {
-                case kCreateTexture:
-                    _CreateTexture();
-                    break;
-                default:
-                    _Error(IObject::kErrorDataRead);
-                    break;
-                }
-
-                return (GetNextAction());
-            }
-
-            virtual NextAction LoaderThreadAction() override
-            {
-                switch (mStage)
-                {
-                case kLoadData:
-                    _LoadData();
-                    break;
-                default:
-                    _Error(IObject::kErrorDataRead);
-                    break;
-                }
-
-                return (GetNextAction());
-            }
-
-        private:
-            friend class Texture;
-
-            friend void jz::__IncrementRefCount<graphics::TextureLoader>(graphics::TextureLoader* p);
-            friend size_t jz::__GetRefCount<graphics::TextureLoader>(graphics::TextureLoader* p);
-            friend void jz::__DecrementRefCount<graphics::TextureLoader>(graphics::TextureLoader* p);
-
-            TextureLoader(Texture* apTexture)
-                : mStage(0u), mpTexture(apTexture)
-            {}
-            TextureLoader(const TextureLoader&);
-            TextureLoader& operator=(const TextureLoader&);
-
-            ByteBuffer mData;
-            natural mStage;
-            TexturePtr mpTexture;
-
-            void _LoadData()
-            {
-                system::IReadFilePtr pFile;
-                try
-                {
-                    pFile = system::Files::GetSingleton().Open(mpTexture->GetFilename().c_str());
-                }
-                catch (std::exception&)
-                {
-                    _Error(IObject::kErrorFileNotFound);
-                    return;
-                }
-
-                mData.resize(pFile->GetSize());
-                if (pFile->Read(mData.Get(), mData.size()) != mData.size())
-                {
-                    _Error(IObject::kErrorDataRead);
-                    return;
-                }
-
-                mStage = (kCreateTexture);
-            }
-
-            void _CreateTexture()
-            {
-                Graphics& graphics = Graphics::GetSingleton();
-
-                if (graphics.IsLoaded())
-                {
-                    IDirect3DTexture9* p;
-                    HRESULT hr = D3DXCreateTextureFromFileInMemory(gpD3dDevice9, mData.Get(), mData.GetSizeInBytes(), &p);
-                    if (!SUCCEEDED(hr))
+                    switch (mStage)
                     {
-                        _Error(IObject::kErrorGraphics);
+                    case kLoadData: return (kLoaderThread); break;
+                    case kCreateTexture: return (kMainThread); break;
+                    default:
+                        return (kComplete);
+                    break;
+                    }
+                }
+
+                virtual NextAction MainThreadAction() override
+                {
+                    switch (mStage)
+                    {
+                    case kCreateTexture:
+                        _CreateTexture();
+                        break;
+                    default:
+                        _Error(IObject::kErrorDataRead);
+                        break;
+                    }
+
+                    return (GetNextAction());
+                }
+
+                virtual NextAction LoaderThreadAction() override
+                {
+                    switch (mStage)
+                    {
+                    case kLoadData:
+                        _LoadData();
+                        break;
+                    default:
+                        _Error(IObject::kErrorDataRead);
+                        break;
+                    }
+
+                    return (GetNextAction());
+                }
+
+            private:
+                friend class Texture;
+
+                friend void jz::__IncrementRefCount<graphics::TextureLoader>(graphics::TextureLoader* p);
+                friend size_t jz::__GetRefCount<graphics::TextureLoader>(graphics::TextureLoader* p);
+                friend void jz::__DecrementRefCount<graphics::TextureLoader>(graphics::TextureLoader* p);
+
+                TextureLoader(Texture* apTexture)
+                    : mStage(0u), mpTexture(apTexture)
+                {}
+                TextureLoader(const TextureLoader&);
+                TextureLoader& operator=(const TextureLoader&);
+
+                ByteBuffer mData;
+                natural mStage;
+                TexturePtr mpTexture;
+
+                void _LoadData()
+                {
+                    system::IReadFilePtr pFile;
+                    try
+                    {
+                        pFile = system::Files::GetSingleton().Open(mpTexture->GetFilename().c_str());
+                    }
+                    catch (std::exception&)
+                    {
+                        _Error(IObject::kErrorFileNotFound);
                         return;
                     }
 
-                    mpTexture->mHandle = p;
-                    mpTexture->mInternalState = (IObject::kLost);
+                    mData.resize(pFile->GetSize());
+                    if (pFile->Read(mData.Get(), mData.size()) != mData.size())
+                    {
+                        _Error(IObject::kErrorDataRead);
+                        return;
+                    }
+
+                    mStage = (kCreateTexture);
                 }
 
-                if (!graphics.IsLost())
+                void _CreateTexture()
                 {
-                    mpTexture->mInternalState = (mpTexture->_Reset(graphics.GetViewportWidth(), graphics.GetViewportHeight()));
+                    Graphics& graphics = Graphics::GetSingleton();
+
+                    if (graphics.IsLoaded())
+                    {
+                        IDirect3DTexture9* p;
+                        HRESULT hr = D3DXCreateTextureFromFileInMemory(gpD3dDevice9, mData.Get(), mData.GetSizeInBytes(), &p);
+                        if (!SUCCEEDED(hr))
+                        {
+                            _Error(IObject::kErrorGraphics);
+                            return;
+                        }
+
+                        mpTexture->mHandle = p;
+                        mpTexture->mInternalState = (IObject::kLost);
+                    }
+
+                    if (!graphics.IsLost())
+                    {
+                        mpTexture->mInternalState = (mpTexture->_Reset(graphics.GetViewportWidth(), graphics.GetViewportHeight()));
+                    }
+
+                    mStage = (kDone);
                 }
 
-                mStage = (kDone);
-            }
-
-            void _Error(IObject::State err)
-            {
-                mStage = kDone;
-                mpTexture->mInternalState = err;
-            }
-        };
+                void _Error(IObject::State err)
+                {
+                    mStage = kDone;
+                    mpTexture->mInternalState = err;
+                }
+            };
+#       endif
 
         Texture::Texture(const string& aFilename)
             : IObject(aFilename)
@@ -167,8 +169,10 @@ namespace jz
 
         IObject::State Texture::_Load()
         {
+#       if JZ_MULTITHREADED
             if (!system::Loader::GetSingletonExists())
             {
+#       endif
                 JZ_ASSERT(!mHandle);
 
                 system::IReadFilePtr pFile;
@@ -193,12 +197,14 @@ namespace jz
                 mHandle = p;
 
                 return (kLost);
+#       if JZ_MULTITHREADED
             }
             else
             {
                 system::Loader::GetSingleton().Add(new TextureLoader(this));
                 return (kLoading);
             }
+#       endif
         }
 
         IObject::State Texture::_Unload()

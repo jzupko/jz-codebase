@@ -79,6 +79,8 @@ namespace jz
             return (Radius * Radius);
         }
         
+        static BoundingSphere CreateFrom(const BoundingBox& b);
+
         ///
         /// <summary>Bounding sphere construction from points.</summary>
         /// <remarks>

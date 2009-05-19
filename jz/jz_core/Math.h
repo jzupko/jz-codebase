@@ -137,6 +137,12 @@ namespace jz
     }
    
     template <typename T>
+    __inline T RSqrt(T v)
+    {
+        return (T)std::rsqrt(v);
+    }
+
+    template <typename T>
     __inline T Sqrt(T v)
     {
         return (T)std::sqrt(v);

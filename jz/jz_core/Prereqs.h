@@ -75,6 +75,10 @@ namespace jz
 
 #       define JZ_PLATFORM_SSE     1
 
+        // Multithreading is disabled because I think I have some bugs in the multithreaded IO.
+        // Disabling until I have time to implement that code carefully and correctly.
+#       define JZ_MULTITHREADED    0
+
 #       define JZ_ALIGN_OF __alignof
 #   else
 #       error "Platform not yet supported."
@@ -385,6 +389,18 @@ namespace jz
     {
         T* p = arpData;
         arpData = null;
+
+        if (p)
+        {
+            delete p;
+        }
+    }
+
+    template <typename T>
+    __inline void SafeDelete(Handle& arData)
+    {
+        T* p = StaticCast<T*>(arData);
+        arData.Reset();
 
         if (p)
         {

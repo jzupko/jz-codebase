@@ -175,7 +175,7 @@
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="..\"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;JZ_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;JZ_STATICLIB;JZ_PROFILING"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -433,6 +433,14 @@
 		</File>
 		<File
 			RelativePath="..\jz_engine_3D\RenderMan.h"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\RigidBodyNode.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_engine_3D\RigidBodyNode.h"
 			>
 		</File>
 		<File

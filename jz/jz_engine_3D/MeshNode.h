@@ -42,18 +42,18 @@ namespace jz
         {
         public:
             MeshNode();
-            MeshNode(const string& aId);
+            MeshNode(const string& aBaseId, const string& aId);
             virtual ~MeshNode();
 
             bool bVisible() const { return mbVisible; }
             void SetVisible(bool b) { mbVisible = b; }
 
+            virtual const BoundingBox& GetBoundingBox() const override { return mWorldAABB; }
+
             virtual void Pick(const Ray3D& aRay) override;
             virtual void PoseForReflection(ReflectivePlaneNode* apReflectivePlane) override;
             virtual void PoseForRender() override;
             virtual void PoseForShadow(LightNode* apLight) override;
-
-            virtual const BoundingBox& GetAABB() const override { return mAABB; }
 
             StandardEffect* GetEffect() const { return (StandardEffect*)(mPack.pEffect.Get()); }
             graphics::Material* GetMaterial() const { return (mPack.pMaterial.Get()); }
@@ -77,18 +77,26 @@ namespace jz
             const ThreePoint& GetThreePoint() const { return mTp; }
             void SetThreePoint(const ThreePoint& v) { mTp = v; mbHasTp = true; }
 
+            virtual bool bCastShadow() const override { return mbCastShadow; }
+            void SetCastShadow(bool b) { mbCastShadow = b; }
+
+            const Vector3& GetScale() const { return mScale; }
+            void SetScale(const Vector3& v) { mScale = v; }
+
         protected:
             virtual void _PopulateClone(SceneNode* apNode) override;
             virtual void _PostUpdate(bool abChanged)  override;
-            virtual SceneNode* _SpawnClone(const string& aCloneId) override;
+            virtual SceneNode* _SpawnClone(const string& aBaseId, const string& aCloneId) override;
 
             bool mbVisible;
-            BoundingBox mAABB;
             bool mbNonDeferred;
             graphics::RenderPack mPack;
 
             bool mbHasTp;
             ThreePoint mTp;
+            
+            bool mbCastShadow;
+            Vector3 mScale;
 
         private:
             friend void jz::__IncrementRefCount<engine_3D::MeshNode>(engine_3D::MeshNode*);

@@ -55,6 +55,10 @@ namespace jz
             : X(x), Y(y), Z(z), W(w)
         {}
 
+        Quaternion(const Vector3& v, float w)
+            : X(v.X), Y(v.Y), Z(v.Z), W(w)
+        {}
+
         Quaternion(const Quaternion& q)
             : X(q.X), Y(q.Y), Z(q.Z), W(q.W)
         {}
@@ -162,10 +166,11 @@ namespace jz
             return Dot(*this, *this);
         }
 
+        // TODO: assumes axis is of unit length. If want to change this, divide (sin) by magnitude of axis.
         void SetFromAxisAngle(const Vector3& aAxis, const Radian& aAngle)
         {
             Radian halfAngle = Radian(0.5f * aAngle.GetValue());
-            float   sin      = Sin(halfAngle);
+            float sin = Sin(halfAngle);
 
             X = sin * aAxis.X;
             Y = sin * aAxis.Y;

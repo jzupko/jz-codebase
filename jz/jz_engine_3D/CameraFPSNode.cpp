@@ -21,14 +21,53 @@
 // 
 
 #include <jz_engine_3D/CameraFPSNode.h>
+#include <jz_engine_3D/PhysicsNode.h>
 #include <jz_system/Input.h>
 #include <jz_system/Time.h>
 #include <jz_graphics/Graphics.h>
+
+#include <jz_physics/narrowphase/Body.h>
+#include <jz_physics/narrowphase/collision/SphereShape.h>
+#include <jz_physics/World.h>
 
 namespace jz
 {
     namespace engine_3D
     {
+
+        void CameraFPSNode::SetCollisionEnabled(bool b, float aCollisionRadius, bool abFriction)
+        {
+            mbWantsPhysicsBody = b;
+            if (mbWantsPhysicsBody)
+            {
+                mCollisionRadius = aCollisionRadius;
+                mbWantsFriction = abFriction;
+            }
+
+            if (b != mpPhysicsBody.IsValid())
+            {
+                PhysicsNodePtr pNode = Get<PhysicsNode>(GetBaseId(), "physics_node");
+                if (pNode.IsValid())
+                {
+                    physics::World3D* pWorld = pNode->GetWorld();
+                    
+                    if (b)
+                    {
+                        mpPhysicsBody = pWorld->Create(new physics::SphereShape(mCollisionRadius), physics::Body3D::kDynamic | physics::Body3D::kNonAngular, physics::Body3D::kDynamic | physics::Body3D::kStatic);
+                        mpPhysicsBody->SetAffectedByGravity(false);
+                        mpPhysicsBody->SetFriction((mbWantsFriction) ? 1.0f : 0.0f);
+                        mpPhysicsBody->SetMass(1.0f);
+                        mpPhysicsBody->SetFrame(CoordinateFrame3D::CreateFromMatrix4(mWorld));
+                        mpPhysicsBody->OnUpdate.Add<CameraFPSNode, &CameraFPSNode::__UpdateHandler>(this, mUpdateConnection);
+                    }
+                    else
+                    {
+                        mUpdateConnection.Reset();
+                        mpPhysicsBody.Reset();
+                    }
+                }
+            }
+        }
 
         bool CameraFPSNode::MouseButtonHandler(system::Mouse::Button aButton, system::Mouse::State aState)
         {
@@ -82,10 +121,15 @@ namespace jz
             return false;
         }
 
-        void CameraFPSNode::_PreUpdate(const Matrix4& aParentWorld, bool abParentChanged)
+        void CameraFPSNode::_PreUpdateA(const Matrix4& aParentWorld, bool abParentChanged)
         {
             using namespace system;
-            CameraNode::_PreUpdate(aParentWorld, abParentChanged);
+            CameraNode::_PreUpdateA(aParentWorld, abParentChanged);
+
+            if (mpPhysicsBody.IsValid() && (mFlags & SceneNodeFlags::kWorldDirty) != 0)
+            {
+                mpPhysicsBody->SetFrame(CoordinateFrame3D::CreateFromMatrix4(mWorld));
+            }
 
             Vector3 vChange = Vector3::kZero;
 
@@ -96,14 +140,7 @@ namespace jz
                 if (mLeft.KeyState == Key::kPressed) { vChange += Vector3::kLeft; mbUpdateCamera = true; }
                 if (mRight.KeyState == Key::kPressed) { vChange += Vector3::kRight; mbUpdateCamera = true; }
 
-                if (mbUpdateCamera)
-                {
-                    if (AboutZero(vChange.LengthSquared(), Constants<float>::kLooseTolerance)) { mbUpdateCamera = false; }
-                    else
-                    {
-                        vChange = Vector3::Normalize(vChange);
-                    }
-                }
+                vChange = Vector3::Normalize(vChange);
             }
 
             if (_UpdateMouseLook())
@@ -135,14 +172,23 @@ namespace jz
                     Input::GetSingleton().SetMousePosition(mMouseSavedX, mMouseSavedY);
                     mbUpdateCamera = true;
                 }
+            }
 
-                if (mbUpdateCamera)
+            if (mbUpdateCamera)
+            {
+                #pragma region Orientation
+                Quaternion q = Quaternion::CreateFromAxisAngle(Vector3::kUp, mYaw) * Quaternion::CreateFromAxisAngle(Vector3::kRight, mPitch);
+                ToTransform(q, mWorld);
+                #pragma endregion
+
+                if (mpPhysicsBody.IsValid())
                 {
-                    #pragma region Orientation
-                    Quaternion q = Quaternion::CreateFromAxisAngle(Vector3::kUp, mYaw) * Quaternion::CreateFromAxisAngle(Vector3::kRight, mPitch);
-                    ToTransform(q, mWorld);
-                    #pragma endregion
-
+                    Vector3 v = (Vector3::TransformDirection(mWorld, vChange) * mMoveRate);
+                    mpPhysicsBody->SetLinearVelocity(v);
+                    mpPhysicsBody->SetOrientation(Matrix3::CreateFromUpperLeft(mWorld));
+                }
+                else
+                {
                     #pragma region Position
                     float et = (Time::GetSingleton().GetElapsedSeconds());
                     float delta = (et * mMoveRate);
@@ -150,11 +196,24 @@ namespace jz
                     Vector3 newPosition = mWorld.GetTranslation() + (Vector3::TransformDirection(mWorld, vChange) * delta);
                     ToTransform(newPosition, mWorld);
                     #pragma endregion
+                }
 
-                    mbUpdateCamera = false;
-                    mFlags |= SceneNodeFlags::kWorldDirty;
+                mbUpdateCamera = false;
+                mFlags |= SceneNodeFlags::kWorldDirty;
+            }
+            else
+            {
+                if (mpPhysicsBody.IsValid())
+                {
+                    mpPhysicsBody->SetLinearVelocity(Vector3::kZero);
                 }
             }
+        }
+
+        void CameraFPSNode::__UpdateHandler(physics::Body3D* apBody)
+        {
+            ToTransform(apBody->GetFrame(), mWorld);
+            mFlags |= SceneNodeFlags::kWorldDirty;
         }
 
         void CameraFPSNode::ResizeHandler()

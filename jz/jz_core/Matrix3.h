@@ -33,6 +33,7 @@ namespace jz
 
     struct Matrix2;
     struct Matrix4;
+    struct Quaternion;
     struct Matrix3
     {
         static const int S = 3;
@@ -352,6 +353,9 @@ namespace jz
         return (m * s);
     }
     
+    void FromMatrix(const Matrix3& m, Quaternion& q);
+    void ToMatrix(const Quaternion& q, Matrix3& m);
+
 }
 
 #endif

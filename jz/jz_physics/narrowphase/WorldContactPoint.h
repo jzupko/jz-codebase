@@ -24,53 +24,13 @@
 #ifndef _JZ_PHYSICS_WORLD_CONTACT_POINT_H_
 #define _JZ_PHYSICS_WORLD_CONTACT_POINT_H_
 
-#include <jz_core/Vector2.h>
 #include <jz_core/Vector3.h>
 
 namespace jz
 {
+    struct CoordinateFrame3D;
     namespace physics
     {
-
-        struct WorldContactPoint2D
-        {
-            static const float kDistanceTolerance;
-            static const float kNormalTolerance;
-
-            Vector2 WorldNormal;
-            Vector2 WorldPointA;
-            Vector2 WorldPointB;
-
-            Vector2 Center() const
-            {
-                return ((WorldPointA + WorldPointB) * 0.5f);
-            }
-
-            float GetSeparationSquared() const
-            {
-                return (Vector2::DistanceSquared(WorldPointA, WorldPointB));
-            }
-
-            static bool AboutEqual(const WorldContactPoint2D& a, const WorldContactPoint2D& b)
-            {
-                Vector2 ac = 0.5f * (a.WorldPointA + a.WorldPointB);
-                Vector2 bc = 0.5f * (b.WorldPointA + b.WorldPointB);
-
-                bool bReturn = (Vector2::DistanceSquared(ac, bc) < kDistanceTolerance);
-
-                return bReturn;
-            }
-
-            static WorldContactPoint2D Flip(const WorldContactPoint2D& a)
-            {
-                WorldContactPoint2D ret;
-                ret.WorldNormal = -a.WorldNormal;
-                ret.WorldPointA =  a.WorldPointB;
-                ret.WorldPointB =  a.WorldPointA;
-
-                return ret;
-            }
-        };
 
         struct WorldContactPoint3D
         {
@@ -110,6 +70,8 @@ namespace jz
 
                 return ret;
             }
+
+            static WorldContactPoint3D Transform(const CoordinateFrame3D& cf, const WorldContactPoint3D& cp); 
         };
 
     }

@@ -36,7 +36,7 @@ namespace jz
         {
         public:
             JointNode();
-            JointNode(const string& aId);
+            JointNode(const string& aBaseId, const string& aId);
             virtual ~JointNode();
 
             const Animation& GetAnimation() const { return mAnimation; }
@@ -47,8 +47,8 @@ namespace jz
 
         protected:
             virtual void _PopulateClone(SceneNode* apNode) override;
-            virtual void _PreUpdate(const Matrix4& aParentWorld, bool abParentChanged)  override;
-            virtual SceneNode* _SpawnClone(const string& aCloneId) override;
+            virtual void _PreUpdateA(const Matrix4& aParentWorld, bool abParentChanged)  override;
+            virtual SceneNode* _SpawnClone(const string& aBaseId, const string& aCloneId) override;
 
             Animation mAnimation;
             AnimationControlPtr mpAnimationControl;

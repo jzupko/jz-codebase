@@ -20,136 +20,138 @@
 // THE SOFTWARE.
 //
 
-#include <jz_system/Loader.h>
-#include <jz_system/Time.h>
+#if JZ_MULTITHREADED
+#   include <jz_system/Loader.h>
+#   include <jz_system/Time.h>
 
-namespace jz
-{
-    system::Loader* system::Loader::mspSingleton = null;
-    namespace system
+    namespace jz
     {
-
-        Loader::Loader()
-            : mMilliseconds(4u),
-              mpMainTail(null), mpLoaderTail(null),
-              mbDone(false), mThread(Loader::_LoaderFunction)
-        {}
-
-        Loader::~Loader()
+        system::Loader* system::Loader::mspSingleton = null;
+        namespace system
         {
-            mbDone = true;
-            while (!mThread.bDone()) ;
-        }
 
-        void Loader::_Remove(ILoaderEntryPtr& pHead, ILoaderEntry*& pTail, ILoaderEntry* p)
-        {
-            JZ_ASSERT(p != null);
-            JZ_ASSERT(pHead.Get() == p && !p->mpPrev);
+            Loader::Loader()
+                : mMilliseconds(4u),
+                  mpMainTail(null), mpLoaderTail(null),
+                  mbDone(false), mThread(Loader::_LoaderFunction)
+            {}
 
-            ILoaderEntryPtr pNext = (p->mpNext);
-            p->mpNext.Reset();
-         
-            if (pNext.IsValid()) { pNext->mpPrev = null; }
-            else { pTail = null; }
-
-            pHead = pNext;
-        }
-
-        void Loader::_Insert(ILoaderEntryPtr& pHead, ILoaderEntry*& pTail, ILoaderEntry* p)
-        {
-            JZ_ASSERT(p != null);
-            JZ_ASSERT(!p->mpPrev && !p->mpNext.IsValid());
-
-            p->mpPrev = pTail;
-            if (pTail) { pTail->mpNext.Reset(p); }
-            pTail = p;
-
-            if (!pHead.IsValid()) { pHead = p; }
-        }
-
-        void Loader::Add(ILoaderEntry* p)
-        {
-            if (p->GetNextAction() == ILoaderEntry::kLoaderThread)
+            Loader::~Loader()
             {
-                Lock lock(mMutex);
-                _Insert(mpLoaderHead, mpLoaderTail, p);
+                mbDone = true;
+                while (!mThread.bDone()) ;
             }
-            else if (p->GetNextAction() == ILoaderEntry::kMainThread)
+
+            void Loader::_Remove(ILoaderEntryPtr& pHead, ILoaderEntry*& pTail, ILoaderEntry* p)
             {
-                Lock lock(mMutex);
-                _Insert(mpMainHead, mpMainTail, p);
+                JZ_ASSERT(p != null);
+                JZ_ASSERT(pHead.Get() == p && !p->mpPrev);
+
+                ILoaderEntryPtr pNext = (p->mpNext);
+                p->mpNext.Reset();
+             
+                if (pNext.IsValid()) { pNext->mpPrev = null; }
+                else { pTail = null; }
+
+                pHead = pNext;
             }
-        }
 
-        void Loader::Tick()
-        {
-            if (mThread.bCurrent()) { return; }
-
-            unatural startTick = system::Time::GetSingleton().GetAbsoluteMilliseconds();
-            unatural currentTick = startTick;
-
-            while ((currentTick - startTick) < mMilliseconds)
+            void Loader::_Insert(ILoaderEntryPtr& pHead, ILoaderEntry*& pTail, ILoaderEntry* p)
             {
-                ILoaderEntryPtr p;
+                JZ_ASSERT(p != null);
+                JZ_ASSERT(!p->mpPrev && !p->mpNext.IsValid());
+
+                p->mpPrev = pTail;
+                if (pTail) { pTail->mpNext.Reset(p); }
+                pTail = p;
+
+                if (!pHead.IsValid()) { pHead = p; }
+            }
+
+            void Loader::Add(ILoaderEntry* p)
+            {
+                if (p->GetNextAction() == ILoaderEntry::kLoaderThread)
                 {
                     Lock lock(mMutex);
-                    p = mpMainHead;
+                    _Insert(mpLoaderHead, mpLoaderTail, p);
                 }
-
-                if (!p.IsValid()) { break; }
-
-                ILoaderEntry::NextAction next = p->MainThreadAction();
-
+                else if (p->GetNextAction() == ILoaderEntry::kMainThread)
                 {
                     Lock lock(mMutex);
-                    _Remove(mpMainHead, mpMainTail, p.Get());
-                    if (next == ILoaderEntry::kMainThread) 
-                    {
-                        _Insert(mpMainHead, mpMainTail, p.Get());
-                    }
-                    else if (next == ILoaderEntry::kLoaderThread)
-                    {
-                        _Insert(mpLoaderHead, mpLoaderTail, p.Get());
-                    }
+                    _Insert(mpMainHead, mpMainTail, p);
                 }
-
-                currentTick = system::Time::GetSingleton().GetAbsoluteMilliseconds();
             }
-        }
 
-        void Loader::_LoaderFunction(const Thread& t)
-        {
-            Loader& loader = Loader::GetSingleton();
-            while (!loader.mbDone)
+            void Loader::Tick()
             {
-                ILoaderEntryPtr p;
-                {
-                    Lock lock(loader.mMutex);
-                    p = loader.mpLoaderHead;
-                }
+                if (mThread.bCurrent()) { return; }
 
-                if (!p.IsValid())
-                {
-                    Thread::Sleep(50);
-                    continue;
-                }
+                unatural startTick = system::Time::GetSingleton().GetAbsoluteMilliseconds();
+                unatural currentTick = startTick;
 
-                ILoaderEntry::NextAction next = p->LoaderThreadAction();
-
+                while ((currentTick - startTick) < mMilliseconds)
                 {
-                    Lock lock(loader.mMutex);
-                    loader._Remove(loader.mpLoaderHead, loader.mpLoaderTail, p.Get());
-                    if (next == ILoaderEntry::kMainThread) 
+                    ILoaderEntryPtr p;
                     {
-                        loader._Insert(loader.mpMainHead, loader.mpMainTail, p.Get());
+                        Lock lock(mMutex);
+                        p = mpMainHead;
                     }
-                    else if (next == ILoaderEntry::kLoaderThread)
+
+                    if (!p.IsValid()) { break; }
+
+                    ILoaderEntry::NextAction next = p->MainThreadAction();
+
                     {
-                        loader._Insert(loader.mpLoaderHead, loader.mpLoaderTail, p.Get());
+                        Lock lock(mMutex);
+                        _Remove(mpMainHead, mpMainTail, p.Get());
+                        if (next == ILoaderEntry::kMainThread) 
+                        {
+                            _Insert(mpMainHead, mpMainTail, p.Get());
+                        }
+                        else if (next == ILoaderEntry::kLoaderThread)
+                        {
+                            _Insert(mpLoaderHead, mpLoaderTail, p.Get());
+                        }
+                    }
+
+                    currentTick = system::Time::GetSingleton().GetAbsoluteMilliseconds();
+                }
+            }
+
+            void Loader::_LoaderFunction(const Thread& t)
+            {
+                Loader& loader = Loader::GetSingleton();
+                while (!loader.mbDone)
+                {
+                    ILoaderEntryPtr p;
+                    {
+                        Lock lock(loader.mMutex);
+                        p = loader.mpLoaderHead;
+                    }
+
+                    if (!p.IsValid())
+                    {
+                        Thread::Sleep(50);
+                        continue;
+                    }
+
+                    ILoaderEntry::NextAction next = p->LoaderThreadAction();
+
+                    {
+                        Lock lock(loader.mMutex);
+                        loader._Remove(loader.mpLoaderHead, loader.mpLoaderTail, p.Get());
+                        if (next == ILoaderEntry::kMainThread) 
+                        {
+                            loader._Insert(loader.mpMainHead, loader.mpMainTail, p.Get());
+                        }
+                        else if (next == ILoaderEntry::kLoaderThread)
+                        {
+                            loader._Insert(loader.mpLoaderHead, loader.mpLoaderTail, p.Get());
+                        }
                     }
                 }
             }
-        }
 
+        }
     }
-}
+#endif

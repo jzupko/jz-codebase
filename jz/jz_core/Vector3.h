@@ -32,6 +32,7 @@ namespace jz
 {
 
     struct CoordinateFrame3D;
+    struct CoordinateFrame3D;
     struct Matrix4;
     struct Matrix3;
     struct Quaternion;

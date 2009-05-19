@@ -21,6 +21,7 @@
 //
 
 #include <jz_core/CoordinateFrame3D.h>
+#include <jz_core/CoordinateFrame3D.h>
 #include <jz_core/Matrix4.h>
 #include <jz_core/Quaternion.h>
 #include <jz_core/Vector3.h>
@@ -73,7 +74,7 @@ namespace jz
         return Vector3(x, y, z);
     }
 
-    Vector3 Transform(const Quaternion& q, const Vector3& u)
+    Vector3 Vector3::Transform(const Quaternion& q, const Vector3& u)
     {
         Vector3 uv, uuv;
         Vector3 qvec(q.X, q.Y, q.Z);

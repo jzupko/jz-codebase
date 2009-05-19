@@ -74,7 +74,6 @@ namespace jz
         public static readonly Vector3 kMaxVector3 = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
         public static readonly Vector2 kMinVector2 = new Vector2(float.MinValue, float.MinValue);
         public static readonly Vector3 kMinVector3 = new Vector3(float.MinValue, float.MinValue, float.MinValue);
-        public const string kMediaRoot = "Content\\";
         public const string kNotImplemented = "Execution has reached code that has not yet been implemented.";
         public const string kShouldNotBeHere = "Execution has reached a code branch that should not be possible. Please send the details of this exception to a developer.";
         public const string kSingleton = "This class can only have one instance at a time.";

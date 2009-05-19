@@ -32,6 +32,7 @@
 #define ADD_MIRROR 0
 #define ADD_GUI 0
 #define FPS_COUNTER 1
+#define ADD_RIGID_BODIES 0
 
 // Note: deferred must currently always be enabled. Forward rendering has not been completely implemented.
 #define DEFERRED 1
@@ -49,9 +50,11 @@
 #include <jz_engine_3D/PickMan.h>
 #include <jz_engine_3D/ReflectivePlaneNode.h>
 #include <jz_engine_3D/RenderMan.h>
+#include <jz_engine_3D/RigidBodyNode.h>
 #include <jz_engine_3D/SceneNode.h>
 #include <jz_engine_3D/SceneReader.h>
 #include <jz_engine_3D/ShadowMan.h>
+#include <jz_engine_3D/SimpleEffect.h>
 #include <jz_engine_3D/StandardEffect.h>
 #include <jz_graphics/Effect.h>
 #include <jz_graphics/Graphics.h>
@@ -63,6 +66,7 @@
 #include <jz_gui/GuiImageEffect.h>
 #include <jz_gui/GuiMan.h>
 #include <jz_physics/narrowphase/Body.h>
+#include <jz_physics/narrowphase/collision/Collide.h>
 #include <jz_physics/narrowphase/collision/SphereShape.h>
 #include <jz_sail/ThreePointLighting.h>
 #include <jz_system/Files.h>
@@ -161,18 +165,21 @@
 
     static void Light(float* apMaxRange, ::jz::engine_3D::LightNode* apLight, ::jz::engine_3D::IShadowable* p)
     {
-        if (apLight->GetBoundingSphere().Intersects(p->GetAABB()))
+        if (p->bCastShadow())
         {
-            jz::BoundingBox aabb = p->GetAABB();
-            float d = jz::Vector3::Distance(apLight->GetWorldTranslation(), p->GetAABB().Center());
-            jz::Vector3 n = jz::Vector3::Normalize(apLight->GetWorldTranslation() - p->GetAABB().Center());
-            float r = aabb.EffectiveRadius(n);
-
-            (*apMaxRange) = jz::Max(*apMaxRange, (d + r));
-
-            if (apLight->GetWorldFrustum().Test(p->GetAABB()) != ::jz::Geometric::kDisjoint)
+            if (apLight->GetBoundingSphere().Intersects(p->GetBoundingBox()))
             {
-                p->PoseForShadow(apLight);
+                const jz::BoundingBox& aabb = p->GetBoundingBox();
+                float d = jz::Vector3::Distance(apLight->GetWorldTranslation(), p->GetBoundingBox().Center());
+                jz::Vector3 n = jz::Vector3::Normalize(apLight->GetWorldTranslation() - p->GetBoundingBox().Center());
+                float r = aabb.EffectiveRadius(n);
+
+                (*apMaxRange) = jz::Max(*apMaxRange, (d + r));
+
+                if (apLight->GetWorldFrustum().Test(p->GetBoundingBox()) != ::jz::Geometric::kDisjoint)
+                {
+                    p->PoseForShadow(apLight);
+                }
             }
         }
     }
@@ -197,7 +204,7 @@
 
     static void Reflect(const ::jz::Region& aReflectedFrustum, ::jz::engine_3D::ReflectivePlaneNode* apNode, ::jz::engine_3D::IReflectable* p)
     {
-        if (aReflectedFrustum.Test(p->GetAABB()) != jz::Geometric::kDisjoint)
+        if (aReflectedFrustum.Test(p->GetBoundingBox()) != jz::Geometric::kDisjoint)
         {
             p->PoseForReflection(apNode);
         }
@@ -268,7 +275,7 @@
 
     static void Poser(const ::jz::Region& aFrustum, ::jz::engine_3D::IRenderable* p)
     {
-        if (aFrustum.Test(p->GetAABB()) != ::jz::Geometric::kDisjoint)
+        if (aFrustum.Test(p->GetBoundingBox()) != ::jz::Geometric::kDisjoint)
         {
             p->PoseForRender();
         }
@@ -291,7 +298,7 @@
         static void PickHelper(engine_3D::MeshNode* p, const Ray3D& ray)
         {
             float distance;
-            if (ray.Intersects(p->GetAABB(), distance))
+            if (ray.Intersects(p->GetBoundingBox(), distance))
             {
                 p->Pick(ray);
             }
@@ -406,7 +413,10 @@
                     Files& files = Files::GetSingleton();
                     files.AddArchive(new ZipArchive("media.dat"));
 
-                    Loader loader;
+#                   if JZ_MULTITHREADED
+                        Loader loader;
+#                   endif
+
 #if START_FULLSCREEN
                     Graphics graphics(true);
 #else
@@ -459,8 +469,32 @@
                         }
 
                         pRoot->Apply<LightNode>(ActivateShadowing);
-                        PhysicsNodePtr pPhysicsNode = SceneNode::Get<PhysicsNode>("1930_room_physics_node");
-                        CameraFPSNodePtr pCamera(new CameraFPSNode());
+                        PhysicsNodePtr pPhysicsNode = SceneNode::Get<PhysicsNode>("1930_room", "physics_node");
+                        CameraFPSNodePtr pCamera(new CameraFPSNode(string(), "main_camera"));
+                        pCamera->SetCollisionEnabled(true, 0.2f);
+                        float ar = ((float)graphics.GetViewportWidth()) / ((float)graphics.GetViewportHeight());
+                        pCamera->SetWorldTranslation(Vector3::kUp + Vector3::kRight);
+                        pCamera->SetProjection(Matrix4::CreatePerspectiveFieldOfViewDirectX(Radian::kPiOver2, ar, 0.099f, 22.63f));
+                        pCamera->SetMoveRate(2.0f);
+                        pCamera->SetActive(true);
+                        pCamera->SetParent(pRoot.Get());
+
+#                       if ADD_RIGID_BODIES
+                        static const float kBoxScale = 0.2f;
+                        static const int kBoxCount = 1;
+
+                        for (int i = 0; i < kBoxCount; i++)
+                        {
+                            RigidBodyNodePtr pRigidBody = new RigidBodyNode(string(), "box" + StringUtility::ToString(i));
+                            pRigidBody->SetParent(pRoot.Get());
+                            pRigidBody->SetWorldTranslation(Vector3::kUp * 2.0f + Vector3::kRight + Vector3::kForward);
+                            pRigidBody->SetAsPhysicalBox(Vector3::kOne * kBoxScale, 1.0f);
+                            pRigidBody->SetEffect(man.GetSimpleEffect());
+                            pRigidBody->SetMesh(man.GetUnitBoxMesh());
+                            pRigidBody->SetCastShadow(false);
+                            pRigidBody->SetScale(Vector3::kOne * kBoxScale);
+                        }
+#                       endif
 
 #                       if ADD_CAMERA_LIGHT
                         {
@@ -485,29 +519,6 @@
                             pMirror->SetMesh(RenderMan::GetSingleton().GetUnitQuadMesh());
                         }
 #                       endif
-
-                        float ar = ((float)graphics.GetViewportWidth()) / ((float)graphics.GetViewportHeight());
-                        pCamera->SetWorldTranslation(Vector3::kUp + Vector3::kRight);
-                        pCamera->SetProjection(Matrix4::CreatePerspectiveFieldOfViewDirectX(Radian::kPiOver2, ar, 0.099f, 22.63f));
-                        pCamera->SetParent(pRoot.Get());
-                        pCamera->SetMoveRate(2.0f);
-                        pCamera->SetActive(true);
-                        Body3DPtr pCameraBody;
-
-                        if (pPhysicsNode.IsValid())
-                        {
-                            World3D* pWorld = pPhysicsNode->GetWorld();
-                            pWorld->SetGravity(Vector3::kZero);
-                            pCameraBody = pWorld->Create(new SphereShape(0.2f), Body3D::kDynamic, Body3D::kStatic);
-                            pCameraBody->SetTranslation(pCamera->GetWorldTranslation());
-                            pCameraBody->SetFriction(0.0f);
-
-    #                       ifdef DEBUG_PHYSICS
-                                pPhysicsNode->SetDebugPhysics(true);
-                                pRoot->Apply<MeshNode>(HideMeshNodes);
-                                man.SetClearColor(ColorRGBA(1, 0, 0, 1));
-    #                       endif
-                        }
 
                         ThreePointLighting lighting;
                         lighting.GetLightLearner().Load("woman.dat");
@@ -570,7 +581,6 @@
                         }
 #endif
 
-
                         Profiler profiler;
 
                         MSG msg; 
@@ -590,8 +600,9 @@
                                 Time::GetSingleton().Tick();
                                 float t = Time::GetSingleton().GetElapsedSeconds();
 
-                                
-                                loader.Tick();
+#                               if JZ_MULTITHREADED                                
+                                    loader.Tick();
+#                               endif
 
 #if FPS_COUNTER
                                 timeDelta += t;
@@ -638,36 +649,7 @@
                                     }
                                 }
 
-                                if (t > Constants<float>::kZeroTolerance && pCameraBody.IsValid())
-                                {
-                                    Vector3 prev = (pCamera->GetWorldTranslation());
-                                    pCamera->Update();
-                                    Vector3 lv = (pCamera->GetWorldTranslation() - prev) / t;
-
-                                    if (lv.LengthSquared() > Constants<float>::kZeroTolerance)
-                                    {
-                                        pCameraBody->SetVelocity(lv);
-                                    }
-                                    else
-                                    {
-                                        pCameraBody->SetVelocity(Vector3::kZero);
-                                    }
-                                }
-
                                 pRoot->Update();
-                                 
-                                if (pCameraBody.IsValid())
-                                {
-                                    if (!Vector3::AboutEqual(pCamera->GetWorldTranslation(), pCameraBody->GetTranslation(), Constants<float>::kLooseTolerance))
-                                    {
-                                        // Ewwwwww.
-                                        pCamera->SetWorldTranslation(pCameraBody->GetTranslation());
-                                        float moveRate = pCamera->GetMoveRate();
-                                        pCamera->SetMoveRate(0.0f);
-                                        pCamera->Update();
-                                        pCamera->SetMoveRate(moveRate);
-                                    }
-                                }
                                 profiler.End("Update");
                                 #pragma endregion
 
@@ -692,6 +674,14 @@
                                 man.AddConsoleLine("Avg update time: " + StringUtility::ToString(profiler.GetAverageSeconds("Update")));
                                 man.AddConsoleLine("Avg pose time: " + StringUtility::ToString(profiler.GetAverageSeconds("Pose")));
                                 man.AddConsoleLine("Avg draw time: " + StringUtility::ToString(profiler.GetAverageSeconds("Draw")));
+#if JZ_PROFILING
+                                man.AddConsoleLine("Avg distance iterations: " + StringUtility::ToString(Collide::AverageMprDistanceIterations));
+                                man.AddConsoleLine("Avg collide iterations: " + StringUtility::ToString(Collide::AverageMprCollideIterations));
+                                if (pPhysicsNode.IsValid())
+                                {
+                                    man.AddConsoleLine("Avg collision pairs: " + StringUtility::ToString(pPhysicsNode->GetWorld()->AverageCollisionPairs));
+                                }
+#endif
 #endif
                                 #pragma endregion
 

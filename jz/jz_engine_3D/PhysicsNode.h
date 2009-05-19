@@ -44,25 +44,28 @@ namespace jz
         {
         public:
             PhysicsNode();
-            PhysicsNode(const string& aId);
+            PhysicsNode(const string& aBaseId, const string& aId);
             virtual ~PhysicsNode();
 
-            virtual const BoundingBox& GetAABB() const override;
+            virtual const BoundingBox& GetBoundingBox() const override { return mWorldAABB; }
             virtual void PoseForRender() override;
 
             physics::World3D* GetWorld() const { return mpWorld; }
             physics::Body3D* GetWorldBody() const { return mpWorldBody.Get(); }
-            physics::TriangleTreeShape* GetWorldTree() const
+
+            physics::TriangleTreeShape const* GetWorldTree() const { return (mpWorldTree.Get()); }
+            physics::TriangleTreeShape* GetWorldTree()
             {
-                const_cast<bool&>(mbTreeDirty) = true;
+                mbTreeDirty = true;
                 return (mpWorldTree.Get());
             }
 
             void SetDebugPhysics(bool b) { mbDebugPhysics = b; }
 
         protected:
-            virtual void _PreUpdate(const Matrix4& aParentWorld, bool abParentChanged) override;
-            virtual SceneNode* _SpawnClone(const string& aCloneId) override;
+            virtual void _PostUpdate(bool abChanged) override;
+            virtual void _PreUpdateB(const Matrix4& aParentWorld, bool abParentChanged) override;
+            virtual SceneNode* _SpawnClone(const string& aBaseId, const string& aCloneId) override;
 
         private:
             physics::World3D* mpWorld;
@@ -71,7 +74,6 @@ namespace jz
             
             bool mbTreeDirty;
             bool mbDebugPhysics;
-            BoundingBox mAABB;
 
             friend void jz::__IncrementRefCount<engine_3D::PhysicsNode>(engine_3D::PhysicsNode*);
             friend void jz::__DecrementRefCount<engine_3D::PhysicsNode>(engine_3D::PhysicsNode*);

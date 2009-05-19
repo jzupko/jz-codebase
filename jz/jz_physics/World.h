@@ -26,8 +26,6 @@
 
 #include <jz_core/Auto.h>
 #include <jz_core/BoundingBox.h>
-#include <jz_core/BoundingRectangle.h>
-#include <jz_core/Vector2.h>
 #include <jz_core/Vector3.h>
 #include <vector>
 
@@ -36,56 +34,10 @@ namespace jz
     namespace physics
     {
 
-        class IBroadphase2D; typedef AutoPtr<IBroadphase2D> IBroadphase2DPtr;
         class IBroadphase3D; typedef AutoPtr<IBroadphase3D> IBroadphase3DPtr;
-        class ICollisionShape2D;
         class ICollisionShape3D;
-        class Body2D; typedef AutoPtr<Body2D> Body2DPtr;
         class Body3D; typedef AutoPtr<Body3D> Body3DPtr;
-        struct WorldContactPoint2D;
         struct WorldContactPoint3D;
-        class World2D sealed
-        {
-        public:
-            static const Vector2 kDefaultGravity;
-            static const float kTimeStep;
-
-            World2D();
-            ~World2D();
-
-            Body2D* Create(ICollisionShape2D* apShape, u32 aType, u32 aCollidesWith);
-
-            float GetUnitMeter() const { return mUnitMeter; }
-            void SetUnitMeter(float v);
-
-            Vector2 GetGravity() const { return (mGravity / mUnitMeter); }
-            void SetGravity(const Vector2& g) { mGravity = (mUnitMeter * g); }
-
-            void Tick(float aTimeStep);
-
-        private:
-            IBroadphase2DPtr mpBroadphase;
-            vector<Body2D*> mBodies;
-            Vector2 mGravity;
-            float mTimePool;
-            float mUnitMeter;
-
-        protected:
-            World2D(const World2D&);
-            World2D& operator=(const World2D&);
-
-            friend class Body2D;
-
-            void _StartStopCollisionHandler(void_p a, void_p b);
-            void _UpdateCollisionHelper(Body2D* pa, Body2D* pb, const WorldContactPoint2D& cp);
-            void _UpdateCollisionConcaveHandler(Body2D* pa, Body2D* pb);
-            void _UpdateCollisionHandler(void_p a, void_p b);
-
-            void _Add(Body2D* apBody, u32 aType, u32 aCollidesWith);
-            void _Remove(Body2D* apBody);
-            void _Update(Body2D* apBody, const BoundingRectangle& aBoundingRectangle);
-        };
-
         class World3D sealed
         {
         public:
@@ -105,9 +57,18 @@ namespace jz
 
             void Tick(float aTimeStep);
 
+#           if JZ_PROFILING
+                unatural AverageCollisionPairs;
+#           endif
+
         private:
+#           if JZ_PROFILING
+                unatural mAverageCollisionPairs;
+#           endif
+
+            typedef vector<Body3D*> Bodies;
             IBroadphase3DPtr mpBroadphase;
-            vector<Body3D*> mBodies;
+            Bodies mBodies;
             Vector3 mGravity;
             float mTimePool;
             float mUnitMeter;
@@ -119,9 +80,9 @@ namespace jz
             friend class Body3D;
 
             void _StartStopCollisionHandler(void_p a, void_p b);
-            void _UpdateCollisionHelper(Body3D* pa, Body3D* pb, const WorldContactPoint3D& cp);
-            void _UpdateCollisionConcaveHandler(Body3D* pa, Body3D* pb);
             void _UpdateCollisionHandler(void_p a, void_p b);
+            void _ResolveConvexCollision(Body3D* pa, Body3D* pb, const WorldContactPoint3D& cp);
+            void _ResolveConcaveCollision(Body3D* pa, Body3D* pb);
 
             void _Add(Body3D* apBody, u32 aType, u32 aCollidesWith);
             void _Remove(Body3D* apBody);

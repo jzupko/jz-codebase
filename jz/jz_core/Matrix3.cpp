@@ -24,6 +24,7 @@
 #include <jz_core/Matrix2.h>
 #include <jz_core/Matrix3.h>
 #include <jz_core/Matrix4.h>
+#include <jz_core/Quaternion.h>
 #include <jz_core/Vector3.h>
 
 namespace jz
@@ -149,6 +150,76 @@ namespace jz
         return Matrix3(1, 0, 0,
                        0, 1, 0,
                        t.X, t.Y, 1);
+    }
+
+    void FromMatrix(const Matrix3& b, Quaternion& q)
+    {
+        static const natural skaNext[3] = { 1, 2, 0 };
+
+        const float d = b.M11 + b.M22 + b.M33;
+        float r;
+        
+        if (d > 0.0f)
+        {
+            r = Sqrt(d + 1.0f);
+            q.W = 0.5f * r;
+            
+            r   = 0.5f / r;
+            q.X = (b.M23 - b.M32) * r;
+            q.Y = (b.M31 - b.M13) * r;
+            q.Z = (b.M12 - b.M21) * r;
+        }
+        else
+        {
+            natural i = 0;
+            
+            if (b.M22 > b.M11) { i = 1; }
+            if (b.M33 > b(i, i)) { i = 2; }
+
+            natural j = skaNext[i];
+            natural k = skaNext[j];
+
+            r = Sqrt(b(i, i) - b(j, j) - b(k, k) + 1.0f);
+
+            float* pa[3] = { &(q.X), &(q.Y), &(q.Z) };
+            
+            *pa[i] = 0.5f * r;
+            
+            r = (0.5f / r);
+            q.W = (b(j, k) - b(k, j)) * r;
+
+            *pa[j] = (b(i, j) + b(j, i)) * r;
+            *pa[k] = (b(i, k) + b(k, i)) * r;
+        }
+    }
+    
+    void ToMatrix(const Quaternion& q, Matrix3& m)
+    {
+        const float x = 2.0f * q.X;
+        const float y = 2.0f * q.Y;
+        const float z = 2.0f * q.Z;
+
+        const float wx = q.W * x;
+        const float wy = q.W * y;
+        const float wz = q.W * z;
+        const float xx = q.X * x;
+        const float xy = q.X * y;
+        const float xz = q.X * z;
+        const float yy = q.Y * y;
+        const float yz = q.Y * z;
+        const float zz = q.Z * z;
+
+        m.M11 = 1.0f - (yy + zz);
+        m.M21 = (xy - wz);
+        m.M31 = (xz + wy);
+
+        m.M12 = (xy + wz);
+        m.M22 = 1.0f - (xx + zz);
+        m.M32 = (yz - wx);
+
+        m.M13 = (xz - wy);
+        m.M23 = (yz + wx);
+        m.M33 = 1.0f - (xx + yy);
     }
 
 }

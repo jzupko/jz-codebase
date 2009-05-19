@@ -20,6 +20,7 @@
 // THE SOFTWARE.
 // 
 
+#include <jz_core/Matrix3.h>
 #include <jz_physics/narrowphase/collision/SphereShape.h>
 
 namespace jz
@@ -27,7 +28,33 @@ namespace jz
     namespace physics
     {
 
-        
+        // From: http://scienceworld.wolfram.com/physics/MomentofInertiaSphere.html
+        Vector3 SphereShape::GetInertiaTensor(float aInverseMass) const
+        {
+            if (AboutZero(aInverseMass)) { return Vector3::kZero; }
+            else
+            {
+                static const float kFactor = (float)(2.0 / 5.0);
 
+                float m = (1.0f / aInverseMass);
+                Vector3 ret(kFactor * (Radius * Radius) * m);
+
+                return ret;
+            }
+        } 
+
+        Vector3 SphereShape::GetInverseInertiaTensor(float aInverseMass) const
+        {
+            static const float kFactor = (float)(5.0 / 2.0);
+
+            float r2 = (Radius * Radius);
+            if (r2 < (Constants<float>::kZeroTolerance * Constants<float>::kZeroTolerance)) { return Vector3::kZero; }
+            else
+            {
+                Vector3 ret((kFactor * aInverseMass) / r2);
+
+                return ret;
+            }
+        } 
     }
 }
