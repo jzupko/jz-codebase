@@ -294,6 +294,14 @@
 			>
 		</File>
 		<File
+			RelativePath="..\jz_system\TriangleTree.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\jz_system\TriangleTree.h"
+			>
+		</File>
+		<File
 			RelativePath="..\jz_system\Win32.h"
 			>
 		</File>

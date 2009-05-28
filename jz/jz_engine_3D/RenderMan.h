@@ -63,6 +63,7 @@ namespace jz
             RenderMan();
             ~RenderMan();
 
+            JZ_EXPORT void ClearWithoutRender();
             JZ_EXPORT void Pose(const graphics::RenderPack& r);
             JZ_EXPORT void Render();
 

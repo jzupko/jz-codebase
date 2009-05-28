@@ -26,8 +26,8 @@
 
 #include <jz_engine_3D/IRenderable.h>
 #include <jz_engine_3D/SceneNode.h>
-#include <jz_physics/TriangleTree.h>
 #include <jz_physics/World.h>
+#include <jz_system/TriangleTree.h>
 
 namespace jz
 {

@@ -38,13 +38,13 @@ dereferenceXRefs=0;cameraXFov=0;cameraYFov=1</comments>
         <technique sid="common">
           <lambert>
             <emission>
-              <color>1 0 0 1</color>
+              <color>0 0 0 1</color>
             </emission>
             <ambient>
               <color>0 0 0 1</color>
             </ambient>
             <diffuse>
-              <color>0 0 0 0</color>
+              <color>1 0 0 1</color>
             </diffuse>
             <transparent opaque="RGB_ZERO">
               <color>0 0 0 1</color>

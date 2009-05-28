@@ -23,10 +23,7 @@
 #ifndef _ENGINE_3D_DEFERRED_FX_
 #define _ENGINE_3D_DEFERRED_FX_
 
-#define JZ_DEBUG_AO 0
-#define JZ_DISABLE_BLUR 0
-#define JZ_DISABLE_DIRECTIONAL_AO 0
-#define JZ_MATH_CORRECT_SHADOW_FILTERING 0
+#define JZ_DISABLE_DOF_HALO_COMPENSATION 0
 
 #include "../media/fb_common.fxh"
 #include "../media/lighting_common.fxh"
@@ -35,10 +32,19 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 // constants
 //////////////////////////////////////////////////////////////////////////////////////////
-static const int kKernelRadius = 11;
+// Bloom and Motion Blur constants
+static const int kKernelRadius = 9;
+static const int kShadowTapRadius = 5;
 static const int kMotionBlurTaps = kKernelRadius;
-static const int kCircularTaps = 16;
-static const float kNormalDistanceMin = 1e-2;
+
+// Ao Constants
+static const float kAoBiasFactor = 512.0;
+static const int kTapsRt = 5;
+static const int kCircularTaps = (kTapsRt * kTapsRt);
+static const float kNormalDistanceMin = 0.01;
+
+// Dof Constants
+static const float kMaxF2 = (3.0 / 4.0);
 
 # if !NDEBUG
     static const float3 kDebugDirectionalColor = float3(1, 0, 0);
@@ -59,7 +65,6 @@ struct vsOut { float4 Position : POSITION; float4 ScreenHTexCoords : TEXCOORD0; 
 //////////////////////////////////////////////////////////////////////////////////////////
 texture ShadowTexture : jz_ShadowTexture;
 sampler ShadowSampler = sampler_state { texture = <ShadowTexture>; AddressU = clamp; AddressV = clamp; MinFilter = POINT; MagFilter = POINT; MipFilter = NONE; };
-sampler ShadowSamplerFilterable = sampler_state { texture = <ShadowTexture>; AddressU = clamp; AddressV = clamp; MinFilter = LINEAR; MagFilter = LINEAR; MipFilter = NONE; };
 
 float2 ShadowDelta : jz_ShadowDelta = float2(0, 0);
 float2 ShadowNearFar : jz_ShadowNearFar = float2(0, 0);
@@ -78,19 +83,19 @@ float GaussianWeights[kKernelRadius] : jz_GaussianWeights;
 texture HdrTexture : jz_HdrTexture;
 sampler HdrSampler = sampler_state { texture = <HdrTexture>; AddressU = clamp; AddressV = clamp; MinFilter = POINT; MagFilter = POINT; MipFilter = NONE; };
 
-float3 RandomVectors[kCircularTaps] : jz_RandomVectors;
-
-float AoRadius : jz_AoRadius = 16.0f;
+float AoRadius : jz_AoRadius = 128.0f;
 float AoScale : jz_AoScale = 0.0f;
 bool bDebugAO : jz_bDebugAO = false;
+
+float3 FocusDistances : jz_FocusDistances = float3(0.0, 0.0, 0.0);
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // functions
 //////////////////////////////////////////////////////////////////////////////////////////
-float3 GetNonDirectionalLight(vsOut aIn, out float3 arLv, out float arDistance, out float3 arViewPos)
+float3 GetNonDirectionalLight(vsOut aIn, out float3 arLv, out float arDistance, out float3 arViewPos, bool abIncludeAo)
 {
 	float4 nd = GetDeferredNormalAndDepth(aIn.ScreenHTexCoords);
-	float3 diffuse = GetDeferredDiffuse(aIn.ScreenHTexCoords);
+	float4 diffuse = GetDeferredDiffuse(aIn.ScreenHTexCoords);
     float4 specularShininess = GetDeferredSpecularAndShininess(aIn.ScreenHTexCoords);
 	arViewPos = GetViewPosition(aIn.ScreenHTexCoords, nd.w);
 
@@ -105,22 +110,20 @@ float3 GetNonDirectionalLight(vsOut aIn, out float3 arLv, out float arDistance, 
 
     float3 color = GetLitColorAtt(
         LightColor, 
-        diffuse, GetDiffuseFactor(ndotl), 
+        diffuse.rgb, GetDiffuseFactor(ndotl), 
         specularShininess.rgb, GetSpecularFactor(ev, GetReflectionVector(nv, arLv, ndotl), ndotl, specularShininess.a),
         GetLightAttenuation(LightAttenuation, arDistance, distanceSquare));
 	
-	return color;
+    return (abIncludeAo) ? color * diffuse.a : color;
 }
 
 float GetShadowFactor(sampler aSampler, float2 aShadowDelta, float4 aShadowTexCoords, float4 aShadowScaleShift, float aPixelDepth, float aShadowControlTerm)
 {
-	//float2 coords = ((aShadowTexCoords.xy / aShadowTexCoords.w) * aShadowScaleShift.xy) + aShadowScaleShift.zw;
     float4 coords =
         float4(aShadowTexCoords.xy * aShadowScaleShift.xy + (aShadowTexCoords.w * aShadowScaleShift.zw),
         aShadowTexCoords.zw);
 
     float pd = (aPixelDepth);
-    // float sd = tex2D(aSampler, coords).r;
     float sd = tex2Dproj(aSampler, coords).r;
 
     float ret = exp(512.0 * aShadowControlTerm * min(sd - pd, 0.0));
@@ -128,137 +131,180 @@ float GetShadowFactor(sampler aSampler, float2 aShadowDelta, float4 aShadowTexCo
     return ret;
 }
 
-float3 GetAO(float4 huv)
-{
-	return tex2Dproj(HdrSampler, huv).xyz;
-}
-
-float3 BlurAOPass2(float4 huv)
-{
-	float3 ret = kZero3;
-	int max = (kKernelRadius - 1);
-	
-	for (int i = -max; i <= -1; i++)
-	{
-		ret += GetAO(OffsetHuvH(huv, i)) * GaussianWeights[-i];
-	}
-	
-	ret += GetAO(huv) * GaussianWeights[0];
-	
-	for (int i = 1; i <= max; i++)
-	{
-		ret += GetAO(OffsetHuvH(huv, i)) * GaussianWeights[i];
-	}
-	
-	return ret;
-}
-
-float3 BlurAOPass3(float4 huv)
-{
-	float3 ret = kZero3;
-	int max = (kKernelRadius - 1);
-	
-	for (int i = -max; i <= -1; i++)
-	{
-		ret += GetAO(OffsetHuvV(huv, i)) * GaussianWeights[-i];
-	}
-	
-	ret += GetAO(huv) * GaussianWeights[0];
-	
-	for (int i = 1; i <= max; i++)
-	{
-		ret += GetAO(OffsetHuvV(huv, i)) * GaussianWeights[i];
-	}
-	
-	return ret;
-}
-
 float GetShadow(float4 huv)
 {
 	return tex2Dproj(ShadowSampler, huv).r;
 }
 
-float GetShadowFiltered(float4 huv)
-{
-	return tex2Dproj(ShadowSamplerFilterable, huv).r;
-}
-
-#if JZ_MATH_CORRECT_SHADOW_FILTERING
-float LogConvolution(float c0, float c1, float a, float b)
-{
-    return (a + log(c1 * exp(b - a) + c0));
-}
-
 float GetShadowBlurPass1(float4 huv)
 {
-	float ret = 0.0;
-	int max = (kKernelRadius - 1);
+    static const int kMax = (kShadowTapRadius);
+    static const float kFactor = 1.0 / (kMax * 2.0 + 1.0);
 	
-    ret = LogConvolution(0.5, 0.5, GetShadowFiltered(OffsetHuvH(huv, -max)), GetShadowFiltered(OffsetHuvH(huv, -max + 1)));
-
-    for (int i = (-max + 2); i <= max; i++)
+    float ret = 0.0;
+    for (int i = -kMax; i <= kMax; i++)
     {
-        ret = LogConvolution(0.5, 0.5, GetShadowFiltered(OffsetHuvH(huv, i)), ret);
+        ret += exp(GetShadow(OffsetHuvH(huv, i)));
     }
+
+    ret = log(ret * kFactor);
 	
 	return ret;
 }
 
 float GetShadowBlurPass2(float4 huv)
 {
-	float ret = 0.0;
+    static const int kMax = (kShadowTapRadius);
+    static const float kFactor = 1.0 / (kMax * 2.0 + 1.0);
+	
+    float ret = 0.0;
+    for (int i = -kMax; i <= kMax; i++)
+    {
+        ret += exp(GetShadow(OffsetHuvV(huv, i)));
+    }
+
+    ret = log(ret * kFactor);
+	
+	return ret;
+}
+
+float3 GetHdr(float4 huv)
+{
+	return tex2Dproj(HdrSampler, huv).rgb;
+}
+
+float3 GetHdrBlurPass1(float4 huv)
+{
+	float3 ret = kZero3;
 	int max = (kKernelRadius - 1);
 	
-    ret = LogConvolution(0.5, 0.5, GetShadowFiltered(OffsetHuvV(huv, -max)), GetShadowFiltered(OffsetHuvV(huv, -max + 1)));
+	for (int i = -max; i <= -1; i++)
+	{
+		ret += GetHdr(OffsetHuvH(huv, i)) * GaussianWeights[-i];
+	}
+	
+	ret += GetHdr(huv) * GaussianWeights[0];
+	
+	for (int i = 1; i <= max; i++)
+	{
+		ret += GetHdr(OffsetHuvH(huv, i)) * GaussianWeights[i];
+	}
+	
+	return ret;
+}
 
-    for (int i = (-max + 2); i <= max; i++)
+float3 GetHdrBlurPass2(float4 huv)
+{
+	float3 ret = kZero3;
+	int max = (kKernelRadius - 1);
+	
+	for (int i = -max; i <= -1; i++)
+	{
+		ret += GetHdr(OffsetHuvV(huv, i)) * GaussianWeights[-i];
+	}
+	
+	ret += GetHdr(huv) * GaussianWeights[0];
+	
+	for (int i = 1; i <= max; i++)
+	{
+        ret += GetHdr(OffsetHuvV(huv, i)) * GaussianWeights[i];
+	}
+	
+	return ret;
+}
+
+float GetDofBlurinessFactor(float4 c)
+{
+    float viewDepth = GetDeferredDepth(c);
+    float3 viewPosition = GetViewPosition(c, viewDepth);
+
+    float f = abs(FocusDistances.x - length(viewPosition));
+
+    float t = 0.0;
+    if (FocusDistances.z > kZeroTolerance)
     {
-        ret = LogConvolution(0.5, 0.5, GetShadowFiltered(OffsetHuvV(huv, i)), ret);
+        if (f >= FocusDistances.z) { t = 1.0; }
+        else if (f <= FocusDistances.y) { t = 0.0; }
+        else
+        {
+            t = (f - FocusDistances.y) / (FocusDistances.z - FocusDistances.y);
+        } 
+    }
+
+    return t;
+}
+
+float3 GetDofBlurPass1(float4 huv)
+{
+	float3 ret = kZero3;
+	int max = (kKernelRadius - 1);
+	
+    float sum = 0.0;
+	for (int i = -max; i <= -1; i++)
+	{
+        float4 c = OffsetHuvH(huv, i);
+        float weight = (GetDofBlurinessFactor(c) * GaussianWeights[-i]);
+
+        sum += weight;
+        ret += GetHdr(c) * weight;
+	}
+	
+    {
+        float weight = (GetDofBlurinessFactor(huv) * GaussianWeights[0]);
+
+        sum += weight;
+        ret += GetHdr(huv) * weight;
     }
 	
-	return ret;
-}
-#else
-float GetShadowBlurPass1(float4 huv)
-{
-	float ret = 0.0;
-	int max = (kKernelRadius - 1);
-	
-	for (int i = -max; i <= -1; i++)
-	{
-		ret += GetShadowFiltered(OffsetHuvH(huv, i)) * GaussianWeights[-i];
-	}
-	
-	ret += GetShadowFiltered(huv) * GaussianWeights[0];
-	
 	for (int i = 1; i <= max; i++)
 	{
-		ret += GetShadowFiltered(OffsetHuvH(huv, i)) * GaussianWeights[i];
-	}
+        float4 c = OffsetHuvH(huv, i);
+        float weight = (GetDofBlurinessFactor(c) * GaussianWeights[i]);
+
+        sum += weight;
+        ret += GetHdr(c) * weight;
+    }
+
+    ret /= sum;
 	
 	return ret;
 }
 
-float GetShadowBlurPass2(float4 huv)
+float3 GetDofBlurPass2(float4 huv)
 {
-	float ret = 0.0;
+	float3 ret = kZero3;
 	int max = (kKernelRadius - 1);
 	
+    float sum = 0.0;
 	for (int i = -max; i <= -1; i++)
 	{
-		ret += GetShadowFiltered(OffsetHuvV(huv, i)) * GaussianWeights[-i];
+        float4 c = OffsetHuvV(huv, i);
+        float weight = (GetDofBlurinessFactor(c) * GaussianWeights[-i]);
+
+        sum += weight;
+        ret += GetHdr(c) * weight;
 	}
 	
-	ret += GetShadowFiltered(huv) * GaussianWeights[0];
+    {
+        float weight = (GetDofBlurinessFactor(huv) * GaussianWeights[0]);
+
+        sum += weight;
+        ret += GetHdr(huv) * weight;
+    }
 	
 	for (int i = 1; i <= max; i++)
 	{
-		ret += GetShadowFiltered(OffsetHuvV(huv, i)) * GaussianWeights[i];
-	}
+        float4 c = OffsetHuvV(huv, i);
+        float weight = (GetDofBlurinessFactor(c) * GaussianWeights[i]);
+
+        sum += weight;
+        ret += GetHdr(c) * weight;
+    }
+
+    ret /= sum;
 	
 	return ret;
 }
-#endif
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // vertexes
@@ -289,118 +335,103 @@ vsOut VertexDeferredLight(vsIn aIn)
 //////////////////////////////////////////////////////////////////////////////////////////
 // fragments
 //////////////////////////////////////////////////////////////////////////////////////////
-float3 AoVer2Contrib(float4 coords, float3 aViewPosition, float4 aPixelPlane)
+float AoContrib(float4 coords, float3 aViewPosition, float4 aPixelPlane)
 {
 	float3 vp = GetViewPosition(coords, GetDeferredDepth(coords));
 	float  dc = DotCoordinate(aPixelPlane, vp);
-	float3 df = (vp - aViewPosition);
-	float3 ao = df;
 	
-#	if JZ_DISABLE_DIRECTIONAL_AO
-		float f = (dc > kNormalDistanceMin) ? (1.0 - (1.0 / (1.0 + dot(ao, ao)))) : 1.0;
-		float3 ret = float3(f, f, f);
-#	else
-		float3 ret = (dc > kNormalDistanceMin) ? (kOne3 - (1.0 / (kOne3 + (ao * ao)))) : kOne3;
-#	endif
-	
-	return ret;
+    float f = (exp(kAoBiasFactor * min(kNormalDistanceMin - dc, 0.0)));
+
+	return f;
 }
 
-float4 FragmentAOPass1(vsOut aIn) : COLOR
+#define JZ_ENABLE_AO_SCALE 1
+float ApplyAoScale(float f)
 {
+#	if JZ_ENABLE_AO_SCALE
+        static const float kCompressionFactor = 0.1;
+        if (AoScale < -kCompressionFactor - kZeroTolerance)
+        {
+            float absAoScale = abs(AoScale) - kCompressionFactor;
+            if (f <= absAoScale) { f = (f / absAoScale) * 0.01; }
+            else { f = (f - absAoScale) / (1.0 - absAoScale); }
+
+            return f;
+        }
+        else
+        {
+		    float ret = saturate((f + AoScale) / (1.0 + AoScale));
+	
+		    return ret;
+        }
+#	else
+		return f;
+#	endif
+}
+
+float4 FragmentAO(vsOut aIn) : COLOR
+{
+    static const float kAngleFactor = (kTwoPi / kTapsRt);
+    static const float kScaleFactor = (1.0 / kTapsRt);
+
 	float4 nd = GetDeferredNormalAndDepth(aIn.ScreenHTexCoords);
 	float3 vPos = GetViewPosition(aIn.ScreenHTexCoords, nd.w);
 	float4 plane = GetPlane(nd.xyz, vPos);
 	
 	float2 scale = AoRadius * (-CameraFocalLength / vPos.z);
 	
-	float3 accum = kZero3;
-	for (float i = 0; i < kCircularTaps; i++)
-	{
-		float2 t = (RandomVectors[i].xy * scale);
-		float4 c = OffsetHuv(aIn.ScreenHTexCoords, t);
+	float accum = 0.0;
+    [unroll(kTapsRt)]
+    for (int i = 0; i < kTapsRt; i++)
+    {
+        [unroll(kTapsRt)]
+        for (int j = 0; j < kTapsRt; j++)
+        {
+            float scl = (i * kScaleFactor);
+            float ang = (j * kAngleFactor);
+
+            float2 v = float2(cos(ang) * scl, sin(ang) * scl);
+		    float2 t = (v * scale);
+		    float4 c = OffsetHuv(aIn.ScreenHTexCoords, t);
 		
-		accum += AoVer2Contrib(c, vPos, plane);
-	}
+		    accum += AoContrib(c, vPos, plane);
+        }
+    }
 
-	float3 f = (accum / kCircularTaps);
+    float3 diffuse = GetDeferredDiffuse(aIn.ScreenHTexCoords).rgb;
+	float f = ApplyAoScale(accum / kCircularTaps);
 	
-	return float4(f, 0.0);
-}
-
-float4 FragmentAOPass2(vsOut aIn) : COLOR
-{
-#	if JZ_DISABLE_BLUR
-		float3 f = GetAO(aIn.ScreenHTexCoords);
-#	else
-		float3 f = BlurAOPass2(aIn.ScreenHTexCoords);
-#	endif
-
-	return float4(f, 0.0);
-}
-
-#define JZ_ENABLE_AO_SCALE 1
-float3 ApplyAoScale(float3 f)
-{
-#	if JZ_ENABLE_AO_SCALE
-		float3 ret = saturate((f + float3(AoScale, AoScale, AoScale)) / (kOne3 + float3(AoScale, AoScale, AoScale)));
-	
-		return ret;
-#	else
-		return f;
-#	endif
-}
-
-float4 FragmentAOPass3(vsOut aIn) : COLOR0
-{
-#	if JZ_DISABLE_BLUR
-		float3 f = ApplyAoScale(GetAO(aIn.ScreenHTexCoords));
-#	else
-		float3 f = ApplyAoScale(BlurAOPass3(aIn.ScreenHTexCoords));
-#	endif
-
-	float4 nd = GetDeferredNormalAndDepth(aIn.ScreenHTexCoords);
-
-#	if JZ_DEBUG_AO
-		float4 ret = float4(f, nd.w);
-#	else
-		float4 ret = float4(nd.xyz * f, nd.w);
-#	endif
-	
-	return ret;	
+    return float4(diffuse, f);
 }
 
 litFbOut FragmentLdrPass(vsOut aIn)
 {
-#	if JZ_DEBUG_AO
-		litFbOut ret = Out(float4(GetDeferredNormal(aIn.ScreenHTexCoords), 1.0));
-		return ret;
-#	else	
+    litFbOut ret;
+    if (bDebugAO)
+    {
+        float ao = GetDeferredDiffuse(aIn.ScreenHTexCoords).a;
+        ret = Out(float4(ao, ao, ao, 1.0));
+    }
+    else
+    {
 		float4 litColor = GetDeferredLit(aIn.ScreenHTexCoords);
 		
-		litFbOut ret = Out(LinearToNonLinear(litColor));
-		return ret;
-#	endif
+		ret = Out(LinearToNonLinear(litColor));
+    }
+	
+    return ret;
 }
 
 float4 FragmentShadowBlurPass1(vsOut aIn) : COLOR0
 {
-#   if JZ_DISABLE_BLUR
-        float4 ret = float4(GetShadow(aIn.ScreenHTexCoords), 0, 0, 0);
-#   else
-        float4 ret = float4(GetShadowBlurPass2(aIn.ScreenHTexCoords), 0, 0, 0);
-#   endif
+    float4 ret = float4(GetShadowBlurPass2(aIn.ScreenHTexCoords), 0, 0, 0);
 
     return ret;
 }
 
 float4 FragmentShadowBlurPass2(vsOut aIn) : COLOR0
 {
-#   if JZ_DISABLE_BLUR
-        float4 ret = float4(GetShadow(aIn.ScreenHTexCoords), 0, 0, 0);
-#   else
-        float4 ret = float4(GetShadowBlurPass2(aIn.ScreenHTexCoords), 0, 0, 0);
-#   endif
+    float4 ret = float4(GetShadowBlurPass2(aIn.ScreenHTexCoords), 0, 0, 0);
 
     return ret;
 }
@@ -417,7 +448,7 @@ float4 FragmentBloomProcess(vsOut aIn) : COLOR
 
 float4 FragmentBloomBlurPass1(vsOut aIn) : COLOR
 {
-	float3 f = BlurAOPass2(aIn.ScreenHTexCoords);
+	float3 f = GetHdrBlurPass1(aIn.ScreenHTexCoords);
 
 	return float4(f, 0.0);
 }
@@ -425,29 +456,56 @@ float4 FragmentBloomBlurPass1(vsOut aIn) : COLOR
 float4 FragmentBloomBlurPass2(vsOut aIn) : COLOR0
 {
     float4 b = GetDeferredLit(aIn.ScreenHTexCoords);
-    float3 f = BlurAOPass3(aIn.ScreenHTexCoords);
+    float3 f = GetHdrBlurPass2(aIn.ScreenHTexCoords);
 
     float4 ret = float4(b.rgb + f, b.a);
 
     return ret;
 }
 
+float4 FragmentDofBlurPass1(vsOut aIn) : COLOR0
+{
+#   if JZ_DISABLE_DOF_HALO_COMPENSATION
+        float3 bc = GetHdrBlurPass1(aIn.ScreenHTexCoords);
+#   else
+        float3 bc = GetDofBlurPass1(aIn.ScreenHTexCoords);
+#   endif
+
+    return float4(bc, 0.0);
+}
+
+float4 FragmentDofBlurPass2(vsOut aIn) : COLOR0
+{
+#   if JZ_DISABLE_DOF_HALO_COMPENSATION
+        float3 bc = GetHdrBlurPass2(aIn.ScreenHTexCoords);
+#   else
+        float3 bc = GetDofBlurPass2(aIn.ScreenHTexCoords);
+#   endif
+
+    float4 c = GetDeferredLit(aIn.ScreenHTexCoords);
+    float t = GetDofBlurinessFactor(aIn.ScreenHTexCoords);
+
+    float3 ret = lerp(c.rgb, bc, t);
+
+    return float4(ret, c.a);
+}
+
 float4 FragmentDirectional(vsOut aIn) : COLOR
 {
 	float4 nd = GetDeferredNormalAndDepth(aIn.ScreenHTexCoords);
-	float3 diffuse = GetDeferredDiffuse(aIn.ScreenHTexCoords);
+	float4 diffuse = GetDeferredDiffuse(aIn.ScreenHTexCoords);
 
 	float3 nv = (nd.xyz);
 	float ndotl = dot(nv, -LightV);
 
 	float3 lightColor = max(ndotl, 0.0) * LightColor;
-	float3 color = (diffuse * lightColor);
+	float3 color = (diffuse.rgb * lightColor);
 		
 #	if !NDEBUG
 		if (bDebugDeferred) { color = kDebugDirectionalColor; }
 #	endif
 
-    return float4(color, 1);
+    return float4(color * diffuse.a, 1);
 }
 
 float4 FragmentPoint(vsOut aIn) : COLOR
@@ -456,7 +514,7 @@ float4 FragmentPoint(vsOut aIn) : COLOR
     float distance;
     float3 vPos;
     
-	float3 color = GetNonDirectionalLight(aIn, lv, distance, vPos);
+	float3 color = GetNonDirectionalLight(aIn, lv, distance, vPos, true);
 #   if !NDEBUG
 		if (bDebugDeferred) { color = kDebugPointColor; }
 #	endif
@@ -470,7 +528,7 @@ float4 FragmentSpot(vsOut aIn) : COLOR
     float distance;
     float3 vPos;
 
-	float3 color = GetNonDirectionalLight(aIn, lv, distance, vPos);
+	float3 color = GetNonDirectionalLight(aIn, lv, distance, vPos, true);
 	float spot = GetSpotFactor(lv, SpotDirection, SpotFalloffExponent, SpotFalloffCosHalfAngle);
 
 #   if !NDEBUG
@@ -489,7 +547,7 @@ float4 FragmentSpotWithShadow(vsOut aIn) : COLOR
     float distance;
     float3 vPos;
 
-	float3 color = GetNonDirectionalLight(aIn, lv, distance, vPos);
+	float3 color = GetNonDirectionalLight(aIn, lv, distance, vPos, true);
 	float spot = GetSpotFactor(lv, SpotDirection, SpotFalloffExponent, SpotFalloffCosHalfAngle);
 	
 	float4 shadowTexCoords = mul(float4(vPos, 1.0), ShadowTransform);
@@ -534,11 +592,16 @@ float4 FragmentMotionBlur(vsOut aIn) : COLOR0
 
     float4 uv = aIn.ScreenHTexCoords;
     float3 color = kZero3;
+
+    // Renormalize, GaussianWeights are normalized for symmetrical kernel
+    float sum = 0.0;
     for (int i = 0; i < kMotionBlurTaps; i++)
     {
+        sum += GaussianWeights[i];
         color += GetDeferredLit(uv).rgb * GaussianWeights[i];
         uv += offset;
     }
+    color /= sum;
 
     float4 ret = float4(color, 1.0);
 
@@ -548,26 +611,7 @@ float4 FragmentMotionBlur(vsOut aIn) : COLOR0
 //////////////////////////////////////////////////////////////////////////////////////////
 // techniques
 //////////////////////////////////////////////////////////////////////////////////////////
-technique AoPass1
-{
-    pass
-    {
-		DISABLE_STENCIL
-		JZ_LIT_OUTPUT		
-		
-        AlphaTestEnable = false;
-        AlphaBlendEnable = false;
-        CullMode = BACK_FACE_CULLING;
-        FillMode = Solid;
-		ZEnable = false;
-        ZWriteEnable = false;
-
-		VertexShader = compile vs_2_a VertexQuad();
-		PixelShader = compile ps_2_a FragmentAOPass1();
-    }
-}
-
-technique AoPass2
+technique Ao
 {
     pass
     {
@@ -582,26 +626,7 @@ technique AoPass2
         ZWriteEnable = false;
 
 		VertexShader = compile vs_2_a VertexQuad();
-		PixelShader = compile ps_2_a FragmentAOPass2();
-    }
-}
-
-technique AoPass3
-{
-    pass
-    {
-		DISABLE_STENCIL
-		JZ_LIT_OUTPUT
-		
-        AlphaTestEnable = false;
-        AlphaBlendEnable = false;
-        CullMode = BACK_FACE_CULLING;
-        FillMode = Solid;
-		ZEnable = false;
-        ZWriteEnable = false;
-
-		VertexShader = compile vs_2_a VertexQuad();
-		PixelShader = compile ps_2_a FragmentAOPass3();
+		PixelShader = compile ps_2_a FragmentAO();
     }
 }
 
@@ -638,13 +663,8 @@ technique ShadowBlurPass1
 		ZEnable = false;
         ZWriteEnable = false;
 
-#if JZ_MATH_CORRECT_SHADOW_FILTERING
-		VertexShader = compile vs_2_a VertexQuad();
-		PixelShader = compile ps_2_a FragmentShadowBlurPass1();
-#else
 		VertexShader = compile vs_2_0 VertexQuad();
 		PixelShader = compile ps_2_0 FragmentShadowBlurPass1();
-#endif
     }
 }
 
@@ -662,13 +682,8 @@ technique ShadowBlurPass2
 		ZEnable = false;
         ZWriteEnable = false;
 
-#if JZ_MATH_CORRECT_SHADOW_FILTERING
-		VertexShader = compile vs_2_a VertexQuad();
-		PixelShader = compile ps_2_a FragmentShadowBlurPass2();
-#else
 		VertexShader = compile vs_2_0 VertexQuad();
 		PixelShader = compile ps_2_0 FragmentShadowBlurPass2();
-#endif
     }
 }
 
@@ -729,7 +744,7 @@ technique BloomBlurPass2
     }
 }
 
-technique MotionBlur
+technique DofBlurPass1
 {
     pass
     {
@@ -744,7 +759,45 @@ technique MotionBlur
         ZWriteEnable = false;
 
 		VertexShader = compile vs_2_a VertexQuad();
-		PixelShader = compile ps_2_a FragmentMotionBlur();        
+		PixelShader = compile ps_2_a FragmentDofBlurPass1();
+    }
+}
+
+technique DofBlurPass2
+{
+    pass
+    {
+		DISABLE_STENCIL
+		JZ_LIT_OUTPUT
+		
+        AlphaTestEnable = false;
+        AlphaBlendEnable = false;
+        CullMode = BACK_FACE_CULLING;
+        FillMode = Solid;
+		ZEnable = false;
+        ZWriteEnable = false;
+
+		VertexShader = compile vs_2_a VertexQuad();
+		PixelShader = compile ps_2_a FragmentDofBlurPass2();
+    }
+}
+
+technique MotionBlur
+{
+    pass
+    {
+		DISABLE_STENCIL
+		JZ_LIT_OUTPUT
+		
+        AlphaTestEnable = false;
+        AlphaBlendEnable = false;
+        CullMode = BACK_FACE_CULLING;
+        FillMode = Solid;
+		ZEnable = false;
+        ZWriteEnable = false;
+
+		VertexShader = compile vs_2_0 VertexQuad();
+		PixelShader = compile ps_2_0 FragmentMotionBlur();        
     }
 }
 

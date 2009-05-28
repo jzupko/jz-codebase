@@ -25,6 +25,7 @@
 #include <jz_core/Plane.h>
 #include <jz_core/Ray3D.h>
 #include <jz_core/Segment.h>
+#include <jz_core/Triangle3D.h>
 
 namespace jz
 {
@@ -193,6 +194,36 @@ namespace jz
         t = (aPlane.GetD() - Vector3::Dot(aPlane.GetNormal(), P0)) / Vector3::Dot(aPlane.GetNormal(), ab);
 
         return (t >= 0.0f && t <= 1.0f);
+    }
+
+    /// From: Ericson, C. 2005. "Real-Time Collision Detection",
+    ///     Elsevier, Inc. ISBN: 1-55860-732-3, page 191
+    bool Segment::Intersects(const Triangle3D& aTriangle, float& t) const
+    {
+        Vector3 ab = (aTriangle.P1 - aTriangle.P0);
+        Vector3 ac = (aTriangle.P2 - aTriangle.P0);
+        Vector3 qp = (P0 - P1);
+
+        Vector3 n = Vector3::Cross(ab, ac);
+        float d = Vector3::Dot(qp, n);
+        if (d <= 0.0f) { return false; }
+
+        Vector3 ap = (P0 - aTriangle.P0);
+        t = Vector3::Dot(ap, n);
+        if (t < 0.0f) { return false; }
+        if (t > d) { return false; }
+
+        Vector3 e = Vector3::Cross(qp, ap);
+        float v = Vector3::Dot(ac, e);
+        if (v < 0.0f || v > d) { return false; }
+
+        float w = -Vector3::Dot(ab, e);
+        if (w < 0.0f || (v + w) > d) { return false; }
+
+        float ood = (1.0f / d);
+        t *= ood;
+
+        return true;
     }
 
 }

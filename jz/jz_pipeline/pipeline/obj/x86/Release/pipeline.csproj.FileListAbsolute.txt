@@ -1,0 +1,5 @@
+D:\jz_dev\bin\release\pipeline.dll
+D:\jz_dev\bin\release\pipeline.pdb
+D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Release\ResolveAssemblyReference.cache
+D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Release\pipeline.dll
+D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Release\pipeline.pdb

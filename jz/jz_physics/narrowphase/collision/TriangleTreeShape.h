@@ -24,8 +24,8 @@
 #ifndef _JZ_PHYSICS_TRIANGLE_TREE_SHAPE_H_
 #define _JZ_PHYSICS_TRIANGLE_TREE_SHAPE_H_
 
-#include <jz_physics/TriangleTree.h>
 #include <jz_physics/narrowphase/collision/ICollisionShape.h>
+#include <jz_system/TriangleTree.h>
 
 namespace jz
 {
@@ -40,7 +40,7 @@ namespace jz
             {}
             virtual ~TriangleTreeShape() {}
 
-            TriangleTree mTriangleTree;
+            system::TriangleTree mTriangleTree;
 
             virtual bool bRotationallyInvariant() const override { return false; }
 

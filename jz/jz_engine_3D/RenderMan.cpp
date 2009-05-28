@@ -211,6 +211,17 @@ namespace jz
             }
         }
 
+        void RenderMan::ClearWithoutRender()
+        {
+            // Temp:
+            mConsoleText.clear();
+            // End Temp:
+
+            _ResetTrees();
+            _ClearInstanceBuffers();
+            mpDeferred->ClearLights();
+        }
+
         void RenderMan::Render()
         {
             using namespace graphics;
@@ -292,13 +303,7 @@ namespace jz
                 mPrevProjection = mProjection;
             }
 
-            // Temp:
-            mConsoleText.clear();
-            // End Temp:
-
-            _ResetTrees();
-            _ClearInstanceBuffers();
-            mpDeferred->ClearLights();
+            ClearWithoutRender();
         }
 
         void RenderMan::_ResetTrees()

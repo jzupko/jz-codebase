@@ -315,7 +315,7 @@ namespace jz
 
             if (cpa && cpb)
             {
-                const vector<TriangleTree::Node>& nodes = cpb->mTriangleTree.GetNodes();
+                const vector<system::TriangleTree::Node>& nodes = cpb->mTriangleTree.GetNodes();
                 const size_t size = nodes.size();
 
                 CoordinateFrame3D aInBcf = pa->mFrame * CoordinateFrame3D::Invert(pb->mFrame);

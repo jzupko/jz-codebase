@@ -41,7 +41,7 @@ namespace jz
     namespace engine_3D
     {
 
-        static const float kDefaultGaussianKernelStdDev = 1.5f;
+        static const float kDefaultGaussianKernelStdDev = 2.0f;
         static const float kMinimumGaussianStdDev = Constants<float>::kZeroTolerance;
         static const char* kEffectFile = "engine_3D_deferred.cfx";
 
@@ -50,13 +50,13 @@ namespace jz
         static const float kDefaultMotionBlurAmount = 0.25f;
         static const float kDefaultBloomThreshold = 0.9f;
 
-        static const float kDefaultAoScale = -0.3f;
-        static const float kMinAoScale = -0.9f;
-        static const float kMaxAoScale =  0.9f;
+        static const float kDefaultAoScale = -0.5f;
+        static const float kMinAoScale = -0.99f;
+        static const float kMaxAoScale =  0.99f;
 
-        static const float kDefaultAoRadius = 64.0f;
-        static const float kMinAoRadius = 1.0f;
-        static const float kMaxAoRadius = 64.0f;
+        static const float kDefaultAoRadius = 0.5f;
+        static const float kMinAoRadius = 0.0f;
+        static const float kMaxAoRadius = 1.0f;
 
         static const graphics::Target::Format kMrtFormats[Deferred::kMrtCount] = 
         {
@@ -94,7 +94,8 @@ namespace jz
             mAoRadius(kDefaultAoRadius),
             mAoScale(kDefaultAoScale),
             mbDebugAO(false),
-            mbDebugDeferredLighting(false)
+            mbDebugDeferredLighting(false),
+            mFocusDistances(0.0, 0.0f, 0.0f)
         {
             SetGaussianKernelStdDev(kDefaultGaussianKernelStdDev);
         }
@@ -155,11 +156,12 @@ namespace jz
 
             JZ_HELPER(jz_GaussianWeights);
             JZ_HELPER(jz_HdrTexture);
-            JZ_HELPER(jz_RandomVectors);
 
             JZ_HELPER(jz_AoRadius);
             JZ_HELPER(jz_AoScale);
             JZ_HELPER(jz_bDebugAO);
+
+            JZ_HELPER(jz_FocusDistances);
 
             JZ_HELPER(jz_bDebugDeferred);
             JZ_HELPER(jz_LightAttenuation);
@@ -171,9 +173,7 @@ namespace jz
 #           undef JZ_HELPER
 
 #           define JZ_HELPER(name) m##name = mEffect->GetTechniqueByName(#name)
-            JZ_HELPER(AoPass1);
-            JZ_HELPER(AoPass2);
-            JZ_HELPER(AoPass3);
+            JZ_HELPER(Ao);
             JZ_HELPER(LdrPass);
             JZ_HELPER(ShadowBlurPass1);
             JZ_HELPER(ShadowBlurPass2);
@@ -181,6 +181,8 @@ namespace jz
             JZ_HELPER(BloomProcess);
             JZ_HELPER(BloomBlurPass1);
             JZ_HELPER(BloomBlurPass2);
+            JZ_HELPER(DofBlurPass1);
+            JZ_HELPER(DofBlurPass2);
 
             JZ_HELPER(Directional);
             JZ_HELPER(Point);
@@ -190,25 +192,6 @@ namespace jz
             JZ_HELPER(SpotAsQuad);
             JZ_HELPER(SpotWithShadowAsQuad);
 #           undef JZ_HELPER
-
-            #pragma region Random vectors
-            {
-                const Radian kAngleFactor = (Radian::kTwoPi / kTapsRt);
-                const float kScaleFactor = (1.0f / kTapsRt);
-
-                int index = 0;
-                for (int i = 0; i < kTapsRt; i++)
-                {
-                    for (int j = 0; j < kTapsRt; j++)
-                    {
-                        float scl  = ((float)i * kScaleFactor) + (UniformRandomf() * kScaleFactor);
-                        Radian ang = ((float)j * kAngleFactor) + (UniformRandomf() * kAngleFactor);
-
-                        mRandomVectors[index++] = Vector4(Cos(ang) * scl, Sin(ang) * scl, 0.0f, 0.0f);
-                    }
-                }
-            }
-            #pragma endregion
         }
 
         void Deferred::_Unload()
@@ -241,9 +224,10 @@ namespace jz
             jz_MrtTexture1.Reset();
             jz_MrtTexture0.Reset();
 
+            jz_FocusDistances.Reset();
+
             jz_GaussianWeights.Reset();
             jz_HdrTexture.Reset();
-            jz_RandomVectors.Reset();
             jz_AoRadius.Reset();
             jz_AoScale.Reset();
             jz_bDebugAO.Reset();
@@ -256,15 +240,15 @@ namespace jz
             jz_SpotFalloffCosHalfAngle.Reset();
             jz_SpotFalloffExponent.Reset();
 
+            mDofBlurPass2.Reset();
+            mDofBlurPass1.Reset();
             mBloomBlurPass2.Reset();
             mBloomBlurPass1.Reset();
             mBloomProcess.Reset();
             mMotionBlur.Reset();
             mShadowBlurPass2.Reset();
             mShadowBlurPass1.Reset();
-            mAoPass1.Reset();
-            mAoPass2.Reset();
-            mAoPass3.Reset();
+            mAo.Reset();
             mLdrPass.Reset();
 
             mDirectional.Reset();
@@ -398,22 +382,12 @@ namespace jz
             RenderMan& rm = RenderMan::GetSingleton();
 
             mHdrTargets[0]->SetToDevice(0u);
-            mEffect->SetTechnique(mAoPass1);
+            mEffect->SetTechnique(mAo);
             _DoPasses(rm.GetUnitQuadMesh());
 
-            mHdrTargets[1]->SetToDevice(0u);
-            jz_HdrTexture.Set(mHdrTargets[0]);
-            mEffect->SetTechnique(mAoPass2);
-            _DoPasses(rm.GetUnitQuadMesh());
-
-            mHdrTargets[0]->SetToDevice(0u);
-            jz_HdrTexture.Set(mHdrTargets[1]);
-            mEffect->SetTechnique(mAoPass3);
-            _DoPasses(rm.GetUnitQuadMesh());
-
-            Swap(mHdrTargets[0], mTargets[1]);
+            Swap(mHdrTargets[0], mTargets[2]);
             mTargets[0]->SetToDevice(0u);
-            jz_MrtTexture1.Set(mTargets[1]);
+            jz_MrtTexture2.Set(mTargets[2]);
         }
 
         void Deferred::_DeferredLighting()
@@ -590,6 +564,31 @@ namespace jz
             _DoPasses(rm.GetUnitQuadMesh());
 
             Swap(mHdrTargets[0], mTargets[0]);
+            jz_MrtTexture0.Set(mTargets[0]);
+        }
+
+        void Deferred::_Dof()
+        {
+            using namespace graphics;
+
+            RenderMan& rm = RenderMan::GetSingleton();
+
+            jz_FocusDistances.Set(mFocusDistances);
+
+            Target::ResetTarget(0u);
+            jz_HdrTexture.Set(mTargets[0]);
+            mHdrTargets[0]->SetToDevice(0u);
+            mEffect->SetTechnique(mDofBlurPass1);
+            _DoPasses(rm.GetUnitQuadMesh());
+
+            jz_MrtTexture0.Set(mTargets[0]);
+            jz_HdrTexture.Set(mHdrTargets[0]);
+            mHdrTargets[1]->SetToDevice(0u);
+            mEffect->SetTechnique(mDofBlurPass2);
+            _DoPasses(rm.GetUnitQuadMesh());
+
+            Swap(mHdrTargets[1], mTargets[0]);
+            jz_MrtTexture0.Set(mTargets[0]);
         }
 
         void Deferred::_MotionBlur()
@@ -633,6 +632,7 @@ namespace jz
 
         void Deferred::_InitPost()
         {
+            static const float kAoRadiusFactor = 0.25f;
             using namespace graphics;
 
             Graphics& gd = Graphics::GetSingleton();
@@ -643,10 +643,11 @@ namespace jz
             jz_World.Set(Matrix4::kIdentity);
 
             jz_Gamma.Set(rm.GetGamma());
-            jz_RandomVectors.Set<kCircularTaps>(mRandomVectors);
             jz_GaussianWeights.Set<kGaussianKernelRadius>(mGaussianWeights);
 
-            jz_AoRadius.Set(mAoRadius);
+            float aoRadius = Min(gd.GetViewportHeight(), gd.GetViewportWidth()) * kAoRadiusFactor * mAoRadius;
+
+            jz_AoRadius.Set(aoRadius);
             jz_AoScale.Set(mAoScale);
             jz_bDebugAO.Set(mbDebugAO);
 
@@ -680,6 +681,7 @@ namespace jz
             _InitPost();
             _PushScreenDimensions(gd.GetViewportWidth(), gd.GetViewportHeight());
             _Bloom();
+            _Dof();
             _MotionBlur();
             _Ldr();
         }

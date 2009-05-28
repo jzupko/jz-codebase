@@ -306,14 +306,6 @@
 			</Filter>
 		</Filter>
 		<File
-			RelativePath="..\jz_physics\TriangleTree.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\jz_physics\TriangleTree.h"
-			>
-		</File>
-		<File
 			RelativePath="..\jz_physics\World.cpp"
 			>
 		</File>

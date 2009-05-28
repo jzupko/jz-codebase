@@ -42,6 +42,11 @@ namespace jz.cb
             new VertexElement(0, 0, VertexElementFormat.Vector3, VertexElementMethod.Default, VertexElementUsage.Position, 0),
             new VertexElement(0, (3 * sizeof(float)), VertexElementFormat.Vector3, VertexElementMethod.Default, VertexElementUsage.TextureCoordinate, 0)
         };
+        private static readonly VertexElement[] mkV3C3Declaration = new VertexElement[]
+        {
+            new VertexElement(0, 0, VertexElementFormat.Vector3, VertexElementMethod.Default, VertexElementUsage.Position, 0),
+            new VertexElement(0, (3 * sizeof(float)), VertexElementFormat.Vector3, VertexElementMethod.Default, VertexElementUsage.Color, 0)
+        };
 
         private static readonly UInt16[] mkInstancingIndices;
         private static readonly float[] mkInstancingVertices;
@@ -312,6 +317,18 @@ namespace jz.cb
 
             if (item.Checked) { mFlags |= BuilderFlags.ProcessColladaFiles; }
             else { mFlags &= ~BuilderFlags.ProcessColladaFiles; }
+        }
+
+        private void v3C3VertexToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DocInfo info;
+            info.BaseFilename = kFilename;
+            info.Filename = Path.Combine(mInDirectory, kFilename);
+            info.InAbsDirectory = mInDirectory;
+            info.OutRelDirectory = "";
+            info.OutAbsDirectory = mOutDirectory;
+
+            Helpers.Write(null, info, mkV3C3Declaration);
         }
 
     }

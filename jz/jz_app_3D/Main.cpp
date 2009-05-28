@@ -20,6 +20,10 @@
 // THE SOFTWARE.
 // 
 
+/*! \mainpage JZ
+ * <img src="jz.png">
+ */
+
 // #define DEBUG_PHYSICS 1
 // #define DEBUG_SHADOWS 1
 // #define DEBUG_DEFERRED 1
@@ -33,6 +37,9 @@
 #define ADD_GUI 0
 #define FPS_COUNTER 1
 #define ADD_RIGID_BODIES 0
+#define USE_FILE_ARCHIVE 0
+#define TEST_RADIOSITY 0
+#define TEST_DOF 1
 
 // Note: deferred must currently always be enabled. Forward rendering has not been completely implemented.
 #define DEFERRED 1
@@ -68,6 +75,10 @@
 #include <jz_physics/narrowphase/Body.h>
 #include <jz_physics/narrowphase/collision/Collide.h>
 #include <jz_physics/narrowphase/collision/SphereShape.h>
+#include <jz_physics/narrowphase/collision/TriangleTreeShape.h>
+#if TEST_RADIOSITY
+#   include <jz_gi/RadiosityMan.h>
+#endif
 #include <jz_sail/ThreePointLighting.h>
 #include <jz_system/Files.h>
 #include <jz_system/Input.h>
@@ -237,8 +248,11 @@
     // This is currently a global term. Eventually, it should be attached to individal LightNodes.
     static const float kShadowControlStep = 0.01f;
     static const float kGaussianStdDevStep = 0.1f;
+    static const float kAoRadiusStep = 0.02f;
+    static const float kAoScaleStep = 0.01f;
     static bool KeyHandler(jz::system::Key::Code aCode, jz::system::Key::State aState)
     {
+        jz::engine_3D::Deferred& deferred = jz::engine_3D::Deferred::GetSingleton();
         if (aCode == jz::system::Key::kEscape && aState == jz::system::Key::kReleased)
         {
             bool bFullscreen = (jz::graphics::Graphics::GetSingleton().GetFullscreen());
@@ -249,25 +263,45 @@
                 return true;
             }
         }
+        else if (aCode == jz::system::Key::kF1 && aState == jz::system::Key::kPressed)
+        {
+            deferred.SetDebugAO(!deferred.bDebugAO());
+        }   
+        else if (aCode == jz::system::Key::kF2 && aState == jz::system::Key::kPressed)
+        {
+            deferred.SetDebugDeferredLighting(!deferred.bDebugDeferredLighting());
+        }
         else if (aCode == jz::system::Key::kUp && aState == jz::system::Key::kPressed)
         {
-            jz::engine_3D::Deferred::GetSingleton().SetShadowControlTerm(
-                jz::engine_3D::Deferred::GetSingleton().GetShadowControlTerm() + kShadowControlStep);
+            deferred.SetShadowControlTerm(deferred.GetShadowControlTerm() + kShadowControlStep);
         }
         else if (aCode == jz::system::Key::kDown && aState == jz::system::Key::kPressed)
         {
-            jz::engine_3D::Deferred::GetSingleton().SetShadowControlTerm(
-                jz::engine_3D::Deferred::GetSingleton().GetShadowControlTerm() - kShadowControlStep);
+            deferred.SetShadowControlTerm(deferred.GetShadowControlTerm() - kShadowControlStep);
         }
         else if (aCode == jz::system::Key::kRight && aState == jz::system::Key::kPressed)
         {
-            jz::engine_3D::Deferred::GetSingleton().SetGaussianKernelStdDev(
-                jz::engine_3D::Deferred::GetSingleton().GetGaussianKernelStdDev() + kGaussianStdDevStep);
+            deferred.SetGaussianKernelStdDev(deferred.GetGaussianKernelStdDev() + kGaussianStdDevStep);
         }
         else if (aCode == jz::system::Key::kLeft && aState == jz::system::Key::kPressed)
         {
-            jz::engine_3D::Deferred::GetSingleton().SetGaussianKernelStdDev(
-                jz::engine_3D::Deferred::GetSingleton().GetGaussianKernelStdDev() - kGaussianStdDevStep);
+            deferred.SetGaussianKernelStdDev(deferred.GetGaussianKernelStdDev() - kGaussianStdDevStep);
+        }
+        else if (aCode == jz::system::Key::kNumpad6 && aState == jz::system::Key::kPressed)
+        {
+            deferred.SetAoRadius(deferred.GetAoRadius() + kAoRadiusStep);
+        }
+        else if (aCode == jz::system::Key::kNumpad4 && aState == jz::system::Key::kPressed)
+        {
+            deferred.SetAoRadius(deferred.GetAoRadius() - kAoRadiusStep);
+        }
+        else if (aCode == jz::system::Key::kNumpad8 && aState == jz::system::Key::kPressed)
+        {
+            deferred.SetAoScale(deferred.GetAoScale() + kAoScaleStep);
+        }
+        else if (aCode == jz::system::Key::kNumpad2 && aState == jz::system::Key::kPressed)
+        {
+            deferred.SetAoScale(deferred.GetAoScale() - kAoScaleStep);
         }
 
         return false;
@@ -310,7 +344,7 @@
             {
                 Vector3 vp = Vector3::TransformPosition(gspPickedNode->GetWorldTransform(), gsLocalPickPoint);
                 Vector3 vpp = engine_3D::PickMan::GetSingleton().Project(vp);
-                
+
                 vpp.X = (float)x;
                 vpp.Y = (float)y;
 
@@ -328,43 +362,60 @@
             
             if (aButton == Mouse::kRight)
             {
-                if (aState == Mouse::kPressed && !gspPickedNode)
+                if (aState == Mouse::kPressed)
                 {
-                    natural x = Input::GetSingleton().GetMouseX();
-                    natural y = Input::GetSingleton().GetMouseY();
-
-                    Ray3D ray = PickMan::GetSingleton().GetPickingRay(x, y);
-
-                    gspRoot->Apply<MeshNode>(tr1::bind(PickHelper, tr1::placeholders::_1, ray));
-
-                    #pragma region Render and handle pick
+                    if (!gspPickedNode)
                     {
-                        IPickable* p;
-                        float depth;
-                        RectangleU rect;
-                        rect.Top = y;
-                        rect.Bottom = (y + 1);
-                        rect.Left = x;
-                        rect.Right = (x + 1);
+                        natural x = Input::GetSingleton().GetMouseX();
+                        natural y = Input::GetSingleton().GetMouseY();
 
-                        if (PickMan::GetSingleton().Pick(rect, p, depth))
+                        Ray3D ray = PickMan::GetSingleton().GetPickingRay(x, y);
+
+                        gspRoot->Apply<MeshNode>(tr1::bind(PickHelper, tr1::placeholders::_1, ray));
+
+                        #pragma region Render and handle pick
                         {
-                            gspPickedNode = dynamic_cast<engine_3D::MeshNode*>(p);
+                            IPickable* p;
+                            float depth;
+                            RectangleU rect;
+                            rect.Top = y;
+                            rect.Bottom = (y + 1);
+                            rect.Left = x;
+                            rect.Right = (x + 1);
 
-                            if (gspPickedNode)
+                            if (PickMan::GetSingleton().Pick(rect, p, depth))
                             {
-                                gsPickedDepth = depth;
+                                gspPickedNode = dynamic_cast<engine_3D::MeshNode*>(p);
 
-                                Vector3 v = Vector3((float)x, (float)y, depth);
-                                Vector3 wv = PickMan::GetSingleton().UnProject(v);
-                                gsLocalPickPoint = Vector3::TransformPosition(Matrix4::Invert(gspPickedNode->GetWorldTransform()), wv);
+                                if (gspPickedNode)
+                                {
+                                    gsPickedDepth = depth;
+
+                                    Vector3 v = Vector3((float)x, (float)y, depth);
+                                    Vector3 wv = PickMan::GetSingleton().UnProject(v);
+                                    gsLocalPickPoint = Vector3::TransformPosition(Matrix4::Invert(gspPickedNode->GetWorldTransform()), wv);
+
+#                                   if TEST_DOF
+                                    {
+                                        float distance = Vector3::Distance(gspPickedNode->GetBoundingSphere().Center, RenderMan::GetSingleton().GetInverseView().GetTranslation());
+                                        Deferred::GetSingleton().SetFocusDistances(Vector3(
+                                            distance,
+                                            0.80f * gspPickedNode->GetBoundingSphere().Radius,
+                                            gspPickedNode->GetBoundingSphere().Radius));
+                                    }
+#                                   endif
+                                }
                             }
                         }
+                        #pragma endregion
                     }
-                    #pragma endregion
                 }
                 else
                 {
+#                   if TEST_DOF
+                        Deferred::GetSingleton().SetFocusDistances(Vector3::kZero);
+#                   endif
+
                     gsLocalPickPoint = Vector3::kZero;
                     gspPickedNode = null;
                     gsPickedDepth = 0.0f;
@@ -394,6 +445,9 @@
                 using namespace jz::graphics;
                 using namespace jz::gui;
                 using namespace jz::physics;
+#               if TEST_RADIOSITY
+                    using namespace jz::gi;
+#               endif
                 using namespace jz::sail;
                 using namespace jz::system;
                 
@@ -411,7 +465,12 @@
                         tr1::bind(Files::SetWorkingDirectory, origDir));
 
                     Files& files = Files::GetSingleton();
-                    files.AddArchive(new ZipArchive("media.dat"));
+
+#                   if USE_FILE_ARCHIVE
+                        files.AddArchive(new FileArchive("../media/compiled"));
+#                   else
+                        files.AddArchive(new ZipArchive("media.dat"));
+#                   endif
 
 #                   if JZ_MULTITHREADED
                         Loader loader;
@@ -479,9 +538,23 @@
                         pCamera->SetActive(true);
                         pCamera->SetParent(pRoot.Get());
 
+#                       if TEST_RADIOSITY
+                        RadiosityMan radMan;
+
+                        if (pPhysicsNode.IsValid())
+                        {
+                            radMan.GetTree() = pPhysicsNode->GetWorldTree()->mTriangleTree;
+                        }
+
+                        for (u16 i = 0u; i < 3u; i++)
+                        {
+                            radMan.AddInitialRadiance(i, ColorRGB(1, 1, 1));
+                        }
+#                       endif
+
 #                       if ADD_RIGID_BODIES
                         static const float kBoxScale = 0.2f;
-                        static const int kBoxCount = 1;
+                        static const int kBoxCount = 25;
 
                         for (int i = 0; i < kBoxCount; i++)
                         {
@@ -650,6 +723,7 @@
                                 }
 
                                 pRoot->Update();
+
                                 profiler.End("Update");
                                 #pragma endregion
 
@@ -661,10 +735,12 @@
                                     mLetters[i]->Pose();
                                 }
 #endif
+#                               if !TEST_RADIOSITY
                                 Region frustum(-man.GetView().GetTranslation(), man.GetView() * man.GetProjection());
                                 pRoot->Apply<IRenderable>(tr1::bind(Poser, frustum, tr1::placeholders::_1));
                                 pRoot->Apply<LightNode>(tr1::bind(Lighter, frustum, pRoot, tr1::placeholders::_1));
                                 pRoot->Apply<ReflectivePlaneNode>(tr1::bind(Reflector, frustum, pRoot, tr1::placeholders::_1));
+#                               endif
                                 profiler.End("Pose");
                                 #pragma endregion
 
@@ -674,6 +750,10 @@
                                 man.AddConsoleLine("Avg update time: " + StringUtility::ToString(profiler.GetAverageSeconds("Update")));
                                 man.AddConsoleLine("Avg pose time: " + StringUtility::ToString(profiler.GetAverageSeconds("Pose")));
                                 man.AddConsoleLine("Avg draw time: " + StringUtility::ToString(profiler.GetAverageSeconds("Draw")));
+                                man.AddConsoleLine("Shadow Control Term: " + StringUtility::ToString(Deferred::GetSingleton().GetShadowControlTerm()));
+                                man.AddConsoleLine("Gaussian Kernel StdDev: " + StringUtility::ToString(Deferred::GetSingleton().GetGaussianKernelStdDev()));
+                                man.AddConsoleLine("AO Radius: " + StringUtility::ToString(Deferred::GetSingleton().GetAoRadius()));
+                                man.AddConsoleLine("AO Scale: " + StringUtility::ToString(Deferred::GetSingleton().GetAoScale()));
 #if JZ_PROFILING
                                 man.AddConsoleLine("Avg distance iterations: " + StringUtility::ToString(Collide::AverageMprDistanceIterations));
                                 man.AddConsoleLine("Avg collide iterations: " + StringUtility::ToString(Collide::AverageMprCollideIterations));
@@ -687,7 +767,17 @@
 
                                 #pragma region Draw
                                 profiler.Begin("Draw");
+#                               if !TEST_RADIOSITY
                                 man.Render();
+#                               else
+                                man.ClearWithoutRender();
+                                if (graphics.Begin(ColorRGBA::kWhite * 0.5f, true))
+                                {
+                                    man.SetStandardParameters();
+                                    radMan.Draw();
+                                    graphics.End(true);
+                                }
+#                               endif
                                 profiler.End("Draw");
                                 #pragma endregion
                             }

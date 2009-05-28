@@ -32,6 +32,7 @@ namespace jz
     struct BoundingSphere;
     struct Cylinder;
     struct Plane;
+    struct Triangle3D;
     struct Segment
     {
         Vector3 P0;
@@ -93,6 +94,7 @@ namespace jz
         bool Intersects(const BoundingSphere& bs, float& t) const;
         bool Intersects(const Cylinder& cyl, float& t) const;
         bool Intersects(const Plane& aPlane, float& t) const;
+        bool Intersects(const Triangle3D& aTriangle, float& t) const;
     };
 
     __inline bool operator==(const Segment& a, const Segment& b)

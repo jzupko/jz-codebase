@@ -254,7 +254,7 @@ namespace jz.cb
             string refFilename = Path.Combine(aInfo.OutRelDirectory, Utilities.ExtractBaseFilename(Utilities.ExtractRelativeFilename(aInfo.InAbsDirectory, aInfo.Filename))) + "_" + baseFilename + kVertexDeclarationExtension;
             string outFilename = Path.Combine(aInfo.OutAbsDirectory, Utilities.ExtractBaseFilename(Utilities.ExtractRelativeFilename(aInfo.InAbsDirectory, aInfo.Filename))) + "_" + baseFilename + kVertexDeclarationExtension;
 
-            Write(aOut, refFilename);
+            if (aOut != null) { Write(aOut, refFilename); }
             BinaryWriter writer = new BinaryWriter(new FileStream(outFilename, FileMode.Create));
 
             Write(writer, (UInt32)aVertexDeclaration.Length);

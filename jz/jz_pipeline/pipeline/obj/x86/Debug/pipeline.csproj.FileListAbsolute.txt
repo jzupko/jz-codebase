@@ -1,5 +1,0 @@
-D:\jz_dev\bin\debug\pipeline.dll
-D:\jz_dev\bin\debug\pipeline.pdb
-D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Debug\ResolveAssemblyReference.cache
-D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Debug\pipeline.dll
-D:\jz_dev\jz\jz_pipeline\pipeline\obj\x86\Debug\pipeline.pdb

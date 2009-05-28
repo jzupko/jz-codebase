@@ -27,6 +27,7 @@
 #include <jz_core/Auto.h>
 #include <jz_core/Color.h>
 #include <jz_core/Event.h>
+#include <jz_core/Plane.h>
 #include <jz_core/Utility.h>
 #include <jz_core/Vector4.h>
 #include <jz_graphics/Effect.h>
@@ -53,10 +54,7 @@ namespace jz
             Deferred();
             ~Deferred();
 
-            static const int kTapsRt = 4;
-            static const int kCircularTaps = (kTapsRt * kTapsRt);
-
-            static const int kGaussianKernelRadius = 11;
+            static const int kGaussianKernelRadius = 9;
             static const int kMrtCount = 4;
             static const int kHdrCount = 2;
             static const int kShadowCount = 2;
@@ -106,6 +104,17 @@ namespace jz
             float GetGaussianKernelStdDev() const { return mGaussianStdDev; }
             void SetGaussianKernelStdDev(float v);
 
+            const Vector3& GetFocusDistances() const { return mFocusDistances; }
+
+            // X - distance in view space from camera that is the center of focus
+            // Y - distance around the focus distance within which objects are completely in focus.
+            // Z - distance around the focus distance outside which objects are completely out of focus.
+            void SetFocusDistances(const Vector3& v)
+            {
+                mFocusDistances = Vector3::Abs(v);
+                mFocusDistances.Y = Min(mFocusDistances.Y, mFocusDistances.Z);
+            }
+
         private:
             void _Load();
             void _Unload();
@@ -141,15 +150,17 @@ namespace jz
 
             graphics::Parameter<float> jz_GaussianWeights;
             graphics::Parameter<graphics::Target> jz_HdrTexture;
-            graphics::Parameter<Vector4> jz_RandomVectors;
 
             graphics::Parameter<float> jz_AoRadius;
             graphics::Parameter<float> jz_AoScale;
             graphics::Parameter<bool> jz_bDebugAO;
 
-            graphics::Technique mAoPass1;
-            graphics::Technique mAoPass2;
-            graphics::Technique mAoPass3;
+            void _Dof();
+
+            Vector3 mFocusDistances;
+            graphics::Parameter<Vector3> jz_FocusDistances;
+
+            graphics::Technique mAo;
             graphics::Technique mLdrPass;
             graphics::Technique mShadowBlurPass1;
             graphics::Technique mShadowBlurPass2;
@@ -157,6 +168,8 @@ namespace jz
             graphics::Technique mBloomProcess;
             graphics::Technique mBloomBlurPass1;
             graphics::Technique mBloomBlurPass2;
+            graphics::Technique mDofBlurPass1;
+            graphics::Technique mDofBlurPass2;
             graphics::EffectPtr mEffect;
 
             graphics::Parameter<bool> jz_bDebugDeferred;
@@ -187,8 +200,6 @@ namespace jz
 
             float mGaussianWeights[kGaussianKernelRadius];
             float mGaussianStdDev;
-
-            Vector4 mRandomVectors[kCircularTaps];
 
             float mAoRadius;
             float mAoScale;

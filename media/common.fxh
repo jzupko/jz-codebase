@@ -50,6 +50,8 @@
 		StencilEnable = false; \
 		TwoSidedStencilMode = false;
 
+static const float kTwoPi = 6.28318530718;
+
 static const float3 kNtscGrayscaleFactors = float3(0.299, 0.587, 0.114);
 
 static const float3 kBlack3 = float3(0, 0, 0);
