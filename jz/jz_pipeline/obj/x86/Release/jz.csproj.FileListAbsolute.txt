@@ -1,6 +1,0 @@
-D:\jz_dev\bin\release\jz.dll
-D:\jz_dev\bin\release\jz.pdb
-D:\jz_dev\jz\jz_pipeline\obj\x86\Release\ResolveAssemblyReference.cache
-D:\jz_dev\jz\jz_pipeline\obj\x86\Release\Microsoft.Xna.Framework.RuntimeProfile.txt
-D:\jz_dev\jz\jz_pipeline\obj\x86\Release\jz.dll
-D:\jz_dev\jz\jz_pipeline\obj\x86\Release\jz.pdb
