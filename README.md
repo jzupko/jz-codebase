@@ -1,9 +1,15 @@
 jz-codebase
 ===========
-
-Archive of C++ code that was part of my System for Automated Interactive
+Archive of C++ code developed while working on my System for Automated Interactive
 Lighting (SAIL) [dissertation](https://etda.libraries.psu.edu/catalog/9361)
 work (2009).
+
+Note that the codebase which was actually used as part of the interview
+portion of my dissertation is the [sailcs-codebase](https://github.com/jzupko/sailcs-codebase).
+That codebase is written in C#.
+
+This C++ `jz-codebase` was built in tandum and is less complete in terms
+of the implementation of SAIL itself (training and real-time lighting).
 
 Licenses
 --------
